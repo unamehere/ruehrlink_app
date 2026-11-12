@@ -15,8 +15,17 @@ import 'setup_step_layout.dart';
 class DoneStep extends ConsumerStatefulWidget {
   const DoneStep({super.key});
 
-  /// Probelauf laut docs/screens.md; wird trotzdem an die caps angepasst.
-  static const trial = MachineSettings(temperature: 0, time: 30, speed: 1);
+  /// Probelauf laut docs/screens.md: 30 s ohne Heizen auf der Dauerstufe „1“
+  /// (falls das Gerät keine hat: die erste Dauerstufe). Grenzen aus den caps.
+  static MachineSettings trialFor(ApplianceCaps caps) {
+    final continuous = caps.speedsIn(SpeedGroup.continuous);
+    final speed =
+        continuous.where((o) => o.label == '1').firstOrNull ??
+        continuous.firstOrNull;
+    return caps.clamp(
+      MachineSettings(temperature: 0, time: 30, speed: speed?.v ?? 0),
+    );
+  }
 
   @override
   ConsumerState<DoneStep> createState() => _DoneStepState();
@@ -31,7 +40,7 @@ class _DoneStepState extends ConsumerState<DoneStep> {
     final l10n = context.l10n;
     setState(() => _busy = true);
     try {
-      await ref.read(bridgeApiProvider).sendProgram(caps.clamp(DoneStep.trial));
+      await ref.read(bridgeApiProvider).sendProgram(DoneStep.trialFor(caps));
       _ok = true;
       _result = l10n.setupTrySent;
     } on BridgeException {

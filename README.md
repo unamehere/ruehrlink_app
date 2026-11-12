@@ -42,7 +42,7 @@ flutter run            # auf Gerät/Emulator starten
 ### Demo-Modus (ohne Hardware)
 
 Ohne gespeicherte Brücke spricht die App mit einer **simulierten Brücke** (`FakeBridgeApi`): Sie meldet ein
-Demo-Gerät mit typischen Grenzen, bestätigt gesendete Werte, „dreht“ nach 3 s selbst am Knopf, zählt die
+Demo-Gerät mit typischen Grenzen, bestätigt gesendete Werte, „drückt“ nach 3 s selbst den Startknopf, zählt die
 Restzeit herunter und heizt die Schüssel langsam auf. Auch die Einrichtung läuft gegen einen Fake
 (`FakeBridgeProvisioning`) – PIN `0000` und WLAN-Passwort `falsch` zeigen die Fehlermeldungen.
 

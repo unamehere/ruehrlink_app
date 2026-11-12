@@ -6,8 +6,8 @@ import 'bridge_api.dart';
 /// Simulierte Brücke samt Gerät – für Entwicklung ohne Hardware und den Demo-Modus.
 ///
 /// Verhält sich wie die echte Brücke: bestätigt Werte per [AckEvent], prüft die
-/// Grenzen aus [caps], „dreht“ nach kurzer Zeit selbst am Knopf (weil kein Fernstart),
-/// zählt die Restzeit herunter und heizt die Schüssel langsam auf.
+/// Grenzen aus [caps], „drückt“ nach kurzer Zeit selbst den Startknopf (weil kein
+/// Fernstart), zählt die Restzeit herunter und heizt die Schüssel langsam auf.
 class FakeBridgeApi implements BridgeApi {
   FakeBridgeApi({
     this.caps = demoCaps,
@@ -24,18 +24,42 @@ class FakeBridgeApi implements BridgeApi {
     name: 'Demo-Küchenmaschine',
     tempMin: 20,
     tempMax: 180,
-    speedMax: 10,
+    speeds: demoSpeeds,
     timeMaxS: 8 * 60 * 60,
     hasScale: true,
     remoteStart: false,
   );
 
+  /// Stufen des Demo-Geräts. **Vorläufig:** Die Werte `v` sind Platzhalter – das
+  /// echte Mapping wird an der Maschine ermittelt und kommt von der Brücke.
+  static const demoSpeeds = [
+    // Reihenfolge wie am Drehknopf: links herum Intervall-Rühren und Puls,
+    // in der Mitte „Aus“, rechts herum die Dauerstufen min … max.
+    SpeedOption(v: 17, label: 'P', group: SpeedGroup.stir),
+    SpeedOption(v: 16, label: '4', group: SpeedGroup.stir),
+    SpeedOption(v: 15, label: '3', group: SpeedGroup.stir),
+    SpeedOption(v: 14, label: '2', group: SpeedGroup.stir),
+    SpeedOption(v: 13, label: '1', group: SpeedGroup.stir),
+    SpeedOption(v: 0, label: 'Aus', group: SpeedGroup.off),
+    SpeedOption(v: 1, label: 'min', group: SpeedGroup.continuous),
+    SpeedOption(v: 2, label: '1', group: SpeedGroup.continuous),
+    SpeedOption(v: 3, label: '2', group: SpeedGroup.continuous),
+    SpeedOption(v: 4, label: '3', group: SpeedGroup.continuous),
+    SpeedOption(v: 5, label: '4', group: SpeedGroup.continuous),
+    SpeedOption(v: 6, label: '5', group: SpeedGroup.continuous),
+    SpeedOption(v: 7, label: '6', group: SpeedGroup.continuous),
+    SpeedOption(v: 11, label: 'max', group: SpeedGroup.continuous),
+  ];
+
   static const _roomTemperature = 22;
+
+  /// Ab dieser Schüsseltemperatur meldet die Demo „heiß“.
+  static const _hotFrom = 60;
 
   final ApplianceCaps caps;
   final Duration latency;
 
-  /// So lange „braucht“ die Nutzerin, bis sie nach dem Senden am Knopf dreht.
+  /// So lange „braucht“ die Nutzerin, bis sie nach dem Senden den Startknopf drückt.
   final Duration knobDelay;
 
   final _events = StreamController<BridgeEvent>.broadcast();
@@ -45,14 +69,11 @@ class FakeBridgeApi implements BridgeApi {
   bool _paired;
   MachineSettings? _set;
   double _bowl = _roomTemperature.toDouble();
-  late ApplianceStatus _status = ApplianceStatus(
-    bowlTemperature: _roomTemperature,
-    speedSetting: 0,
-    remainingTime: 0,
-    motorOn: false,
-    bowlFitted: true,
-    headLiftInterlockClosed: true,
+  late ApplianceStatus _status = ApplianceStatus.disconnected.copyWith(
     connected: _paired,
+    bowlFitted: true,
+    lidClosed: true,
+    bowlTemp: _roomTemperature,
   );
 
   Future<void> _wait() => Future.delayed(latency);
@@ -96,18 +117,19 @@ class FakeBridgeApi implements BridgeApi {
     _set = settings;
     _update(
       _status.copyWith(
-        speedSetting: settings.speed,
-        remainingTime: settings.time,
+        speedSet: settings.speed,
+        tempSet: settings.temperature,
+        remainingS: settings.time,
       ),
     );
     _emit(const AckEvent(cmd: AckEvent.setProgramme, ok: true));
 
     // Läuft schon? Dann übernimmt die Maschine die Werte sofort (wie die echte).
-    if (!_status.motorOn && settings.time > 0) {
+    if (!_status.running && settings.time > 0) {
       _knob?.cancel();
       _knob = Timer(knobDelay, () {
-        if (_set != null && _status.remainingTime > 0) {
-          _update(_status.copyWith(motorOn: true));
+        if (_set != null && _status.remainingS > 0) {
+          _update(_status.copyWith(running: true));
         }
       });
     }
@@ -117,12 +139,12 @@ class FakeBridgeApi implements BridgeApi {
   Future<void> stop() async {
     await _wait();
     _knob?.cancel();
-    if (_status.motorOn) {
+    if (_status.running) {
       // Wie bei der echten Brücke: Stopp = Restzeit auf 1 s.
-      _update(_status.copyWith(remainingTime: 1));
+      _update(_status.copyWith(remainingS: 1));
     } else {
       _set = null;
-      _update(_status.copyWith(remainingTime: 0, speedSetting: 0));
+      _update(_status.copyWith(remainingS: 0, speedSet: 0, tempSet: 0));
     }
   }
 
@@ -147,20 +169,30 @@ class FakeBridgeApi implements BridgeApi {
 
   void _tick() {
     var s = _status;
-    final target = s.motorOn ? (_set?.temperature ?? 0) : 0;
+    final target = s.running ? (_set?.temperature ?? 0) : 0;
     // Aufheizen ca. 2 °C/s, Abkühlen langsamer, nie unter Raumtemperatur.
     if (target > _bowl) {
       _bowl = (_bowl + 2).clamp(0, target.toDouble());
     } else if (_bowl > _roomTemperature) {
       _bowl = (_bowl - 0.5).clamp(_roomTemperature.toDouble(), 999);
     }
-    s = s.copyWith(bowlTemperature: _bowl.round());
+    s = s.copyWith(
+      bowlTemp: _bowl.round(),
+      heating: target > _bowl.round(),
+      hot: _bowl >= _hotFrom,
+    );
 
-    if (s.motorOn) {
-      final rest = s.remainingTime - 1;
+    if (s.running) {
+      final rest = s.remainingS - 1;
       s = rest > 0
-          ? s.copyWith(remainingTime: rest)
-          : s.copyWith(remainingTime: 0, motorOn: false, speedSetting: 0);
+          ? s.copyWith(remainingS: rest)
+          : s.copyWith(
+              remainingS: 0,
+              running: false,
+              heating: false,
+              speedSet: 0,
+              tempSet: 0,
+            );
       if (rest <= 0) _set = null;
     }
     _update(s);

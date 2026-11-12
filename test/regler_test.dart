@@ -8,7 +8,12 @@ const caps = ApplianceCaps(
   name: 'Testgerät',
   tempMin: 37,
   tempMax: 120,
-  speedMax: 6,
+  speeds: [
+    SpeedOption(v: 9, label: 'P', group: SpeedGroup.stir),
+    SpeedOption(v: 0, label: 'Aus', group: SpeedGroup.off),
+    SpeedOption(v: 1, label: 'min', group: SpeedGroup.continuous),
+    SpeedOption(v: 5, label: 'max', group: SpeedGroup.continuous),
+  ],
   timeMaxS: 3600,
   hasScale: false,
   remoteStart: false,
@@ -20,11 +25,13 @@ void main() {
       caps.clamp(
         const MachineSettings(temperature: 200, time: 99999, speed: 9),
       ),
-      const MachineSettings(temperature: 120, time: 3600, speed: 6),
+      const MachineSettings(temperature: 120, time: 3600, speed: 9),
     );
     // Unter tempMin heißt „Heizung aus“, nicht tempMin.
     expect(caps.clampTemperature(30), 0);
-    expect(caps.clampSpeed(-1), 0);
+    // Nur Stufen aus der Liste – keine Zahlenskala.
+    expect(caps.clampSpeed(5), 5);
+    expect(caps.clampSpeed(3), 0);
   });
 
   test('Temperatur: aus, tempMin, 5er-Schritte, tempMax', () {
@@ -37,13 +44,10 @@ void main() {
     expect(Regler.temperature(caps, 120, up: true), isNull);
   });
 
-  test('Zeit und Stufe stoppen an den Grenzen', () {
+  test('Zeit stoppt an den Grenzen', () {
     expect(Regler.time(caps, 0, up: false), isNull);
     expect(Regler.time(caps, 0, up: true), 10);
     expect(Regler.time(caps, 120, up: false), 110);
     expect(Regler.time(caps, 3600, up: true), isNull);
-    expect(Regler.speed(caps, 6, up: true), isNull);
-    expect(Regler.speed(caps, 0, up: false), isNull);
-    expect(Regler.speed(caps, 3, up: true), 4);
   });
 }

@@ -8,13 +8,22 @@ import '../theme.dart';
 /// Verbindungszustand für das [StatusBand].
 enum BandState { connecting, bridgeUnreachable, ready }
 
-/// Großes Statusband: verbunden? · Schüsseltemperatur · läuft? · Restzeit.
-/// Wird in „Kochen“, „Maschine“ und später im Kochmodus gezeigt.
+/// Großes Statusband: verbunden? · läuft? · Schüssel (Ist/Ziel) · Stufe · Restzeit,
+/// dazu „Heizt“ und „Schüssel heiß“. Wird in „Kochen“, „Maschine“ und später im
+/// Kochmodus gezeigt.
 class StatusBand extends StatelessWidget {
-  const StatusBand({super.key, required this.state, this.status});
+  const StatusBand({
+    super.key,
+    required this.state,
+    this.status,
+    this.speedLabel,
+  });
 
   final BandState state;
   final ApplianceStatus? status;
+
+  /// Anzeige eines Stufenwerts (aus `caps.speeds`); ohne caps die Zahl.
+  final String Function(int v)? speedLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +35,7 @@ class StatusBand extends StatelessWidget {
         ? status
         : null;
     final connected = s != null;
-    final running = s?.motorOn ?? false;
+    final running = s?.running ?? false;
 
     final (Color bg, Color fg) = switch ((state, connected, running)) {
       (BandState.bridgeUnreachable, _, _) => (
@@ -89,24 +98,50 @@ class StatusBand extends StatelessWidget {
                     children: [
                       _Value(
                         label: l10n.statusBowl,
-                        value: l10n.temperatureValue(s.bowlTemperature),
+                        value: l10n.temperatureValue(s.bowlTemp),
+                        color: fg,
+                      ),
+                      if (s.tempSet > 0)
+                        _Value(
+                          label: l10n.statusTarget,
+                          value: l10n.temperatureValue(s.tempSet),
+                          color: fg,
+                        ),
+                      _Value(
+                        label: l10n.dialSpeed,
+                        value: s.speedSet == 0
+                            ? l10n.valueOff
+                            : (speedLabel?.call(s.speedSet) ?? '${s.speedSet}'),
                         color: fg,
                       ),
                       _Value(
                         label: l10n.statusRemaining,
-                        value: formatDuration(s.remainingTime),
+                        value: formatDuration(s.remainingS),
                         color: fg,
                       ),
-                      if (!running)
-                        _Value(
-                          label: l10n.dialSpeed,
-                          value: s.speedSetting == 0
-                              ? l10n.valueOff
-                              : '${s.speedSetting}',
-                          color: fg,
-                        ),
                     ],
                   ),
+                  if (s.heating || s.hot) ...[
+                    const SizedBox(height: Tokens.m),
+                    Wrap(
+                      spacing: Tokens.s,
+                      runSpacing: Tokens.s,
+                      children: [
+                        if (s.heating)
+                          _Flag(
+                            icon: Icons.local_fire_department_rounded,
+                            text: l10n.statusHeating,
+                            color: fg,
+                          ),
+                        if (s.hot)
+                          _Flag(
+                            icon: Icons.warning_amber_rounded,
+                            text: l10n.statusHot,
+                            color: fg,
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
               ],
             ),
@@ -135,4 +170,41 @@ class _Value extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Kleiner Hinweis im Band, z. B. „Heizt“ oder „Schüssel heiß“.
+class _Flag extends StatelessWidget {
+  const _Flag({required this.icon, required this.text, required this.color});
+
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      border: Border.all(color: color, width: 2),
+      borderRadius: BorderRadius.circular(Tokens.radius),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: Tokens.m,
+        vertical: Tokens.s,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 26),
+          const SizedBox(width: Tokens.s),
+          Flexible(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: color),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

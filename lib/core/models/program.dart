@@ -1,7 +1,7 @@
 import 'json.dart';
 import 'machine_settings.dart';
 
-/// Multi-Programm (`GET /api/v1/programs`): mehrere Schritte, ein Knopfdreh.
+/// Multi-Programm (`GET /api/v1/programs`): mehrere Schritte, ein Knopfdruck.
 /// Die Abfolge läuft auf der Brücke, nie im Handy.
 class Program {
   const Program({

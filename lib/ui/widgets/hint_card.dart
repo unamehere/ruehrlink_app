@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../theme.dart';
 
 /// Hinweiskarte mit Symbol, Text und optionaler Erklärung.
-/// [emphasized] hebt sie farbig hervor (z. B. „Jetzt am Knopf drehen“).
+/// [emphasized] hebt sie farbig hervor (z. B. „Zum Starten den Knopf drücken“).
 class HintCard extends StatelessWidget {
   const HintCard({
     super.key,

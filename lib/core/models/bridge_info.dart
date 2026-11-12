@@ -108,7 +108,7 @@ class ApplianceCaps {
     required this.name,
     required this.tempMin,
     required this.tempMax,
-    required this.speedMax,
+    required this.speeds,
     required this.timeMaxS,
     required this.hasScale,
     required this.remoteStart,
@@ -124,18 +124,38 @@ class ApplianceCaps {
   final int tempMin;
   final int tempMax;
 
-  /// Höchste Stufe; 0 = Motor aus.
-  final int speedMax;
+  /// Alle wählbaren Stufen in Anzeige-Reihenfolge, gruppiert (aus, Intervall-Rühren,
+  /// Dauerstufen). Die Werte sind gerätespezifisch und keine Zahlenskala.
+  final List<SpeedOption> speeds;
   final int timeMaxS;
   final bool hasScale;
 
-  /// Kann das Gerät aus der Ferne starten? Sonst: Start am Knopf der Maschine.
+  /// Kann das Gerät aus der Ferne starten? Sonst: zum Starten den
+  /// Knopf an der Maschine drücken.
   final bool remoteStart;
 
   /// Temperatur in den erlaubten Bereich bringen: unter [tempMin] → 0 (Heizung aus).
   int clampTemperature(int t) => t < tempMin ? 0 : (t > tempMax ? tempMax : t);
 
-  int clampSpeed(int s) => s.clamp(0, speedMax);
+  /// Die Stufe zum Wert [v] oder `null`, wenn das Gerät sie nicht kennt.
+  SpeedOption? speedOption(int v) {
+    for (final o in speeds) {
+      if (o.v == v) return o;
+    }
+    return null;
+  }
+
+  /// Anzeige für einen Stufenwert; unbekannte Werte als Zahl.
+  String speedLabel(int v) => speedOption(v)?.label ?? '$v';
+
+  /// Nur bekannte Stufen sind erlaubt, alles andere wird zu 0 (Motor aus).
+  int clampSpeed(int s) => speedOption(s) != null ? s : 0;
+
+  /// Stufen einer Gruppe, in der Reihenfolge der Brücke.
+  List<SpeedOption> speedsIn(SpeedGroup group) => [
+    for (final o in speeds)
+      if (o.group == group) o,
+  ];
 
   int clampTime(int seconds) => seconds.clamp(0, timeMaxS);
 
@@ -151,7 +171,7 @@ class ApplianceCaps {
     name: readString(json['name']),
     tempMin: readInt(json['tempMin']),
     tempMax: readInt(json['tempMax']),
-    speedMax: readInt(json['speedMax']),
+    speeds: List.unmodifiable(readList(json['speeds'], SpeedOption.fromJson)),
     timeMaxS: readInt(json['timeMaxS']),
     hasScale: readBool(json['hasScale']),
     remoteStart: readBool(json['remoteStart']),
@@ -162,9 +182,55 @@ class ApplianceCaps {
     'name': name,
     'tempMin': tempMin,
     'tempMax': tempMax,
-    'speedMax': speedMax,
+    'speeds': [for (final o in speeds) o.toJson()],
     'timeMaxS': timeMaxS,
     'hasScale': hasScale,
     'remoteStart': remoteStart,
   };
+}
+
+/// Gruppe einer Stufe: aus, Intervall-Rühren (z. B. beim Kochen) oder Dauerstufe.
+enum SpeedGroup {
+  off,
+  stir,
+  continuous,
+
+  /// Unbekannte Gruppe einer neueren Brücke – wird wie eine Dauerstufe gezeigt.
+  other;
+
+  static SpeedGroup parse(String s) => switch (s) {
+    'off' => off,
+    'stir' => stir,
+    'continuous' => continuous,
+    _ => other,
+  };
+}
+
+/// Eine wählbare Stufe: [v] geht an die Maschine, [label] wird angezeigt.
+class SpeedOption {
+  const SpeedOption({
+    required this.v,
+    required this.label,
+    required this.group,
+    this.groupName,
+  });
+
+  final int v;
+  final String label;
+  final SpeedGroup group;
+
+  /// Original-Gruppenname aus dem JSON (für unbekannte Gruppen).
+  final String? groupName;
+
+  factory SpeedOption.fromJson(Json json) {
+    final g = readString(json['group']);
+    return SpeedOption(
+      v: readInt(json['v']),
+      label: readString(json['label'], '${readInt(json['v'])}'),
+      group: SpeedGroup.parse(g),
+      groupName: g,
+    );
+  }
+
+  Json toJson() => {'v': v, 'label': label, 'group': groupName ?? group.name};
 }

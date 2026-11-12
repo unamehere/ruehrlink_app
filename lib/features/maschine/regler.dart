@@ -1,6 +1,7 @@
 import '../../core/models/models.dart';
 
-/// Schrittweiten für die drei Regler. Grenzen kommen immer aus den [ApplianceCaps];
+/// Schrittweiten für Temperatur und Zeit. (Stufen sind eine Auswahlliste aus
+/// `caps.speeds`, siehe `SpeedPicker`.) Grenzen kommen immer aus den [ApplianceCaps];
 /// fest stehen nur die Schrittweiten (eine Bedien-, keine Geräteentscheidung).
 ///
 /// Jede Funktion liefert den nächsten Wert oder `null`, wenn die Grenze erreicht
@@ -47,11 +48,4 @@ abstract final class Regler {
     < 3600 => 60,
     _ => 300,
   };
-
-  /// Stufe: 0 (aus) bis speedMax in Einerschritten.
-  static int? speed(ApplianceCaps caps, int s, {required bool up}) {
-    final current = caps.clampSpeed(s);
-    final next = caps.clampSpeed(current + (up ? 1 : -1));
-    return next == current ? null : next;
-  }
 }

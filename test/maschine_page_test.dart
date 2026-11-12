@@ -64,8 +64,13 @@ void main() {
     await _close(tester);
   });
 
-  testWidgets('Senden wird von der Maschine bestätigt', (tester) async {
+  testWidgets('Stufe wählen und senden – Maschine bestätigt', (tester) async {
     await _openMaschine(tester, const Size(1280, 800));
+    // Tippen auf die Beschriftung „max“ rastet den Stufenregler dort ein.
+    await tester.tap(find.text('max'));
+    await tester.pump();
+    expect(find.text('max'), findsNWidgets(2)); // Skala + großes Label
+    expect(find.text('Dauerstufen'), findsWidgets);
     await tester.tap(find.text('An Maschine senden'));
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('Die Maschine hat die Werte übernommen.'), findsOneWidget);

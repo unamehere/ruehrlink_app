@@ -1,81 +1,113 @@
 import 'json.dart';
 
 /// Live-Status des Geräts (`GET /api/v1/state` und WebSocket-Nachricht `status`).
+/// Geräteneutrale Feldnamen; gerätespezifische Namen bleiben im Treiber der Brücke.
 class ApplianceStatus {
   const ApplianceStatus({
-    required this.bowlTemperature,
-    required this.speedSetting,
-    required this.remainingTime,
-    required this.motorOn,
-    required this.bowlFitted,
-    required this.headLiftInterlockClosed,
     required this.connected,
+    required this.running,
+    required this.heating,
+    required this.hot,
+    required this.bowlFitted,
+    required this.lidClosed,
+    required this.bowlTemp,
+    required this.tempSet,
+    required this.speedSet,
+    required this.remainingS,
   });
 
   /// Gerät ist nicht verbunden – nichts bekannt.
   static const disconnected = ApplianceStatus(
-    bowlTemperature: 0,
-    speedSetting: 0,
-    remainingTime: 0,
-    motorOn: false,
-    bowlFitted: false,
-    headLiftInterlockClosed: false,
     connected: false,
+    running: false,
+    heating: false,
+    hot: false,
+    bowlFitted: false,
+    lidClosed: false,
+    bowlTemp: 0,
+    tempSet: 0,
+    speedSet: 0,
+    remainingS: 0,
   );
-
-  /// Ist-Temperatur in der Schüssel, °C.
-  final int bowlTemperature;
-  final int speedSetting;
-
-  /// Restzeit in Sekunden. Zählt nur, solange der Motor läuft.
-  final int remainingTime;
-  final bool motorOn;
-  final bool bowlFitted;
-  final bool headLiftInterlockClosed;
 
   /// Gerät ist mit der Brücke verbunden.
   final bool connected;
 
+  /// Motor/Programm läuft.
+  final bool running;
+
+  /// Heizung ist gerade aktiv.
+  final bool heating;
+
+  /// Schüssel ist heiß – Vorsicht beim Anfassen.
+  final bool hot;
+  final bool bowlFitted;
+
+  /// Kopf/Deckel verriegelt.
+  final bool lidClosed;
+
+  /// Ist-Temperatur in der Schüssel, °C.
+  final int bowlTemp;
+
+  /// Eingestellte Temperatur, °C (0 = Heizung aus).
+  final int tempSet;
+
+  /// Eingestellte Stufe als Gerätewert – Anzeige über `ApplianceCaps.speedLabel`.
+  final int speedSet;
+
+  /// Restzeit in Sekunden. Zählt nur, solange der Motor läuft.
+  final int remainingS;
+
   /// Schüssel eingesetzt und Kopf geschlossen – Voraussetzung zum Starten.
-  bool get readyToStart => bowlFitted && headLiftInterlockClosed;
+  bool get readyToStart => bowlFitted && lidClosed;
 
   factory ApplianceStatus.fromJson(Json json) => ApplianceStatus(
-    bowlTemperature: readInt(json['bowlTemperature']),
-    speedSetting: readInt(json['speedSetting']),
-    remainingTime: readInt(json['remainingTime']),
-    motorOn: readBool(json['motorOn']),
-    bowlFitted: readBool(json['bowlFitted']),
-    // Schreibweise mit großem H so in der API festgelegt.
-    headLiftInterlockClosed: readBool(json['HeadLiftInterlockClosed']),
     connected: readBool(json['connected']),
+    running: readBool(json['running']),
+    heating: readBool(json['heating']),
+    hot: readBool(json['hot']),
+    bowlFitted: readBool(json['bowlFitted']),
+    lidClosed: readBool(json['lidClosed']),
+    bowlTemp: readInt(json['bowlTemp']),
+    tempSet: readInt(json['tempSet']),
+    speedSet: readInt(json['speedSet']),
+    remainingS: readInt(json['remainingS']),
   );
 
   Json toJson() => {
-    'bowlTemperature': bowlTemperature,
-    'speedSetting': speedSetting,
-    'remainingTime': remainingTime,
-    'motorOn': motorOn,
-    'bowlFitted': bowlFitted,
-    'HeadLiftInterlockClosed': headLiftInterlockClosed,
     'connected': connected,
+    'running': running,
+    'heating': heating,
+    'hot': hot,
+    'bowlFitted': bowlFitted,
+    'lidClosed': lidClosed,
+    'bowlTemp': bowlTemp,
+    'tempSet': tempSet,
+    'speedSet': speedSet,
+    'remainingS': remainingS,
   };
 
   ApplianceStatus copyWith({
-    int? bowlTemperature,
-    int? speedSetting,
-    int? remainingTime,
-    bool? motorOn,
-    bool? bowlFitted,
-    bool? headLiftInterlockClosed,
     bool? connected,
+    bool? running,
+    bool? heating,
+    bool? hot,
+    bool? bowlFitted,
+    bool? lidClosed,
+    int? bowlTemp,
+    int? tempSet,
+    int? speedSet,
+    int? remainingS,
   }) => ApplianceStatus(
-    bowlTemperature: bowlTemperature ?? this.bowlTemperature,
-    speedSetting: speedSetting ?? this.speedSetting,
-    remainingTime: remainingTime ?? this.remainingTime,
-    motorOn: motorOn ?? this.motorOn,
-    bowlFitted: bowlFitted ?? this.bowlFitted,
-    headLiftInterlockClosed:
-        headLiftInterlockClosed ?? this.headLiftInterlockClosed,
     connected: connected ?? this.connected,
+    running: running ?? this.running,
+    heating: heating ?? this.heating,
+    hot: hot ?? this.hot,
+    bowlFitted: bowlFitted ?? this.bowlFitted,
+    lidClosed: lidClosed ?? this.lidClosed,
+    bowlTemp: bowlTemp ?? this.bowlTemp,
+    tempSet: tempSet ?? this.tempSet,
+    speedSet: speedSet ?? this.speedSet,
+    remainingS: remainingS ?? this.remainingS,
   );
 }

@@ -9,6 +9,7 @@ import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import '../../ui/widgets/speed_slider.dart';
 import '../../ui/widgets/value_dial.dart';
 import 'live_status_band.dart';
 import 'machine_controller.dart';
@@ -128,25 +129,11 @@ class _Controls extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: Tokens.m),
-        ValueDial(
+        SpeedSlider(
           label: l10n.dialSpeed,
-          icon: Icons.speed_rounded,
-          value: s.speed == 0 ? l10n.valueOff : '${s.speed}',
-          onDecrement: step(
-            Regler.speed(caps, s.speed, up: false),
-            (v) => s.copyWith(speed: v),
-          ),
-          onIncrement: step(
-            Regler.speed(caps, s.speed, up: true),
-            (v) => s.copyWith(speed: v),
-          ),
-          slider: DialSlider(
-            value: s.speed.toDouble(),
-            min: 0,
-            max: caps.speedMax.toDouble(),
-            divisions: caps.speedMax > 0 ? caps.speedMax : null,
-            onChanged: (v) => edit(s.copyWith(speed: v.round())),
-          ),
+          options: caps.speeds,
+          selected: s.speed,
+          onChanged: (v) => edit(s.copyWith(speed: v)),
         ),
         const SizedBox(height: Tokens.l),
         BigButton(

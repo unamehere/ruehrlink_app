@@ -22,7 +22,12 @@ void main() {
       "model": "kenwood-kcl95",
       "name": "Cooking Chef XL",
       "tempMin": 20, "tempMax": 180,
-      "speedMax": 10,
+      "speeds": [
+        {"v": 0, "label": "Aus", "group": "off"},
+        {"v": 13, "label": "1", "group": "stir"},
+        {"v": 1, "label": "min", "group": "continuous"},
+        {"v": 11, "label": "max", "group": "continuous"}
+      ],
       "timeMaxS": 28800,
       "hasScale": true,
       "remoteStart": false
@@ -35,7 +40,10 @@ void main() {
     final caps = info.readyCaps!;
     expect(caps.tempMin, 20);
     expect(caps.tempMax, 180);
-    expect(caps.speedMax, 10);
+    expect(caps.speeds, hasLength(4));
+    expect(caps.speedOption(13)!.group, SpeedGroup.stir);
+    expect(caps.speedLabel(11), 'max');
+    expect(caps.speedLabel(42), '42'); // unbekannt → Zahl
     expect(caps.timeMaxS, 28800);
     expect(caps.remoteStart, isFalse);
     // Rundreise: toJson ergibt wieder dasselbe JSON.
@@ -45,16 +53,19 @@ void main() {
   test('WebSocket-Nachrichten', () {
     final status = BridgeEvent.fromJson(
       _json(
-        '{"t":"status","d":{"bowlTemperature":23,"speedSetting":0,"remainingTime":0,'
-        '"motorOn":false,"bowlFitted":true,"HeadLiftInterlockClosed":true,"connected":true}}',
+        '{"t":"status","d":{"bowlTemp":23,"speedSet":0,"remainingS":0,'
+        '"running":false,"heating":true,"hot":false,"tempSet":100,'
+        '"bowlFitted":true,"lidClosed":true,"connected":true}}',
       ),
     );
     expect(status, isA<StatusEvent>());
     final s = (status as StatusEvent).status;
-    expect(s.bowlTemperature, 23);
-    expect(s.headLiftInterlockClosed, isTrue);
+    expect(s.bowlTemp, 23);
+    expect(s.lidClosed, isTrue);
+    expect(s.heating, isTrue);
+    expect(s.tempSet, 100);
     expect(s.readyToStart, isTrue);
-    expect(s.toJson()['HeadLiftInterlockClosed'], isTrue);
+    expect(s.toJson()['lidClosed'], isTrue);
 
     final weight = BridgeEvent.fromJson(
       _json('{"t":"weight","d":{"g":251.4}}'),

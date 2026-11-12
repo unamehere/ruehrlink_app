@@ -12,10 +12,12 @@ class LiveStatusBand extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(applianceStatusProvider);
+    final caps = ref.watch(bridgeInfoProvider).value?.readyCaps;
     return switch (status) {
       AsyncValue(:final value?, hasError: false) => StatusBand(
         state: BandState.ready,
         status: value,
+        speedLabel: caps?.speedLabel,
       ),
       AsyncValue(hasError: true) => const StatusBand(
         state: BandState.bridgeUnreachable,

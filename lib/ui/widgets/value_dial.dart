@@ -7,7 +7,7 @@ import '../theme.dart';
 ///
 /// Rein darstellend – welche Werte erlaubt sind und in welchen Schritten,
 /// entscheidet der Aufrufer (aus den `caps` des Geräts). Ein `null`-Callback
-/// sperrt die jeweilige Taste (Grenze erreicht). Optional ein Schieberegler.
+/// sperrt die jeweilige Taste (Grenze erreicht).
 class ValueDial extends StatelessWidget {
   const ValueDial({
     super.key,
@@ -16,7 +16,6 @@ class ValueDial extends StatelessWidget {
     required this.onDecrement,
     required this.onIncrement,
     this.icon,
-    this.slider,
   });
 
   final String label;
@@ -26,7 +25,6 @@ class ValueDial extends StatelessWidget {
   final VoidCallback? onDecrement;
   final VoidCallback? onIncrement;
   final IconData? icon;
-  final DialSlider? slider;
 
   @override
   Widget build(BuildContext context) {
@@ -78,35 +76,9 @@ class ValueDial extends StatelessWidget {
                 ),
               ],
             ),
-            if (slider case final s?)
-              Slider(
-                value: s.value.clamp(s.min, s.max),
-                min: s.min,
-                max: s.max,
-                divisions: s.divisions,
-                label: value,
-                onChanged: s.onChanged,
-              ),
           ],
         ),
       ),
     );
   }
-}
-
-/// Konfiguration des optionalen Schiebereglers unter einem [ValueDial].
-class DialSlider {
-  const DialSlider({
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    this.divisions,
-  });
-
-  final double value;
-  final double min;
-  final double max;
-  final int? divisions;
-  final ValueChanged<double>? onChanged;
 }
