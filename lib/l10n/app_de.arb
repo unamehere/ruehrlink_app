@@ -60,6 +60,7 @@
   "@setupStepOf": {"placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}},
   "setupWelcomeTitle": "Willkommen bei Freikoch",
   "setupWelcomeText": "Freikoch macht deine Küchenmaschine wieder smart. Alles bleibt bei dir zu Hause.",
+  "setupAlreadyInWifi": "Brücke ist schon im WLAN",
   "setupStart": "Los geht's",
 
   "setupBridgeTitle": "Brücke finden",

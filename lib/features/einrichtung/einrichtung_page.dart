@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../l10n/l10n.dart';
 import 'bridge_step.dart';
 import 'done_step.dart';
@@ -75,10 +77,27 @@ class _WelcomeStep extends ConsumerWidget {
       visual: const SetupIcon(Icons.soup_kitchen_rounded),
       title: l10n.setupWelcomeTitle,
       text: l10n.setupWelcomeText,
-      action: FilledButton(
-        onPressed: ref.read(setupStepProvider.notifier).next,
-        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(64)),
-        child: Text(l10n.setupStart),
+      action: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton(
+            onPressed: ref.read(setupStepProvider.notifier).next,
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(64)),
+            child: Text(l10n.setupStart),
+          ),
+          const SizedBox(height: 12),
+          // Brücke ist schon im Heim-WLAN (z. B. zweites Handy, Entwicklung): direkt
+          // im WLAN suchen und per Taste koppeln, ohne Bluetooth-Einrichtung.
+          OutlinedButton(
+            onPressed: () {
+              ref.read(setupDoneProvider.notifier).set(true);
+              context.go('/mehr/verbindung');
+            },
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+            child: Text(l10n.setupAlreadyInWifi),
+          ),
+        ],
       ),
     );
   }
