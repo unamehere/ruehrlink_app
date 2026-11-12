@@ -25,21 +25,35 @@ Die App spricht ausschließlich die lokale API der Brücke:
 
 ## Entwicklung
 
-Voraussetzungen (noch zu installieren):
+Flutter 3.50 (stable). Unter Windows liegt das SDK in `C:\git\flutter`; ohne `PATH`-Eintrag
+`C:\git\flutter\bin\flutter.bat` statt `flutter` verwenden.
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install/windows) (stable)
-- Android Studio (Android SDK + Emulator) – Android-Builds gehen unter Windows
-- **iOS-Builds brauchen einen Mac mit Xcode** oder einen Cloud-Build-Dienst (z. B. Codemagic,
-  GitHub Actions mit macOS-Runner)
+```sh
+flutter pub get        # Pakete holen, erzeugt auch die Texte aus lib/l10n/app_de.arb
+flutter analyze        # muss sauber sein
+flutter test           # wenige gezielte Tests
+flutter run            # auf Gerät/Emulator starten
+```
 
-Das Flutter-Projekt wird nach der Installation mit
-`flutter create --org de.freikoch --project-name freikoch .` in diesem Ordner erzeugt.
+- **Android-Builds** brauchen Android Studio bzw. das Android-SDK (noch nicht eingerichtet).
+- **iOS-Builds** brauchen einen Mac mit Xcode oder einen Cloud-Build-Dienst (z. B. Codemagic,
+  GitHub Actions mit macOS-Runner).
 
-Geplante Pakete: `multicast_dns` (Brücke finden), `web_socket_channel`, `sqflite` (lokale DB),
-`flutter_esp_ble_prov` o. ä. (Einrichtung per Bluetooth), `share_plus` (Rezepte teilen),
-`image` (Fotos verkleinern).
+### Demo-Modus (ohne Hardware)
 
-Siehe [`docs/screens.md`](docs/screens.md) für die MVP-Bildschirme.
+Ohne gespeicherte Brücke spricht die App mit einer **simulierten Brücke** (`FakeBridgeApi`): Sie meldet ein
+Demo-Gerät mit typischen Grenzen, bestätigt gesendete Werte, „dreht“ nach 3 s selbst am Knopf, zählt die
+Restzeit herunter und heizt die Schüssel langsam auf. Auch die Einrichtung läuft gegen einen Fake
+(`FakeBridgeProvisioning`) – PIN `0000` und WLAN-Passwort `falsch` zeigen die Fehlermeldungen.
+
+Umschalten auf eine echte Brücke: **Mehr → Verbindung zur Brücke** → im WLAN gefundene Brücke (mDNS
+`_freikoch._tcp`) oder IP-Adresse eingeben → Taste an der Brücke drücken. Zurück mit „Demo-Modus verwenden“.
+„Einrichtung neu starten“ zeigt den Einrichtungsablauf erneut.
+
+### Aufbau
+
+Siehe [`docs/architektur.md`](docs/architektur.md) (Ordner, Datenfluss, Layout für Tablet/Querformat,
+Pakete, Entscheidungen) und [`docs/screens.md`](docs/screens.md) (MVP-Bildschirme).
 
 ## Lizenz
 

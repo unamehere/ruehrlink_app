@@ -1,0 +1,35 @@
+name: freikoch
+description: "Freikoch – die App zur Freikoch Brücke. Strikt lokal im Heim-WLAN."
+publish_to: 'none'
+
+# Später: aus der Datei VERSION abgeleitet (App-Version = Firmware-Version).
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.14.0
+
+# Jede Abhängigkeit ist in docs/architektur.md begründet.
+# Regel: keine Pakete mit Analytics, Firebase, Crash-Reporting, Werbung oder Netzwerkzugriff nach außen.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  material_ui: ^1.11.0
+  cupertino_ui: ^1.1.6
+  intl: ^0.20.2
+  flutter_riverpod: ^3.5.0
+  go_router: ^18.1.4
+  http: ^1.6.0
+  web_socket_channel: ^3.0.3
+  shared_preferences: ^2.5.6
+  bonsoir: ^7.1.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true

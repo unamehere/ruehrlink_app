@@ -26,3 +26,6 @@ ios/Flutter/Flutter.podspec
 # Sonstiges
 .DS_Store
 Thumbs.db
+
+# Von `flutter gen-l10n` erzeugt (läuft automatisch bei `flutter pub get`)
+lib/l10n/app_localizations*.dart
