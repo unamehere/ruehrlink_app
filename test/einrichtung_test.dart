@@ -2,6 +2,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freikoch/app.dart';
+import 'package:freikoch/core/provisioning/bridge_provisioning.dart';
+import 'package:freikoch/core/provisioning/fake_bridge_provisioning.dart';
 import 'package:freikoch/core/storage/app_storage.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,7 +18,12 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [appStorageProvider.overrideWithValue(AppStorage(prefs))],
+        overrides: [
+          appStorageProvider.overrideWithValue(AppStorage(prefs)),
+          bridgeProvisioningProvider.overrideWithValue(
+            FakeBridgeProvisioning(),
+          ),
+        ],
         child: const FreikochApp(),
       ),
     );
@@ -33,16 +40,23 @@ void main() {
     expect(find.text('Willkommen bei Freikoch'), findsOneWidget);
     await tapAndWait(find.text("Los geht's"), 2000);
 
-    // Brücke per Bluetooth (Fake) und Code vom Etikett.
-    await tapAndWait(find.text('Freikoch-98C0'));
-    await tester.enterText(find.byType(TextField), '1234');
-    await tapAndWait(find.text('Verbinden'), 1000);
+    // Code vom Etikett (hier der QR-Inhalt abgetippt) → Brücke wird per
+    // Bluetooth (Fake) gefunden und automatisch verbunden.
+    await tester.enterText(
+      find.byType(TextField),
+      '{"ver":"v1","name":"Freikoch-98C0","pop":"abcde23456",'
+      '"transport":"ble","security":2,"username":"freikoch"}',
+    );
+    await tapAndWait(find.text('Weiter'), 3000);
 
     // WLAN wählen und Passwort.
-    await tester.pump(const Duration(seconds: 2));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
     await tapAndWait(find.text('Zuhause'));
     await tester.enterText(find.byType(TextField), 'geheim');
     await tapAndWait(find.text('Verbinden'), 4000);
+    await tester.pump(const Duration(seconds: 1));
 
     // Maschine koppeln (Demo-Gerät ist sofort verbunden).
     expect(find.text('Maschine koppeln'), findsOneWidget);

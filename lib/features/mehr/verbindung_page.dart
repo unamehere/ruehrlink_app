@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -61,7 +62,7 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
         VerbindungPage.pairInterval.inSeconds;
     String? error = l10n.connectionPairTimeout;
     try {
-      final id = await api.requestPairing(deviceName());
+      final id = await api.requestPairing(await deviceName());
       for (var i = 0; i < attempts && mounted && _pairing == target; i++) {
         await Future<void>.delayed(VerbindungPage.pairInterval);
         if (!mounted || _pairing != target) break;
@@ -275,9 +276,25 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
 }
 
 /// Name, unter dem dieses Gerät bei der Brücke anfragt (wird auf dem
-/// bestätigenden Handy angezeigt).
-String deviceName() => switch (defaultTargetPlatform) {
-  TargetPlatform.iOS => 'iPhone/iPad',
-  TargetPlatform.android => 'Android-Gerät',
-  _ => 'Freikoch-App',
-};
+/// bestätigenden Handy angezeigt), z. B. „Google Pixel 8a“. Nur lokal ermittelt.
+Future<String> deviceName() async {
+  try {
+    final info = DeviceInfoPlugin();
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        final a = await info.androidInfo;
+        final maker = a.manufacturer.isEmpty
+            ? ''
+            : '${a.manufacturer[0].toUpperCase()}${a.manufacturer.substring(1)} ';
+        return a.model.toLowerCase().startsWith(a.manufacturer.toLowerCase())
+            ? a.model
+            : '$maker${a.model}';
+      case TargetPlatform.iOS:
+        final i = await info.iosInfo;
+        return i.modelName.isNotEmpty ? i.modelName : i.model;
+      default:
+        break;
+    }
+  } catch (_) {}
+  return 'Freikoch-App';
+}

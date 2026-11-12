@@ -1,7 +1,8 @@
 import 'json.dart';
 import 'machine_settings.dart';
 
-/// Multi-Programm (`GET /api/v1/programs`): mehrere Schritte, ein Knopfdruck.
+/// Programm (`GET /api/v1/programs`): fester Ablauf mehrerer Schritte, z. B.
+/// Eischnee – ein Knopfdruck. (Später kommen „Assistenten“ dazu, die nachfragen.)
 /// Die Abfolge läuft auf der Brücke, nie im Handy.
 class Program {
   const Program({

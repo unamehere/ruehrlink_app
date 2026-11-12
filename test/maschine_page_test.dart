@@ -87,12 +87,20 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     expect(find.textContaining('Bitte eine Zeit bis'), findsOneWidget);
+    FilledButton send() => tester.widget<FilledButton>(
+      find.ancestor(
+        of: find.text('An Maschine senden'),
+        matching: find.byType(FilledButton),
+      ),
+    );
+    expect(send().onPressed, isNull, reason: 'Senden gesperrt');
     // Ziffern 130 werden zu 1:30 und mit „Fertig“ übernommen.
     await tester.enterText(find.byType(TextField), '130');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
     expect(find.byType(TextField), findsNothing);
     expect(find.text('1:30'), findsOneWidget);
+    expect(send().onPressed, isNotNull);
     await _close(tester);
   });
 }

@@ -36,6 +36,14 @@ abstract class BridgeApi {
   /// Abgelaufen → [BridgeException] `rejected` mit Status 404.
   Future<void> approvePairing(String requestId);
 
+  /// `POST /api/v1/time` – Uhrzeit setzen (die Brücke hat kein NTP).
+  /// Zeitzone wird weggelassen (ohne Zusatzpaket nicht als IANA-Name verfügbar).
+  Future<void> setTime(DateTime now);
+
+  /// `POST /api/v1/reset` – Werksreset: Heim-WLAN, App-Kopplungen und
+  /// Maschinen-Kopplung werden gelöscht, die Brücke startet neu.
+  Future<void> reset();
+
   /// Ereignisse vom WebSocket (`/api/v1/ws`). Broadcast-Stream; die Verbindung
   /// steht, solange jemand zuhört, und wird bei Abbruch neu aufgebaut.
   Stream<BridgeEvent> events();

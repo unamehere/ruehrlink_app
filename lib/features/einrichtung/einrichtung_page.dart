@@ -3,6 +3,8 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../../core/api/bridge_providers.dart';
+import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import 'bridge_step.dart';
 import 'done_step.dart';
@@ -101,6 +103,17 @@ class _WelcomeStep extends ConsumerWidget {
               minimumSize: const Size.fromHeight(56),
             ),
             child: Text(l10n.setupAlreadyInWifi),
+          ),
+          const SizedBox(height: 4),
+          // Ohne Hardware: simulierte Brücke (Vorführung, Ausprobieren).
+          TextButton(
+            onPressed: () async {
+              await ref
+                  .read(bridgeTargetProvider.notifier)
+                  .select(const DemoTarget());
+              await ref.read(setupDoneProvider.notifier).set(true);
+            },
+            child: Text(l10n.setupDemo),
           ),
         ],
       ),

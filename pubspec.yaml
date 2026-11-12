@@ -24,6 +24,10 @@ dependencies:
   web_socket_channel: ^3.0.3
   shared_preferences: ^2.5.6
   bonsoir: ^7.1.6
+  universal_ble: ^3.3.0
+  pointycastle: ^4.0.0
+  device_info_plus: ^13.3.0
+  flutter_zxing: ^3.1.1
 
 dev_dependencies:
   flutter_test:

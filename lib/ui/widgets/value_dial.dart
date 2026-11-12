@@ -46,6 +46,7 @@ class ValueEditor {
     this.suffix,
     this.hint,
     this.maxLength,
+    this.onValidityChanged,
   });
 
   /// Ausgangstext beim Antippen (z. B. „120“ oder „1:30“).
@@ -62,6 +63,10 @@ class ValueEditor {
   /// Platzhalter bei leerem Feld (z. B. „Aus“).
   final String? hint;
   final int? maxLength;
+
+  /// Meldet bei jeder Eingabe, ob der Text gerade gültig ist (z. B. um
+  /// „Senden“ zu sperren). Beim Verlassen der Eingabe wieder `true`.
+  final ValueChanged<bool>? onValidityChanged;
 }
 
 class _ValueDialState extends State<ValueDial> {
@@ -105,11 +110,13 @@ class _ValueDialState extends State<ValueDial> {
     if (editor == null || !mounted) return;
     final error = editor.validate(_controller.text);
     if (error != null) {
+      editor.onValidityChanged?.call(false);
       setState(() => _error = error);
       if (keepFocus) _focus.requestFocus();
       return;
     }
     editor.onSubmit(_controller.text);
+    editor.onValidityChanged?.call(true);
     setState(() {
       _editing = false;
       _error = null;
@@ -122,6 +129,7 @@ class _ValueDialState extends State<ValueDial> {
       ? null
       : () {
           if (_editing) {
+            widget.editor?.onValidityChanged?.call(true);
             setState(() {
               _editing = false;
               _error = null;
@@ -161,6 +169,8 @@ class _ValueDialState extends State<ValueDial> {
               error: _error == null ? null : const SizedBox.shrink(),
             ),
             onSubmitted: (_) => _submit(),
+            onChanged: (text) =>
+                editor.onValidityChanged?.call(editor.validate(text) == null),
           )
         : Semantics(
             liveRegion: true,

@@ -87,7 +87,7 @@ class UnknownEvent extends BridgeEvent {
 
 enum SequenceRunState { running, waitingStart, paused, done, aborted, unknown }
 
-/// Fortschritt eines Multi-Programms auf der Brücke.
+/// Fortschritt eines Programms auf der Brücke (intern „sequence“).
 class SequenceState {
   const SequenceState({
     required this.programId,

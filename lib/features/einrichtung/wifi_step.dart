@@ -1,16 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/bridge_providers.dart';
 import '../../core/provisioning/bridge_provisioning.dart';
+import '../../core/provisioning/diag_log.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
+import '../../ui/widgets/hint_card.dart';
+import 'bridge_step.dart' show setupErrorText;
 import 'setup_controller.dart';
 import 'setup_step_layout.dart';
 
-/// Schritt 3: Heim-WLAN wählen und Passwort eingeben. Danach ist die Brücke
-/// im WLAN und die App kennt Adresse und Token.
+/// Schritt 3: Heim-WLAN. Ist die Brücke schon im WLAN (`fk-info`), entfällt die
+/// Auswahl. Sonst `fk-scan` → Netz wählen → Passwort → `fk-wifi`. Danach
+/// `fk-token` und die Brücke im WLAN suchen – die App ist gekoppelt.
 class WifiStep extends ConsumerStatefulWidget {
   const WifiStep({super.key});
 
@@ -19,15 +25,24 @@ class WifiStep extends ConsumerStatefulWidget {
 }
 
 class _WifiStepState extends ConsumerState<WifiStep> {
-  late Future<List<WifiNetwork>> _networks = _scan();
+  Future<List<WifiNetwork>>? _networks;
   final _password = TextEditingController();
+  bool _loadingInfo = true;
+  String? _alreadySsid;
   WifiNetwork? _selected;
   bool _obscure = true;
   bool _busy = false;
+  bool _finishing = false;
   String? _error;
+  String? _detail;
 
-  Future<List<WifiNetwork>> _scan() =>
-      ref.read(bridgeProvisioningProvider).scanWifi();
+  BridgeProvisioning get _prov => ref.read(bridgeProvisioningProvider);
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
 
   @override
   void dispose() {
@@ -35,51 +50,135 @@ class _WifiStepState extends ConsumerState<WifiStep> {
     super.dispose();
   }
 
+  void _fail(Object e) {
+    if (!mounted) return;
+    final (msg, detail) = setupErrorText(context.l10n, e);
+    setState(() {
+      _error = msg;
+      _detail = detail;
+    });
+  }
+
+  Future<void> _load() async {
+    try {
+      final info = await _prov.info();
+      if (!mounted) return;
+      setState(() {
+        _loadingInfo = false;
+        if (info.homeConnected) {
+          _alreadySsid = info.homeSsid;
+        } else {
+          _networks = _prov.scanWifi();
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => _loadingInfo = false);
+      _fail(e);
+    }
+  }
+
   Future<void> _join() async {
-    final l10n = context.l10n;
-    final provisioning = ref.read(bridgeProvisioningProvider);
+    final network = _selected!;
     setState(() {
       _busy = true;
       _error = null;
+      _detail = null;
     });
     try {
-      await provisioning.joinWifi(_selected!.ssid, _password.text);
-      final target = await provisioning.finish();
-      await provisioning.disconnect();
-      await ref.read(bridgeTargetProvider.notifier).select(target);
-      ref.read(setupStepProvider.notifier).next();
-    } on ProvisioningException catch (e) {
-      setState(
-        () => _error = switch (e.error) {
-          ProvisioningError.wrongPassword => l10n.setupWifiWrongPassword,
-          ProvisioningError.wifiNotFound => l10n.setupWifiNotFound,
-          _ => l10n.setupConnectionLost,
-        },
-      );
+      await _prov.joinWifi(network.ssid, _password.text);
+      await _finish();
+    } catch (e) {
+      _fail(e);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Token holen, Ziel speichern, weiter zu „Maschine koppeln“.
+  Future<void> _finish() async {
+    setState(() {
+      _busy = true;
+      _finishing = true;
+      _error = null;
+      _detail = null;
+    });
+    try {
+      final target = await _prov.finish();
+      await ref.read(bridgeTargetProvider.notifier).select(target);
+      if (mounted) ref.read(setupStepProvider.notifier).next();
+    } catch (e) {
+      _fail(e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _finishing = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final log = ref.watch(provisioningLogProvider);
     final selected = _selected;
+    final already = _alreadySsid;
+
+    final Widget body;
+    if (_loadingInfo) {
+      body = SetupProgress(l10n.setupBridgeConnecting('Freikoch'));
+    } else if (already != null) {
+      body = HintCard(
+        icon: Icons.wifi_rounded,
+        text: l10n.setupWifiAlready(already),
+        emphasized: true,
+      );
+    } else if (selected == null) {
+      body = _networkList();
+    } else {
+      body = _passwordForm();
+    }
+
+    final Widget? action = _loadingInfo
+        ? null
+        : already != null
+        ? BigButton(
+            label: _finishing ? l10n.setupFinishing : l10n.setupNext,
+            icon: Icons.arrow_forward_rounded,
+            busy: _busy,
+            onPressed: _finish,
+          )
+        : selected == null
+        ? null
+        : BigButton(
+            label: _finishing
+                ? l10n.setupFinishing
+                : (_busy ? l10n.setupWifiJoining : l10n.setupWifiJoin),
+            icon: Icons.wifi_rounded,
+            busy: _busy,
+            onPressed: _join,
+          );
+
     return SetupStepLayout(
       visual: const SetupIcon(Icons.wifi_rounded),
       title: l10n.setupWifiTitle,
       text: selected == null
           ? l10n.setupWifiText
           : l10n.setupWifiPasswordFor(selected.ssid),
-      content: selected == null ? _networkList() : _passwordForm(),
-      action: selected == null
-          ? null
-          : BigButton(
-              label: _busy ? l10n.setupWifiJoining : l10n.setupWifiJoin,
-              icon: Icons.wifi_rounded,
-              busy: _busy,
-              onPressed: _join,
-            ),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          body,
+          if (_error != null) ...[
+            const SizedBox(height: Tokens.m),
+            SetupError(_error!, detail: _detail),
+          ],
+          const SizedBox(height: Tokens.m),
+          DiagPanel(log: log),
+        ],
+      ),
+      action: action,
     );
   }
 
@@ -107,7 +206,7 @@ class _WifiStepState extends ConsumerState<WifiStep> {
               ),
             ),
           TextButton.icon(
-            onPressed: () => setState(() => _networks = _scan()),
+            onPressed: () => setState(() => _networks = _prov.scanWifi()),
             icon: const Icon(Icons.refresh_rounded),
             label: Text(l10n.setupWifiRescan),
           ),
@@ -121,31 +220,30 @@ class _WifiStepState extends ConsumerState<WifiStep> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          controller: _password,
-          enabled: !_busy,
-          obscureText: _obscure,
-          autocorrect: false,
-          enableSuggestions: false,
-          style: Theme.of(context).textTheme.titleLarge,
-          decoration: InputDecoration(
-            labelText: l10n.setupWifiPasswordLabel,
-            suffixIcon: IconButton(
-              tooltip: l10n.setupWifiShowPassword,
-              icon: Icon(
-                _obscure
-                    ? Icons.visibility_rounded
-                    : Icons.visibility_off_rounded,
+        if (!_selected!.secured)
+          Text(l10n.setupWifiOpen, style: Theme.of(context).textTheme.bodyLarge)
+        else
+          TextField(
+            controller: _password,
+            enabled: !_busy,
+            obscureText: _obscure,
+            autocorrect: false,
+            enableSuggestions: false,
+            style: Theme.of(context).textTheme.titleLarge,
+            decoration: InputDecoration(
+              labelText: l10n.setupWifiPasswordLabel,
+              suffixIcon: IconButton(
+                tooltip: l10n.setupWifiShowPassword,
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                ),
+                onPressed: () => setState(() => _obscure = !_obscure),
               ),
-              onPressed: () => setState(() => _obscure = !_obscure),
             ),
+            onSubmitted: (_) => _join(),
           ),
-          onSubmitted: (_) => _join(),
-        ),
-        if (_error != null) ...[
-          const SizedBox(height: Tokens.m),
-          SetupError(_error!),
-        ],
         const SizedBox(height: Tokens.s),
         TextButton.icon(
           onPressed: _busy ? null : () => setState(() => _selected = null),

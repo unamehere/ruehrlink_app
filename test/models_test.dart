@@ -128,7 +128,7 @@ void main() {
     expect((back['steps'] as List)[2], (_json(raw)['steps'] as List)[2]);
   });
 
-  test('Multi-Programm', () {
+  test('Programm', () {
     const raw = '''
 {
   "id": "dinkelteig",

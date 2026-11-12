@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/models.dart';
@@ -21,6 +23,12 @@ class BridgeTargetNotifier extends Notifier<BridgeTarget> {
     state = target;
     await ref.read(appStorageProvider).setBridge(target);
   }
+
+  /// Gespeicherte Brücke samt Token vergessen (z. B. nach dem Zurücksetzen).
+  Future<void> forget() async {
+    state = const DemoTarget();
+    await ref.read(appStorageProvider).clearBridge();
+  }
 }
 
 /// Die aktive [BridgeApi] – Demo (simuliert) oder echte Brücke im WLAN.
@@ -35,7 +43,7 @@ final bridgeApiProvider = Provider<BridgeApi>((ref) {
 
 /// Brücke und Gerät inkl. `caps`. Wird neu geholt, wenn das Gerät sich
 /// verbindet oder trennt – dann können sich die Fähigkeiten ändern.
-final bridgeInfoProvider = FutureProvider<BridgeInfo>((ref) {
+final bridgeInfoProvider = FutureProvider<BridgeInfo>((ref) async {
   ref.listen(applianceStatusProvider.select((s) => s.value?.connected), (
     previous,
     next,
@@ -44,7 +52,11 @@ final bridgeInfoProvider = FutureProvider<BridgeInfo>((ref) {
       ref.invalidateSelf();
     }
   });
-  return ref.watch(bridgeApiProvider).info();
+  final api = ref.watch(bridgeApiProvider);
+  final info = await api.info();
+  // Bei jedem Verbinden die Uhrzeit übergeben; Fehler sind hier unkritisch.
+  unawaited(api.setTime(DateTime.now()).catchError((Object _) {}));
+  return info;
 });
 
 /// Live-Status: erst `GET /state`, dann jede `status`-Nachricht vom WebSocket.

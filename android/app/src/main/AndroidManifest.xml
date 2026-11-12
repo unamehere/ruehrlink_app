@@ -2,6 +2,18 @@
     <!-- Nur für die Brücke im Heim-WLAN (HTTP/WebSocket, mDNS). Kein Zugriff nach außen. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- Bluetooth nur für die Einrichtung der Brücke (Geräte in der Nähe), nie zur Ortung. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <!-- Bis Android 11 verlangt das System für Bluetooth-Suche die Standort-Berechtigung. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+    <!-- Kamera nur zum Lesen des QR-Codes auf dem Etikett (lokal, zxing). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:label="Freikoch"
         android:usesCleartextTraffic="true"

@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/api/bridge_api.dart';
+import '../../core/api/bridge_providers.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
@@ -37,9 +39,63 @@ class MehrPage extends ConsumerWidget {
                 onTap: () => ref.read(setupDoneProvider.notifier).set(false),
               ),
             ),
+            const SizedBox(height: Tokens.s),
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  Icons.delete_forever_rounded,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(l10n.mehrReset),
+                onTap: () => _reset(context, ref),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// Werksreset der Brücke – nach deutlicher Sicherheitsabfrage.
+  Future<void> _reset(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          size: 40,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: Text(l10n.resetTitle),
+        content: Text(l10n.resetText),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.resetConfirm),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(bridgeApiProvider).reset();
+    } on BridgeException {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.resetFailed)));
+      return;
+    }
+    // Brücke ist jetzt leer: Token vergessen, Einrichtung von vorn.
+    await ref.read(bridgeTargetProvider.notifier).forget();
+    await ref.read(setupDoneProvider.notifier).set(false);
   }
 }

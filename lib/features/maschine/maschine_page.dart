@@ -94,6 +94,8 @@ class _Controls extends ConsumerWidget {
     final draft = ref.watch(machineControllerProvider);
     final controller = ref.read(machineControllerProvider.notifier);
     final s = caps.clamp(draft.settings);
+    final invalid = ref.read(invalidInputsProvider.notifier);
+    final hasInvalid = ref.watch(invalidInputsProvider).isNotEmpty;
     void edit(MachineSettings next) => controller.edit(next);
     VoidCallback? step(int? next, MachineSettings Function(int) apply) =>
         next == null ? null : () => edit(apply(next));
@@ -126,6 +128,7 @@ class _Controls extends ConsumerWidget {
                 : null,
             onSubmit: (t) =>
                 edit(s.copyWith(temperature: Regler.parseTemperature(caps, t))),
+            onValidityChanged: (ok) => invalid.report('temp', valid: ok),
           ),
         ),
         const SizedBox(height: Tokens.m),
@@ -148,6 +151,7 @@ class _Controls extends ConsumerWidget {
                 ? l10n.inputTimeInvalid(formatDuration(caps.timeMaxS))
                 : null,
             onSubmit: (t) => edit(s.copyWith(time: Regler.parseTime(caps, t))),
+            onValidityChanged: (ok) => invalid.report('time', valid: ok),
           ),
         ),
         const SizedBox(height: Tokens.m),
@@ -164,7 +168,17 @@ class _Controls extends ConsumerWidget {
               : l10n.sendToMachine,
           icon: Icons.send_rounded,
           busy: draft.sendState == SendState.sending,
-          onPressed: controller.send,
+          // Gesperrt, solange ein Feld ungültig ist. Vor dem Senden die laufende
+          // Eingabe schließen, damit ein gültiger getippter Wert übernommen wird.
+          onPressed: hasInvalid
+              ? null
+              : () async {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  await Future<void>.delayed(Duration.zero);
+                  if (ref.read(invalidInputsProvider).isEmpty) {
+                    await controller.send();
+                  }
+                },
         ),
         const SizedBox(height: Tokens.m),
         _SendFeedback(draft.sendState),

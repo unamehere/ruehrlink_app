@@ -195,6 +195,17 @@ class FakeBridgeApi implements BridgeApi {
   Future<void> approvePairing(String requestId) => _wait();
 
   @override
+  Future<void> setTime(DateTime now) => _wait();
+
+  /// Demo: Zurücksetzen trennt das Gerät (wie nach einem echten Werksreset).
+  @override
+  Future<void> reset() async {
+    await _wait();
+    _paired = false;
+    _update(ApplianceStatus.disconnected);
+  }
+
+  @override
   Stream<BridgeEvent> events() => _events.stream;
 
   void _tick() {

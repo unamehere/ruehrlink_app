@@ -6,6 +6,12 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Freikoch findet deine Freikoch Brücke per Bluetooth, um sie einzurichten.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Die Kamera liest den QR-Code auf dem Etikett der Brücke. Es werden keine Bilder gespeichert.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Freikoch greift nicht auf deine Fotos zu.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Freikoch spricht nur mit deiner Freikoch Brücke im Heim-WLAN.</string>
 	<key>NSBonjourServices</key>

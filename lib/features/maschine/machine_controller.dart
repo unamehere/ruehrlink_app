@@ -22,6 +22,21 @@ class MachineDraft {
       );
 }
 
+/// Eingabefelder, die gerade ungültig sind – solange wird nicht gesendet.
+final invalidInputsProvider = NotifierProvider<InvalidInputs, Set<String>>(
+  InvalidInputs.new,
+);
+
+class InvalidInputs extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => const {};
+
+  void report(String field, {required bool valid}) {
+    if (valid == !state.contains(field)) return;
+    state = valid ? ({...state}..remove(field)) : {...state, field};
+  }
+}
+
 final machineControllerProvider =
     NotifierProvider<MachineController, MachineDraft>(MachineController.new);
 

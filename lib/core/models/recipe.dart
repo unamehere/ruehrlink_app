@@ -127,7 +127,7 @@ class WeighTarget {
   };
 }
 
-/// Maschinenschritt im Rezept: entweder ein Multi-Programm ([programId])
+/// Maschinenschritt im Rezept: entweder ein Programm ([programId])
 /// oder direkte Einzelwerte ([settings]).
 class StepMachine {
   const StepMachine.program(String this.programId) : settings = null;

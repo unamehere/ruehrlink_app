@@ -31,6 +31,8 @@ class AppStorage {
   Future<void> setBridge(BridgeTarget target) =>
       _prefs.setString(_kBridge, jsonEncode(target.toJson()));
 
+  Future<void> clearBridge() => _prefs.remove(_kBridge);
+
   /// Einrichtung beim ersten Start abgeschlossen?
   bool get setupDone => _prefs.getBool(_kSetupDone) ?? false;
 

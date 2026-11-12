@@ -131,6 +131,13 @@ class HttpBridgeApi implements BridgeApi {
       _send('POST', 'pair/approve', {'id': requestId});
 
   @override
+  Future<void> setTime(DateTime now) =>
+      _send('POST', 'time', {'epoch': now.millisecondsSinceEpoch ~/ 1000});
+
+  @override
+  Future<void> reset() => _send('POST', 'reset');
+
+  @override
   Stream<BridgeEvent> events() => _events.stream;
 
   void _connect() {

@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/widgets/placeholder_page.dart';
 
-/// Start-Tab. Folgt: Statusband, „Weiterkochen“, Lieblingsrezepte, Multi-Programme.
+/// Start-Tab. Folgt: Statusband, „Weiterkochen“, Lieblingsrezepte, Programme.
 class KochenPage extends StatelessWidget {
   const KochenPage({super.key});
 

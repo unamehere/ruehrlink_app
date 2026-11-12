@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/provisioning/diag_log.dart';
+import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 
@@ -85,11 +87,13 @@ class SetupIcon extends StatelessWidget {
   }
 }
 
-/// Fehlermeldung in einem Schritt – gut sichtbar, mit Symbol.
+/// Fehlermeldung in einem Schritt – gut sichtbar, mit Symbol. [detail] ist die
+/// technische Ursache in kleiner Schrift (hilft bei Bildschirmfotos).
 class SetupError extends StatelessWidget {
-  const SetupError(this.message, {super.key});
+  const SetupError(this.message, {super.key, this.detail});
 
   final String message;
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +106,7 @@ class SetupError extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(Tokens.m),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
                 Icons.error_rounded,
@@ -110,17 +115,67 @@ class SetupError extends StatelessWidget {
               ),
               const SizedBox(width: Tokens.s + 4),
               Expanded(
-                child: Text(
-                  message,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: scheme.onErrorContainer,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      message,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: scheme.onErrorContainer,
+                      ),
+                    ),
+                    if (detail != null) ...[
+                      const SizedBox(height: Tokens.s),
+                      SelectableText(
+                        detail!,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 14,
+                        ).copyWith(color: scheme.onErrorContainer),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Ausklappbares Protokoll der Einrichtung („Entwicklerdetails“). Bewusst klein
+/// gesetzt – es ist für Bildschirmfotos an die Entwickler gedacht.
+class DiagPanel extends StatelessWidget {
+  const DiagPanel({super.key, required this.log});
+
+  final DiagLog log;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      leading: const Icon(Icons.bug_report_outlined),
+      title: Text(context.l10n.diagTitle, style: theme.textTheme.bodyMedium),
+      children: [
+        ListenableBuilder(
+          listenable: log,
+          builder: (context, _) => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(Tokens.s),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SelectableText(
+              log.lines.isEmpty ? '–' : log.lines.join('\n'),
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

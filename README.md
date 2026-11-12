@@ -1,6 +1,6 @@
 # Freikoch App
 
-Die App zur **Freikoch Brücke**: Rezepte mit Fotos, geführtes Kochen, Multi-Programme
+Die App zur **Freikoch Brücke**: Rezepte mit Fotos, geführtes Kochen, Programme
 und Live-Waage für die *Kenwood Cooking Chef XL* – komplett lokal im Heim-WLAN.
 
 **Eine Codebasis für Android und iOS** (Flutter). Getrennte Repos pro Plattform sind nicht nötig;
@@ -43,8 +43,11 @@ flutter run            # auf Gerät/Emulator starten
 
 Ohne gespeicherte Brücke spricht die App mit einer **simulierten Brücke** (`FakeBridgeApi`): Sie meldet ein
 Demo-Gerät mit typischen Grenzen, bestätigt gesendete Werte, „drückt“ nach 3 s selbst den Startknopf, zählt die
-Restzeit herunter und heizt die Schüssel langsam auf. Auch die Einrichtung läuft gegen einen Fake
-(`FakeBridgeProvisioning`) – PIN `0000` und WLAN-Passwort `falsch` zeigen die Fehlermeldungen.
+Restzeit herunter und heizt die Schüssel langsam auf. Ohne Hardware: auf dem Willkommensbildschirm
+„Ohne Brücke ausprobieren (Demo)“.
+
+Die **Einrichtung per Bluetooth** spricht die echte Brücke an (Security 2, siehe `docs/architektur.md`).
+In Tests ersetzt `FakeBridgeProvisioning` sie (Code `000000` und WLAN-Passwort `falsch` zeigen die Fehlerwege).
 
 Umschalten auf eine echte Brücke: **Mehr → Verbindung zur Brücke** → im WLAN gefundene Brücke (mDNS
 `_freikoch._tcp`) oder IP-Adresse eingeben → Anfrage auf einem schon gekoppelten Handy
