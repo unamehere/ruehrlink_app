@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -5,6 +6,7 @@ import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
+import '../../ui/input.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
@@ -113,6 +115,18 @@ class _Controls extends ConsumerWidget {
             Regler.temperature(caps, s.temperature, up: true),
             (v) => s.copyWith(temperature: v),
           ),
+          editor: ValueEditor(
+            text: s.temperature == 0 ? '' : '${s.temperature}',
+            hint: l10n.valueOff,
+            suffix: '°C',
+            maxLength: 3,
+            formatters: [FilteringTextInputFormatter.digitsOnly],
+            validate: (t) => Regler.parseTemperature(caps, t) == null
+                ? l10n.inputTempInvalid(caps.tempMin, caps.tempMax)
+                : null,
+            onSubmit: (t) =>
+                edit(s.copyWith(temperature: Regler.parseTemperature(caps, t))),
+          ),
         ),
         const SizedBox(height: Tokens.m),
         ValueDial(
@@ -126,6 +140,14 @@ class _Controls extends ConsumerWidget {
           onIncrement: step(
             Regler.time(caps, s.time, up: true),
             (v) => s.copyWith(time: v),
+          ),
+          editor: ValueEditor(
+            text: formatDuration(s.time),
+            formatters: [DurationDigitsFormatter()],
+            validate: (t) => Regler.parseTime(caps, t) == null
+                ? l10n.inputTimeInvalid(formatDuration(caps.timeMaxS))
+                : null,
+            onSubmit: (t) => edit(s.copyWith(time: Regler.parseTime(caps, t))),
           ),
         ),
         const SizedBox(height: Tokens.m),

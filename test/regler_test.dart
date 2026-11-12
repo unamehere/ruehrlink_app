@@ -2,6 +2,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freikoch/core/models/models.dart';
 import 'package:freikoch/features/maschine/regler.dart';
+import 'package:freikoch/ui/input.dart';
 
 const caps = ApplianceCaps(
   model: 'test',
@@ -49,5 +50,18 @@ void main() {
     expect(Regler.time(caps, 0, up: true), 10);
     expect(Regler.time(caps, 120, up: false), 110);
     expect(Regler.time(caps, 3600, up: true), isNull);
+  });
+
+  test('Eingetippte Werte: gültig übernehmen, ungültig ablehnen', () {
+    expect(Regler.parseTemperature(caps, ''), 0); // leer = aus
+    expect(Regler.parseTemperature(caps, '0'), 0);
+    expect(Regler.parseTemperature(caps, '100'), 100);
+    expect(Regler.parseTemperature(caps, '30'), isNull); // unter tempMin
+    expect(Regler.parseTemperature(caps, '130'), isNull); // über tempMax
+    expect(formatDurationDigits('130'), '1:30');
+    expect(formatDurationDigits('13000'), '1:30:00');
+    expect(Regler.parseTime(caps, '1:30'), 90);
+    expect(Regler.parseTime(caps, '1:75'), isNull);
+    expect(Regler.parseTime(caps, '1:00:01'), isNull); // über timeMaxS
   });
 }

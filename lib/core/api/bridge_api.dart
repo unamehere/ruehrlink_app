@@ -20,12 +20,21 @@ abstract class BridgeApi {
   Future<void> stop();
 
   /// `POST /api/v1/machine/onboard` – Kopplung mit dem Gerät anstoßen.
-  /// Fortschritt über [info] (`appliance.paired`/`connected`).
+  /// Fortschritt per [OnboardEvent]; währenddessen ist die Brücke im Heim-WLAN
+  /// nicht erreichbar, das Ergebnis steht danach in [info] (`appliance.connected`).
   Future<void> onboardMachine();
 
-  /// `POST /api/v1/pair` – liefert den Token, sobald die Taste an der Brücke
-  /// gedrückt wurde, sonst `null` (Brücke wartet, `202`).
-  Future<String?> pair();
+  /// `POST /api/v1/pair` mit `{"name"}` – Kopplung anfragen, liefert die Anfrage-ID.
+  /// Ein schon gekoppeltes Handy muss die Anfrage bestätigen.
+  Future<String> requestPairing(String deviceName);
+
+  /// `POST /api/v1/pair` mit `{"id"}` – Token, sobald bestätigt, sonst `null`
+  /// (wartet noch). Abgelaufene Anfrage → [BridgeException] `rejected`.
+  Future<String?> pollPairing(String requestId);
+
+  /// `POST /api/v1/pair/approve` – Anfrage eines neuen Geräts erlauben.
+  /// Abgelaufen → [BridgeException] `rejected` mit Status 404.
+  Future<void> approvePairing(String requestId);
 
   /// Ereignisse vom WebSocket (`/api/v1/ws`). Broadcast-Stream; die Verbindung
   /// steht, solange jemand zuhört, und wird bei Abbruch neu aufgebaut.

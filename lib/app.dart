@@ -11,6 +11,7 @@ import 'features/einrichtung/setup_controller.dart';
 import 'features/kochen/kochen_page.dart';
 import 'features/maschine/maschine_page.dart';
 import 'features/mehr/mehr_page.dart';
+import 'features/mehr/pair_request_watcher.dart';
 import 'features/mehr/verbindung_page.dart';
 import 'features/rezepte/rezepte_page.dart';
 import 'l10n/l10n.dart';
@@ -68,7 +69,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const EinrichtungPage(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => AppShell(shell: shell),
+        builder: (context, state, shell) =>
+            PairRequestWatcher(child: AppShell(shell: shell)),
         branches: [
           StatefulShellBranch(
             routes: [

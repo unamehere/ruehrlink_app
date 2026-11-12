@@ -95,6 +95,10 @@
   "setupMachineDone": "Ich habe auf Verbinden gedrückt",
   "setupMachineWaiting": "Warte auf die Maschine … das kann eine Minute dauern.",
   "setupMachineTimeout": "Die Maschine hat sich nicht gemeldet. Bitte an der Maschine noch einmal auf Verbinden drücken.",
+  "setupMachineSearching": "Die Brücke sucht die Maschine …",
+  "setupMachineSent": "Die Maschine bekommt die Zugangsdaten …",
+  "setupMachineOffline": "Die Brücke ist kurz nicht erreichbar, während sie mit der Maschine spricht. Das ist normal.",
+  "setupMachineFailed": "Die Kopplung hat nicht geklappt. Bitte an der Maschine noch einmal auf Verbinden drücken und erneut versuchen.",
   "setupLater": "Später erledigen",
 
   "setupDoneTitle": "Fertig!",
@@ -116,9 +120,25 @@
   "connectionManual": "Adresse von Hand eingeben",
   "connectionHostLabel": "IP-Adresse der Brücke",
   "connectionUse": "Verbinden",
-  "connectionPairTitle": "Taste an der Brücke drücken",
-  "connectionPairText": "Die Brücke blinkt blau. Drück jetzt kurz die Taste an der Brücke.",
-  "connectionPairTimeout": "Keine Taste gedrückt. Bitte noch einmal versuchen.",
+  "connectionPairTitle": "Anfrage bestätigen",
+  "connectionPairText": "Bestätige die Anfrage auf einem Handy, das schon mit der Brücke verbunden ist.",
+  "connectionPairTimeout": "Die Anfrage wurde nicht bestätigt. Bitte noch einmal versuchen.",
+  "connectionPairDevHint": "Entwicklermodus: Die BOOT-Taste an der Brücke bestätigt ebenfalls.",
   "connectionPaired": "Verbunden mit {name}.",
-  "@connectionPaired": {"placeholders": {"name": {"type": "String"}}}
+  "@connectionPaired": {"placeholders": {"name": {"type": "String"}}},
+
+  "pairRequestTitle": "Neues Gerät",
+  "pairRequestText": "{name} möchte sich mit deiner Freikoch Brücke verbinden. Erlauben?",
+  "@pairRequestText": {"placeholders": {"name": {"type": "String"}}},
+  "pairAllow": "Erlauben",
+  "pairDeny": "Ablehnen",
+  "pairAllowed": "Erlaubt.",
+  "pairExpired": "Die Anfrage ist abgelaufen.",
+  "pairFailed": "Das hat nicht geklappt. Bitte noch einmal versuchen.",
+
+  "inputTapToEdit": "Zum Eintippen antippen",
+  "inputTempInvalid": "Bitte {min}–{max} °C eingeben (0 = aus).",
+  "@inputTempInvalid": {"placeholders": {"min": {"type": "int"}, "max": {"type": "int"}}},
+  "inputTimeInvalid": "Bitte eine Zeit bis {max} eingeben, z. B. 1:30.",
+  "@inputTimeInvalid": {"placeholders": {"max": {"type": "String"}}}
 }

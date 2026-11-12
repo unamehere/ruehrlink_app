@@ -76,4 +76,23 @@ void main() {
     expect(find.text('Die Maschine hat die Werte übernommen.'), findsOneWidget);
     await _close(tester);
   });
+
+  testWidgets('Zeit antippen und eintippen', (tester) async {
+    await _openMaschine(tester, const Size(390, 844));
+    await tester.ensureVisible(find.text('1:00'));
+    await tester.tap(find.text('1:00'));
+    await tester.pump();
+    // Zu lang: wird markiert, nicht angepasst.
+    await tester.enterText(find.byType(TextField), '90000');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(find.textContaining('Bitte eine Zeit bis'), findsOneWidget);
+    // Ziffern 130 werden zu 1:30 und mit „Fertig“ übernommen.
+    await tester.enterText(find.byType(TextField), '130');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('1:30'), findsOneWidget);
+    await _close(tester);
+  });
 }

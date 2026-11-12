@@ -106,8 +106,18 @@ class HttpBridgeApi implements BridgeApi {
   Future<void> onboardMachine() => _send('POST', 'machine/onboard');
 
   @override
-  Future<String?> pair() async {
-    final response = await _send('POST', 'pair');
+  Future<String> requestPairing(String deviceName) async {
+    final response = await _send('POST', 'pair', {'name': deviceName});
+    final id = _decode(response)['id'];
+    if (id is! String || id.isEmpty) {
+      throw BridgeException(BridgeErrorKind.protocol, response.statusCode);
+    }
+    return id;
+  }
+
+  @override
+  Future<String?> pollPairing(String requestId) async {
+    final response = await _send('POST', 'pair', {'id': requestId});
     if (response.statusCode == 202) return null;
     final token = _decode(response)['token'];
     if (token is! String || token.isEmpty) {
@@ -115,6 +125,10 @@ class HttpBridgeApi implements BridgeApi {
     }
     return token;
   }
+
+  @override
+  Future<void> approvePairing(String requestId) =>
+      _send('POST', 'pair/approve', {'id': requestId});
 
   @override
   Stream<BridgeEvent> events() => _events.stream;

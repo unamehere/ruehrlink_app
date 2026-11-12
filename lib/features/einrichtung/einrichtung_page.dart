@@ -83,18 +83,23 @@ class _WelcomeStep extends ConsumerWidget {
         children: [
           FilledButton(
             onPressed: ref.read(setupStepProvider.notifier).next,
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(64)),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(64),
+            ),
             child: Text(l10n.setupStart),
           ),
           const SizedBox(height: 12),
           // Brücke ist schon im Heim-WLAN (z. B. zweites Handy, Entwicklung): direkt
-          // im WLAN suchen und per Taste koppeln, ohne Bluetooth-Einrichtung.
+          // im WLAN suchen und koppeln (Bestätigung durch ein
+          // schon gekoppeltes Handy), ohne Bluetooth-Einrichtung.
           OutlinedButton(
             onPressed: () {
               ref.read(setupDoneProvider.notifier).set(true);
               context.go('/mehr/verbindung');
             },
-            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+            ),
             child: Text(l10n.setupAlreadyInWifi),
           ),
         ],

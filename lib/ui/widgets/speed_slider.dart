@@ -10,7 +10,7 @@ import '../theme.dart';
 /// „Aus“ ist die Ruhestellung, die Füllung wächst von „Aus“ zur gewählten Stufe.
 /// Gruppen (Intervall-Rühren, Dauerstufen) sind farblich abgesetzt und betitelt.
 ///
-/// Bedienung: ziehen oder tippen (mit Rast-Vibration), feinfühlig über − und +.
+/// Bedienung: ziehen oder tippen, rastet mit leichter Vibration ein.
 /// Rein darstellend; Werte kommen vom Aufrufer.
 class SpeedSlider extends StatelessWidget {
   const SpeedSlider({
@@ -45,7 +45,6 @@ class SpeedSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     if (options.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    final l10n = context.l10n;
     final index = _index;
     final current = options[index];
     final caption = current.group == SpeedGroup.off
@@ -62,53 +61,28 @@ class SpeedSlider extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Kopfzeile: „Stufe“ links, gewählte Stufe rechts – dezent, nicht riesig.
             Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 Icon(Icons.speed_rounded, color: theme.colorScheme.primary),
                 const SizedBox(width: Tokens.s),
                 Text(label, style: theme.textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: Tokens.s),
-            Row(
-              children: [
-                IconButton.filledTonal(
-                  onPressed: index > 0 ? () => _select(index - 1) : null,
-                  icon: const Icon(Icons.chevron_left_rounded),
-                  tooltip: l10n.dialDecrease(label),
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size.square(Tokens.bigButton),
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          current.label,
-                          style: theme.textTheme.displaySmall,
-                        ),
+                const Spacer(),
+                if (caption != null) ...[
+                  Flexible(
+                    child: Text(
+                      caption,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                      Text(
-                        caption ?? '',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                IconButton.filledTonal(
-                  onPressed: index < options.length - 1
-                      ? () => _select(index + 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_right_rounded),
-                  tooltip: l10n.dialIncrease(label),
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size.square(Tokens.bigButton),
-                  ),
-                ),
+                  const SizedBox(width: Tokens.s),
+                ],
+                Text(current.label, style: theme.textTheme.headlineSmall),
               ],
             ),
             const SizedBox(height: Tokens.s),

@@ -1,4 +1,5 @@
 import '../../core/models/models.dart';
+import '../../ui/input.dart';
 
 /// Schrittweiten für Temperatur und Zeit. (Stufen sind eine Auswahlliste aus
 /// `caps.speeds`, siehe `SpeedPicker`.) Grenzen kommen immer aus den [ApplianceCaps];
@@ -48,4 +49,21 @@ abstract final class Regler {
     < 3600 => 60,
     _ => 300,
   };
+
+  /// Eingetippte Temperatur: leer oder 0 = aus, sonst tempMin–tempMax.
+  /// `null` = ungültig (wird markiert, nicht angepasst).
+  static int? parseTemperature(ApplianceCaps caps, String text) {
+    final t = text.trim();
+    if (t.isEmpty) return 0;
+    final v = int.tryParse(t);
+    if (v == null) return null;
+    if (v == 0) return 0;
+    return v >= caps.tempMin && v <= caps.tempMax ? v : null;
+  }
+
+  /// Eingetippte Zeit (`1:30`, `1:05:00`, `90`), höchstens timeMaxS.
+  static int? parseTime(ApplianceCaps caps, String text) {
+    final v = parseDurationText(text);
+    return v != null && v <= caps.timeMaxS ? v : null;
+  }
 }

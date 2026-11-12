@@ -147,21 +147,52 @@ class FakeBridgeApi implements BridgeApi {
     }
   }
 
+  /// Kopplung wie bei der echten Brücke: Gerät kurz weg, „sucht“, „gesendet“, verbunden.
   @override
   Future<void> onboardMachine() async {
     await _wait();
     _onboard?.cancel();
-    _onboard = Timer(const Duration(seconds: 2), () {
-      _paired = true;
-      _update(_status.copyWith(connected: true));
+    _update(_status.copyWith(connected: false));
+    _emit(const OnboardEvent(OnboardState.searching));
+    var step = 0;
+    _onboard = Timer.periodic(const Duration(seconds: 1), (t) {
+      step++;
+      if (step == 1) {
+        _emit(const OnboardEvent(OnboardState.sent));
+      } else {
+        t.cancel();
+        _paired = true;
+        _update(_status.copyWith(connected: true));
+        _emit(const OnboardEvent(OnboardState.done));
+      }
     });
   }
 
+  Timer? _pairTimer;
+  bool? _pairApproved; // null = keine Anfrage
+
+  /// Demo: Die Anfrage gilt nach 3 s als von einem anderen Handy bestätigt.
   @override
-  Future<String?> pair() async {
+  Future<String> requestPairing(String deviceName) async {
     await _wait();
-    return 'demo-token';
+    _pairApproved = false;
+    _pairTimer?.cancel();
+    _pairTimer = Timer(const Duration(seconds: 3), () => _pairApproved = true);
+    return 'demo-anfrage';
   }
+
+  @override
+  Future<String?> pollPairing(String requestId) async {
+    await _wait();
+    return switch (_pairApproved) {
+      null => throw const BridgeException(BridgeErrorKind.rejected, 404),
+      true => 'demo-token',
+      false => null,
+    };
+  }
+
+  @override
+  Future<void> approvePairing(String requestId) => _wait();
 
   @override
   Stream<BridgeEvent> events() => _events.stream;
@@ -211,6 +242,7 @@ class FakeBridgeApi implements BridgeApi {
     _ticker.cancel();
     _knob?.cancel();
     _onboard?.cancel();
+    _pairTimer?.cancel();
     unawaited(_events.close());
   }
 }

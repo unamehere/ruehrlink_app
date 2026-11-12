@@ -46,7 +46,7 @@ void main() {
 
     // Maschine koppeln (Demo-Gerät ist sofort verbunden).
     expect(find.text('Maschine koppeln'), findsOneWidget);
-    await tapAndWait(find.text('Ich habe auf Verbinden gedrückt'), 1500);
+    await tapAndWait(find.text('Ich habe auf Verbinden gedrückt'), 3000);
 
     expect(find.text('Fertig!'), findsOneWidget);
     await tapAndWait(find.text('Zur App'));

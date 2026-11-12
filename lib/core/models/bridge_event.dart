@@ -13,6 +13,17 @@ sealed class BridgeEvent {
       'seq' => SequenceEvent(SequenceState.fromJson(d)),
       'ack' => AckEvent(cmd: readString(d['cmd']), ok: readBool(d['ok'])),
       'recipes' => RecipesChangedEvent(readInt(d['rev'])),
+      'pairRequest' => PairRequestEvent(
+        id: readString(d['id']),
+        name: readString(d['name']),
+      ),
+      'onboard' => OnboardEvent(switch (d['state']) {
+        'searching' => OnboardState.searching,
+        'sent' => OnboardState.sent,
+        'done' => OnboardState.done,
+        'failed' => OnboardState.failed,
+        _ => OnboardState.unknown,
+      }, reason: d['reason'] as String?),
       final t => UnknownEvent(t is String ? t : '?'),
     };
   }
@@ -49,6 +60,23 @@ class AckEvent extends BridgeEvent {
 class RecipesChangedEvent extends BridgeEvent {
   const RecipesChangedEvent(this.rev);
   final int rev;
+}
+
+/// Ein neues Gerät möchte sich koppeln – eine schon gekoppelte App fragt nach
+/// und bestätigt mit `POST /api/v1/pair/approve`.
+class PairRequestEvent extends BridgeEvent {
+  const PairRequestEvent({required this.id, required this.name});
+  final String id;
+  final String name;
+}
+
+enum OnboardState { searching, sent, done, failed, unknown }
+
+/// Fortschritt der Maschinen-Kopplung (`POST /api/v1/machine/onboard`).
+class OnboardEvent extends BridgeEvent {
+  const OnboardEvent(this.state, {this.reason});
+  final OnboardState state;
+  final String? reason;
 }
 
 /// Unbekannter Typ – neuere Brücke. Wird ignoriert, nicht als Fehler behandelt.

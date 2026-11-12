@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -16,7 +17,8 @@ import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 
 /// Brücke wählen: Demo-Modus, im WLAN gefunden (mDNS) oder IP von Hand.
-/// Bei einer echten Brücke folgt die Tasten-Kopplung aus api.md.
+/// Bei einer echten Brücke folgt die Kopplung aus api.md: Anfrage stellen, ein
+/// schon gekoppeltes Handy bestätigt (im Entwicklermodus auch die BOOT-Taste).
 class VerbindungPage extends ConsumerStatefulWidget {
   const VerbindungPage({super.key});
 
@@ -46,7 +48,7 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
     if (mounted) context.go('/maschine');
   }
 
-  /// Tasten-Kopplung: `POST /pair` wiederholen, bis die Taste gedrückt wurde.
+  /// Kopplung anfragen und alle 2 s nachfragen, bis bestätigt oder abgelaufen.
   Future<void> _pair(NetworkTarget target) async {
     final l10n = context.l10n;
     setState(() {
@@ -54,30 +56,33 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
       _error = null;
     });
     final api = HttpBridgeApi(target);
-    final deadline = DateTime.now().add(VerbindungPage.pairTimeout);
+    final attempts =
+        VerbindungPage.pairTimeout.inSeconds ~/
+        VerbindungPage.pairInterval.inSeconds;
     String? error = l10n.connectionPairTimeout;
     try {
-      while (mounted &&
-          _pairing == target &&
-          DateTime.now().isBefore(deadline)) {
-        final token = await api.pair();
-        if (token != null) {
-          await ref
-              .read(bridgeTargetProvider.notifier)
-              .select(target.withToken(token));
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.connectionPaired(target.name ?? target.host)),
-            ),
-          );
-          context.go('/maschine');
-          return;
-        }
+      final id = await api.requestPairing(deviceName());
+      for (var i = 0; i < attempts && mounted && _pairing == target; i++) {
         await Future<void>.delayed(VerbindungPage.pairInterval);
+        if (!mounted || _pairing != target) break;
+        final token = await api.pollPairing(id);
+        if (token == null) continue;
+        await ref
+            .read(bridgeTargetProvider.notifier)
+            .select(target.withToken(token));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.connectionPaired(target.name ?? target.host)),
+          ),
+        );
+        context.go('/maschine');
+        return;
       }
-    } on BridgeException {
-      error = l10n.bridgeUnreachableHint;
+    } on BridgeException catch (e) {
+      error = e.kind == BridgeErrorKind.rejected
+          ? l10n.connectionPairTimeout
+          : l10n.bridgeUnreachableHint;
     } finally {
       api.close();
     }
@@ -103,13 +108,21 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               HintCard(
-                icon: Icons.touch_app_rounded,
+                icon: Icons.phonelink_lock_rounded,
                 text: l10n.connectionPairTitle,
                 detail: l10n.connectionPairText,
                 emphasized: true,
               ),
               const SizedBox(height: Tokens.xl),
               const Center(child: CircularProgressIndicator()),
+              const SizedBox(height: Tokens.xl),
+              // Nur für Entwicklung: Firmware im Entwicklermodus.
+              Text(
+                l10n.connectionPairDevHint,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
           bottom: BigButton(
@@ -260,3 +273,11 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
     );
   }
 }
+
+/// Name, unter dem dieses Gerät bei der Brücke anfragt (wird auf dem
+/// bestätigenden Handy angezeigt).
+String deviceName() => switch (defaultTargetPlatform) {
+  TargetPlatform.iOS => 'iPhone/iPad',
+  TargetPlatform.android => 'Android-Gerät',
+  _ => 'Freikoch-App',
+};

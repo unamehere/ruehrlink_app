@@ -47,7 +47,8 @@ Restzeit herunter und heizt die Schüssel langsam auf. Auch die Einrichtung läu
 (`FakeBridgeProvisioning`) – PIN `0000` und WLAN-Passwort `falsch` zeigen die Fehlermeldungen.
 
 Umschalten auf eine echte Brücke: **Mehr → Verbindung zur Brücke** → im WLAN gefundene Brücke (mDNS
-`_freikoch._tcp`) oder IP-Adresse eingeben → Taste an der Brücke drücken. Zurück mit „Demo-Modus verwenden“.
+`_freikoch._tcp`) oder IP-Adresse eingeben → Anfrage auf einem schon gekoppelten Handy
+bestätigen (Firmware im Entwicklermodus: auch BOOT-Taste). Zurück mit „Demo-Modus verwenden“.
 „Einrichtung neu starten“ zeigt den Einrichtungsablauf erneut.
 
 ### Aufbau

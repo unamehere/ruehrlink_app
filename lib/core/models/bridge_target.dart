@@ -38,7 +38,8 @@ class NetworkTarget extends BridgeTarget {
   final String host;
   final int port;
 
-  /// Zugangs-Token aus Bluetooth-Einrichtung oder Tasten-Kopplung.
+  /// Zugangs-Token aus Bluetooth-Einrichtung oder bestätigter
+  /// Kopplungsanfrage (`POST /api/v1/pair`).
   final String? token;
   final String? id;
   final String? name;
