@@ -176,7 +176,7 @@ class _Track extends StatelessWidget {
   static const _labelH = 32.0;
 
   /// Ab dieser Zellbreite stehen alle Stufen-Beschriftungen unter der Leiste,
-  /// darunter nur Gruppenränder und „Aus“.
+  /// darunter nur die beiden Enden und „Aus“.
   static const _allLabelsFrom = 40.0;
 
   @override
@@ -201,9 +201,15 @@ class _Track extends StatelessWidget {
         final w = constraints.maxWidth;
         final cell = w / options.length;
         final showAll = cell >= _allLabelsFrom;
+        // Schmal (Handy hochkant): nur die beiden Enden und „Aus“ beschriften –
+        // direkt neben „Aus“ wäre kein Platz (Rührstufe 1 | Aus | min).
         bool edge(int i) =>
             options[i].group == SpeedGroup.off ||
-            runs.any((r) => i == r.$1 || i == r.$1 + r.$2 - 1);
+            i == 0 ||
+            i == options.length - 1;
+        // „Aus“ darf in die (unbeschrifteten) Nachbarzellen hineinragen.
+        double labelW(int i) =>
+            !showAll && options[i].group == SpeedGroup.off ? cell * 3 : cell;
         int at(double dx) => (dx / cell).floor().clamp(0, options.length - 1);
         final trackTop = _titleH + (_touchH - _trackH) / 2;
 
@@ -295,8 +301,8 @@ class _Track extends StatelessWidget {
                 for (var i = 0; i < options.length; i++)
                   if (showAll || edge(i))
                     Positioned(
-                      left: i * cell,
-                      width: cell,
+                      left: (i + 0.5) * cell - labelW(i) / 2,
+                      width: labelW(i),
                       top: _titleH + _touchH,
                       height: _labelH,
                       child: FittedBox(

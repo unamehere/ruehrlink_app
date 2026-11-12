@@ -30,25 +30,24 @@ class FakeBridgeApi implements BridgeApi {
     remoteStart: false,
   );
 
-  /// Stufen des Demo-Geräts. **Vorläufig:** Die Werte `v` sind Platzhalter – das
-  /// echte Mapping wird an der Maschine ermittelt und kommt von der Brücke.
+  /// Stufen des Demo-Geräts – gleiche Werte wie die echte Brücke liefert.
   static const demoSpeeds = [
     // Reihenfolge wie am Drehknopf: links herum Intervall-Rühren und Puls,
     // in der Mitte „Aus“, rechts herum die Dauerstufen min … max.
-    SpeedOption(v: 17, label: 'P', group: SpeedGroup.stir),
-    SpeedOption(v: 16, label: '4', group: SpeedGroup.stir),
-    SpeedOption(v: 15, label: '3', group: SpeedGroup.stir),
-    SpeedOption(v: 14, label: '2', group: SpeedGroup.stir),
-    SpeedOption(v: 13, label: '1', group: SpeedGroup.stir),
+    // Wie die echte KCL95 (gemessen 12.11.2026); P ist per Fernsteuerung nicht verfügbar.
+    SpeedOption(v: 3, label: '4', group: SpeedGroup.stir),
+    SpeedOption(v: 2, label: '3', group: SpeedGroup.stir),
+    SpeedOption(v: 1, label: '2', group: SpeedGroup.stir),
+    SpeedOption(v: 4, label: '1', group: SpeedGroup.stir),
     SpeedOption(v: 0, label: 'Aus', group: SpeedGroup.off),
-    SpeedOption(v: 1, label: 'min', group: SpeedGroup.continuous),
-    SpeedOption(v: 2, label: '1', group: SpeedGroup.continuous),
-    SpeedOption(v: 3, label: '2', group: SpeedGroup.continuous),
-    SpeedOption(v: 4, label: '3', group: SpeedGroup.continuous),
-    SpeedOption(v: 5, label: '4', group: SpeedGroup.continuous),
-    SpeedOption(v: 6, label: '5', group: SpeedGroup.continuous),
-    SpeedOption(v: 7, label: '6', group: SpeedGroup.continuous),
-    SpeedOption(v: 11, label: 'max', group: SpeedGroup.continuous),
+    SpeedOption(v: 5, label: 'min', group: SpeedGroup.continuous),
+    SpeedOption(v: 6, label: '1', group: SpeedGroup.continuous),
+    SpeedOption(v: 7, label: '2', group: SpeedGroup.continuous),
+    SpeedOption(v: 8, label: '3', group: SpeedGroup.continuous),
+    SpeedOption(v: 9, label: '4', group: SpeedGroup.continuous),
+    SpeedOption(v: 10, label: '5', group: SpeedGroup.continuous),
+    SpeedOption(v: 11, label: '6', group: SpeedGroup.continuous),
+    SpeedOption(v: 12, label: 'max', group: SpeedGroup.continuous),
   ];
 
   static const _roomTemperature = 22;
