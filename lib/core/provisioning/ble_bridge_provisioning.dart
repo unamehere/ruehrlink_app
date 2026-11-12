@@ -290,10 +290,17 @@ class BleBridgeProvisioning implements BridgeProvisioning {
 
   @override
   Future<List<WifiNetwork>> scanWifi() async {
+    // Die Brücke sucht im Hintergrund (eine blockierende Suche würde Bluetooth
+    // stören): erster Aufruf startet die Suche, danach nachfragen, bis
+    // `scanning` false ist – max. 15 s.
     log.add('fk-scan…');
-    final j = await _call('fk-scan');
+    var j = await _call('fk-scan', const {'refresh': true});
+    for (var i = 0; i < 15 && j['scanning'] == true; i++) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      j = await _call('fk-scan');
+    }
     final list = readList(j['networks'], WifiNetwork.fromJson);
-    log.add('fk-scan: ${list.length} Netze');
+    log.add('fk-scan: ${list.length} Netze${j['scanning'] == true ? ' (Suche läuft noch)' : ''}');
     return list;
   }
 

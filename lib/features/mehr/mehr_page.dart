@@ -7,6 +7,7 @@ import '../../core/api/bridge_providers.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
+import '../../version.dart';
 import '../einrichtung/setup_controller.dart';
 
 /// Mehr-Tab. Vorerst nur die Verbindung zur Brücke; folgt: Brücke (Firmware,
@@ -49,6 +50,14 @@ class MehrPage extends ConsumerWidget {
                 ),
                 title: Text(l10n.mehrReset),
                 onTap: () => _reset(context, ref),
+              ),
+            ),
+            const SizedBox(height: Tokens.l),
+            Text(
+              'Freikoch App $appVersion',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
