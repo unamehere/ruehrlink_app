@@ -10,6 +10,7 @@ import '../../ui/illustrations.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import '../../ui/widgets/smooth_countdown.dart';
 import '../maschine/live_status_band.dart';
 import 'programs.dart';
 
@@ -129,14 +130,15 @@ class _SequencePanelState extends ConsumerState<_SequencePanel> {
   String _stepKey = '';
   int _stepMax = 0;
 
-  double _stepFraction(SequenceState seq) {
+  /// Anteil des Schritts, der schon vorbei ist – aus der lokal gezählten Restzeit [left].
+  double _stepFraction(SequenceState seq, int left) {
     final key = '${seq.name}/${seq.step}';
     if (key != _stepKey) {
       _stepKey = key;
       _stepMax = 0;
     }
     if (seq.stepRemainingS > _stepMax) _stepMax = seq.stepRemainingS;
-    return _stepMax == 0 ? 0 : 1 - seq.stepRemainingS / _stepMax;
+    return _stepMax == 0 ? 0 : (1 - left / _stepMax).clamp(0.0, 1.0);
   }
 
   /// Kurz vibrieren, sobald die Nutzerin etwas tun muss (Knopf drücken, Kopf schließen …) –
@@ -224,23 +226,34 @@ class _SequencePanelState extends ConsumerState<_SequencePanel> {
                   child: SizedBox(
                     width: 180,
                     height: 180,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CircularProgressIndicator(
-                          value: _stepFraction(seq),
-                          strokeWidth: 12,
-                          strokeCap: StrokeCap.round,
-                          color: Tokens.glow,
-                          backgroundColor: scheme.surfaceContainerHighest,
-                        ),
-                        Center(
-                          child: Text(
-                            formatDuration(seq.stepRemainingS),
-                            style: theme.textTheme.displaySmall,
+                    child: SmoothCountdown(
+                      seconds: seq.stepRemainingS,
+                      running: running,
+                      builder: (context, left) => Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          TweenAnimationBuilder<double>(
+                            // Ring gleitet zwischen den Sekunden statt zu springen
+                            tween: Tween(end: _stepFraction(seq, left)),
+                            duration: const Duration(milliseconds: 900),
+                            builder: (context, v, _) =>
+                                CircularProgressIndicator(
+                                  value: v,
+                                  strokeWidth: 12,
+                                  strokeCap: StrokeCap.round,
+                                  color: Tokens.glow,
+                                  backgroundColor:
+                                      scheme.surfaceContainerHighest,
+                                ),
                           ),
-                        ),
-                      ],
+                          Center(
+                            child: Text(
+                              formatDuration(left),
+                              style: theme.textTheme.displaySmall,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 )

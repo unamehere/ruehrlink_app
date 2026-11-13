@@ -14,6 +14,7 @@ class ApplianceStatus {
     required this.tempSet,
     required this.speedSet,
     required this.remainingS,
+    this.active = false,
   });
 
   /// Gerät ist nicht verbunden – nichts bekannt.
@@ -33,8 +34,11 @@ class ApplianceStatus {
   /// Gerät ist mit der Brücke verbunden.
   final bool connected;
 
-  /// Motor/Programm läuft.
+  /// Motor dreht gerade (bei Rührintervallen im Wechsel an/aus).
   final bool running;
+
+  /// Programm der Maschine läuft (auch Heizen ohne Motor, Intervallpausen). Ältere Brücken: immer false.
+  final bool active;
 
   /// Heizung ist gerade aktiv.
   final bool heating;
@@ -72,6 +76,7 @@ class ApplianceStatus {
     tempSet: readInt(json['tempSet']),
     speedSet: readInt(json['speedSet']),
     remainingS: readInt(json['remainingS']),
+    active: readBool(json['active']),
   );
 
   Json toJson() => {
@@ -85,6 +90,7 @@ class ApplianceStatus {
     'tempSet': tempSet,
     'speedSet': speedSet,
     'remainingS': remainingS,
+    'active': active,
   };
 
   ApplianceStatus copyWith({
@@ -98,6 +104,7 @@ class ApplianceStatus {
     int? tempSet,
     int? speedSet,
     int? remainingS,
+    bool? active,
   }) => ApplianceStatus(
     connected: connected ?? this.connected,
     running: running ?? this.running,
@@ -109,5 +116,6 @@ class ApplianceStatus {
     tempSet: tempSet ?? this.tempSet,
     speedSet: speedSet ?? this.speedSet,
     remainingS: remainingS ?? this.remainingS,
+    active: active ?? this.active,
   );
 }

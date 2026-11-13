@@ -4,6 +4,7 @@ import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../format.dart';
 import '../theme.dart';
+import 'smooth_countdown.dart';
 
 /// Verbindungszustand für das [StatusBand].
 enum BandState { connecting, bridgeUnreachable, ready }
@@ -114,10 +115,14 @@ class StatusBand extends StatelessWidget {
                             : (speedLabel?.call(s.speedSet) ?? '${s.speedSet}'),
                         color: fg,
                       ),
-                      _Value(
-                        label: l10n.statusRemaining,
-                        value: formatDuration(s.remainingS),
-                        color: fg,
+                      SmoothCountdown(
+                        seconds: s.remainingS,
+                        running: s.running || s.active,
+                        builder: (context, left) => _Value(
+                          label: l10n.statusRemaining,
+                          value: formatDuration(left),
+                          color: fg,
+                        ),
                       ),
                     ],
                   ),
