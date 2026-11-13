@@ -211,5 +211,9 @@
   "startFailed": "Starten hat nicht geklappt.",
   "mehrLicenses": "Lizenzen und Bildnachweise",
   "kochenGreeting": "Was kochen wir?",
-  "kochenGreetingSub": "Programm wählen, starten, Knopf drücken – fertig."
+  "kochenGreetingSub": "Programm wählen, starten, Knopf drücken – fertig.",
+  "statusKeepWarm": "Warmhalten",
+  "statusKeepWarmHint": "Die Maschine hält warm – mit Stopp beenden",
+  "statusTargetSmall": "Ziel {temp} °C",
+  "@statusTargetSmall": {"placeholders": {"temp": {"type": "int"}}}
 }
