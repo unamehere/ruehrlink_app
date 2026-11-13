@@ -3,7 +3,7 @@ description: "Freikoch – die App zur Freikoch Brücke. Strikt lokal im Heim-WL
 publish_to: 'none'
 
 # Später: aus der Datei VERSION abgeleitet (App-Version = Firmware-Version).
-version: 0.1.11+11
+version: 0.1.12+12
 
 environment:
   sdk: ^3.14.0
