@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/bridge_providers.dart';
+import '../../ui/widgets/speed_slider.dart';
 import '../../ui/widgets/status_band.dart';
 
 /// [StatusBand] mit Live-Daten der Brücke – für alle Bildschirme, die den
@@ -17,7 +18,7 @@ class LiveStatusBand extends ConsumerWidget {
       AsyncValue(:final value?, hasError: false) => StatusBand(
         state: BandState.ready,
         status: value,
-        speedLabel: caps?.speedLabel,
+        speedLabel: (v) => speedText(context, caps, v),
       ),
       AsyncValue(hasError: true) => const StatusBand(
         state: BandState.bridgeUnreachable,

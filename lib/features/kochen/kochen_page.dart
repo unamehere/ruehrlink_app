@@ -11,6 +11,7 @@ import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/smooth_countdown.dart';
+import '../../ui/widgets/speed_slider.dart';
 import '../maschine/live_status_band.dart';
 import 'programs.dart';
 
@@ -496,18 +497,18 @@ class _ProgramTile extends ConsumerWidget {
     );
   }
 
-  String _stepLine(AppLocalizations l10n, ProgramStep s) {
+  String _stepLine(BuildContext context, AppLocalizations l10n, ProgramStep s) {
     final v = s.settings;
     final time = formatDuration(v.time);
     final line = caps.speedOption(v.speed)?.group == SpeedGroup.off
         ? l10n.programStepRest(time)
         : v.temperature > 0
         ? l10n.programStepLineHeat(
-            caps.speedLabel(v.speed),
+            speedText(context, caps, v.speed),
             time,
             v.temperature,
           )
-        : l10n.programStepLine(caps.speedLabel(v.speed), time);
+        : l10n.programStepLine(speedText(context, caps, v.speed), time);
     return s.label.isEmpty ? line : '${s.label} – $line';
   }
 
@@ -562,7 +563,7 @@ class _ProgramTile extends ConsumerWidget {
                         const SizedBox(width: Tokens.m),
                         Expanded(
                           child: Text(
-                            _stepLine(l10n, s),
+                            _stepLine(context, l10n, s),
                             style: theme.textTheme.bodyLarge,
                           ),
                         ),
