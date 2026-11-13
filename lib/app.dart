@@ -11,6 +11,7 @@ import 'features/einrichtung/setup_controller.dart';
 import 'core/api/bridge_providers.dart';
 import 'features/kochen/kochen_page.dart';
 import 'features/kochen/programs.dart';
+import 'features/kochen/sequence_nudge.dart';
 import 'features/maschine/maschine_page.dart';
 import 'features/mehr/mehr_page.dart';
 import 'features/mehr/pair_request_watcher.dart';
@@ -98,8 +99,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const EinrichtungPage(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) =>
-            PairRequestWatcher(child: AppShell(shell: shell)),
+        builder: (context, state, shell) => PairRequestWatcher(
+          child: SequenceNudgeWatcher(child: AppShell(shell: shell)),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -134,6 +136,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'verbindung',
                     builder: (context, state) => const VerbindungPage(),
+                  ),
+                  GoRoute(
+                    path: 'hinweise',
+                    builder: (context, state) => const NudgeSettingsPage(),
                   ),
                 ],
               ),
