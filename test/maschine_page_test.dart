@@ -70,7 +70,7 @@ void main() {
     await tester.tap(find.text('max'));
     await tester.pump();
     expect(find.text('max'), findsNWidgets(2)); // Skala + großes Label
-    expect(find.text('Dauerstufen'), findsWidgets);
+    expect(find.text('Geschwindigkeit'), findsWidgets);
     await tester.tap(find.text('An Maschine senden'));
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('Die Maschine hat die Werte übernommen.'), findsOneWidget);
