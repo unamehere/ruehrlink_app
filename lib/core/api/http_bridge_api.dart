@@ -206,6 +206,14 @@ class HttpBridgeApi implements BridgeApi {
     _channel = null;
   }
 
+  @override
+  void reconnect() {
+    if (_closed || !_events.hasListener) return;
+    _reconnect?.cancel();
+    _dropChannel();
+    _connect();
+  }
+
   void _disconnect() {
     _reconnect?.cancel();
     _dropChannel();

@@ -324,6 +324,9 @@ class FakeBridgeApi implements BridgeApi {
   @override
   Stream<BridgeEvent> events() => _events.stream;
 
+  @override
+  void reconnect() {}
+
   void _tick() {
     var s = _status;
     final target = s.running ? (_set?.temperature ?? 0) : 0;
