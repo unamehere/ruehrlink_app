@@ -19,6 +19,20 @@ abstract class BridgeApi {
   /// `POST /api/v1/machine/stop`
   Future<void> stop();
 
+  /// `POST /api/v1/sequence/start` mit dem ganzen Programm (Schritte inline).
+  /// Die Brücke prüft es und sendet Schritt 1; gestartet wird am Gerät.
+  /// Abgelehnt → [BridgeException] mit [BridgeException.code] (`hot_speed`, `not_ready` …).
+  Future<SequenceState> startSequence(Program program);
+
+  /// `POST /api/v1/sequence/abort` – Programm abbrechen, stoppt auch die Maschine.
+  Future<void> abortSequence();
+
+  /// `GET /api/v1/sequence` – aktueller Stand, z. B. nach dem Wiederverbinden.
+  Future<SequenceState> sequence();
+
+  /// `GET /api/v1/programs` – auf der Brücke gespeicherte Programme.
+  Future<List<Program>> programs();
+
   /// `POST /api/v1/machine/onboard` – Kopplung mit dem Gerät anstoßen.
   /// Fortschritt per [OnboardEvent]; währenddessen ist die Brücke im Heim-WLAN
   /// nicht erreichbar, das Ergebnis steht danach in [info] (`appliance.connected`).
@@ -54,13 +68,16 @@ abstract class BridgeApi {
 
 /// Fehler beim Sprechen mit der Brücke.
 class BridgeException implements Exception {
-  const BridgeException(this.kind, [this.statusCode]);
+  const BridgeException(this.kind, [this.statusCode, this.code]);
 
   final BridgeErrorKind kind;
   final int? statusCode;
 
+  /// Fehlercode aus der Antwort (`{"error":"…"}`), z. B. `busy` oder `hot_speed`.
+  final String? code;
+
   @override
-  String toString() => 'BridgeException($kind, $statusCode)';
+  String toString() => 'BridgeException($kind, $statusCode, $code)';
 }
 
 enum BridgeErrorKind {

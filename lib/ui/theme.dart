@@ -8,6 +8,14 @@ abstract final class Tokens {
   /// Die eine Akzentfarbe (warmes Terrakotta).
   static const accent = Color(0xFFC2410C);
 
+  /// Bernstein des Lichtpunkts im Zeichen – für Fortschritt und kleine Akzente.
+  static const glow = Color(0xFFF2A33A);
+
+  /// Warmer Seitenhintergrund (hell) bzw. Anthrazit (dunkel); Karten heben sich ab.
+  static const pageLight = Color(0xFFF7F3EE);
+  static const pageDark = Color(0xFF17181B);
+  static const cardDark = Color(0xFF222428);
+
   /// Mindestgröße jeder Tippfläche.
   static const tap = 56.0;
 
@@ -31,12 +39,17 @@ abstract final class Tokens {
 
 ThemeData buildTheme(Brightness brightness) {
   final light = brightness == Brightness.light;
-  final scheme = ColorScheme.fromSeed(
-    seedColor: Tokens.accent,
-    brightness: brightness,
-    dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
-    contrastLevel: 0.5,
-  ).copyWith(surface: light ? Colors.white : const Color(0xFF121212));
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: Tokens.accent,
+        brightness: brightness,
+        dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+        contrastLevel: 0.5,
+      ).copyWith(
+        surface: light ? Tokens.pageLight : Tokens.pageDark,
+        surfaceContainerLowest: light ? Colors.white : Tokens.cardDark,
+        surfaceContainerLow: light ? Colors.white : Tokens.cardDark,
+      );
 
   final base = ThemeData(colorScheme: scheme, brightness: brightness);
   final text = base.textTheme.copyWith(

@@ -3,7 +3,7 @@ description: "Freikoch – die App zur Freikoch Brücke. Strikt lokal im Heim-WL
 publish_to: 'none'
 
 # Später: aus der Datei VERSION abgeleitet (App-Version = Firmware-Version).
-version: 0.1.7+7
+version: 0.1.9+9
 
 environment:
   sdk: ^3.14.0
@@ -37,3 +37,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    # Platzhalter-Illustrationen (Fluent Emoji 3D, MIT) – siehe docs/illustrationen.md
+    - assets/illustrations/
+    - assets/brand/
