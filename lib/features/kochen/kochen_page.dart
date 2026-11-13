@@ -42,7 +42,7 @@ class KochenPage extends ConsumerWidget {
                   HintCard(icon: Icons.science_outlined, text: l10n.demoBanner),
                   const SizedBox(height: Tokens.m),
                 ],
-                const LiveStatusBand(),
+                const _StatusLine(),
                 const SizedBox(height: Tokens.l),
                 const _SequencePanel(),
                 const _ProgramSection(),
@@ -53,6 +53,33 @@ class KochenPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Im Kochen-Tab führen die Programme – der Maschinenstatus ist nur eine Zeile, antippen klappt ihn auf.
+class _StatusLine extends StatefulWidget {
+  const _StatusLine();
+
+  @override
+  State<_StatusLine> createState() => _StatusLineState();
+}
+
+class _StatusLineState extends State<_StatusLine> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) => AnimatedSize(
+    duration: const Duration(milliseconds: 200),
+    alignment: Alignment.topCenter,
+    child: _expanded
+        ? GestureDetector(
+            onTap: () => setState(() => _expanded = false),
+            child: const LiveStatusBand(),
+          )
+        : LiveStatusBand(
+            compact: true,
+            onTap: () => setState(() => _expanded = true),
+          ),
+  );
 }
 
 class _Greeting extends StatelessWidget {

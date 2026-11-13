@@ -8,7 +8,10 @@ import '../../ui/widgets/status_band.dart';
 /// [StatusBand] mit Live-Daten der Brücke – für alle Bildschirme, die den
 /// Maschinenstatus zeigen (Maschine, später Kochen und Kochmodus).
 class LiveStatusBand extends ConsumerWidget {
-  const LiveStatusBand({super.key});
+  const LiveStatusBand({super.key, this.compact = false, this.onTap});
+
+  final bool compact;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,12 +21,20 @@ class LiveStatusBand extends ConsumerWidget {
       AsyncValue(:final value?, hasError: false) => StatusBand(
         state: BandState.ready,
         status: value,
+        compact: compact,
+        onTap: onTap,
         speedLabel: (v) => speedText(context, caps, v),
       ),
-      AsyncValue(hasError: true) => const StatusBand(
+      AsyncValue(hasError: true) => StatusBand(
         state: BandState.bridgeUnreachable,
+        compact: compact,
+        onTap: onTap,
       ),
-      _ => const StatusBand(state: BandState.connecting),
+      _ => StatusBand(
+        state: BandState.connecting,
+        compact: compact,
+        onTap: onTap,
+      ),
     };
   }
 }
