@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hintergrund von App-Symbol und Startbildschirm (warmes Anthrazit) -->
+    <color name="icon_background">#26282C</color>
+</resources>

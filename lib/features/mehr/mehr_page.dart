@@ -52,6 +52,19 @@ class MehrPage extends ConsumerWidget {
                 onTap: () => _reset(context, ref),
               ),
             ),
+            const SizedBox(height: Tokens.s),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.description_outlined, size: 32),
+                title: Text(l10n.mehrLicenses),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 32),
+                onTap: () => showLicensePage(
+                  context: context,
+                  applicationName: 'Freikoch',
+                  applicationVersion: appVersion,
+                ),
+              ),
+            ),
             const SizedBox(height: Tokens.l),
             Text(
               'Freikoch App $appVersion',
