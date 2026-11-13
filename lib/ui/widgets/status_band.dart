@@ -18,6 +18,8 @@ class StatusBand extends StatelessWidget {
     required this.state,
     this.status,
     this.speedLabel,
+    this.compact = false,
+    this.onTap,
   });
 
   final BandState state;
@@ -25,6 +27,12 @@ class StatusBand extends StatelessWidget {
 
   /// Anzeige eines Stufenwerts (aus `caps.speeds`); ohne caps die Zahl.
   final String Function(int v)? speedLabel;
+
+  /// Nur eine Zeile (Zustand, Temperatur, Restzeit) – z. B. im Kochen-Tab, wo die Programme führen.
+  final bool compact;
+
+  /// Antippen, z. B. zum Auf-/Zuklappen.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +65,71 @@ class StatusBand extends StatelessWidget {
       BandState.ready when running => l10n.statusRunning,
       BandState.ready => l10n.statusMachineConnected,
     };
+
+    final radius = BorderRadius.circular(Tokens.radius);
+    if (compact) {
+      return Semantics(
+        container: true,
+        liveRegion: true,
+        button: onTap != null,
+        child: Material(
+          color: bg,
+          borderRadius: radius,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Tokens.m,
+                vertical: Tokens.s + 4,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    connected
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
+                    color: fg,
+                    size: 24,
+                  ),
+                  const SizedBox(width: Tokens.s),
+                  Expanded(
+                    child: Text(
+                      headline,
+                      style: theme.textTheme.titleMedium?.copyWith(color: fg),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (s != null) ...[
+                    Text(
+                      l10n.temperatureValue(s.bowlTemp),
+                      style: theme.textTheme.titleMedium?.copyWith(color: fg),
+                    ),
+                    if (running) ...[
+                      const SizedBox(width: Tokens.m),
+                      SmoothCountdown(
+                        seconds: s.remainingS,
+                        running: running,
+                        builder: (context, left) => Text(
+                          formatDuration(left),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: fg,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                  if (onTap != null) ...[
+                    const SizedBox(width: Tokens.s),
+                    Icon(Icons.expand_more_rounded, color: fg),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Semantics(
       container: true,
