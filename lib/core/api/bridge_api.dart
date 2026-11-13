@@ -62,6 +62,10 @@ abstract class BridgeApi {
   /// steht, solange jemand zuhört, und wird bei Abbruch neu aufgebaut.
   Stream<BridgeEvent> events();
 
+  /// Live-Verbindung sofort neu aufbauen, z. B. wenn die App nach dem Entsperren wieder in den
+  /// Vordergrund kommt (eine schlafende Verbindung merkt man sonst erst nach Sekunden, F5).
+  void reconnect();
+
   /// Verbindungen schließen, Timer beenden.
   void close();
 }
