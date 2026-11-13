@@ -85,29 +85,68 @@ class UnknownEvent extends BridgeEvent {
   final String type;
 }
 
-enum SequenceRunState { running, waitingStart, paused, done, aborted, unknown }
+enum SequenceRunState {
+  idle,
 
-/// Fortschritt eines Programms auf der Brücke (intern „sequence“).
+  /// Werte sind gesendet – jetzt den Knopf an der Maschine drücken.
+  waitingStart,
+  running,
+  paused,
+  done,
+  aborted,
+  unknown,
+}
+
+/// Fortschritt eines Programms auf der Brücke (intern „sequence“), siehe
+/// `GET /api/v1/sequence` und WS `seq` in `freikoch_esp/docs/api.md`.
 class SequenceState {
   const SequenceState({
-    required this.programId,
+    this.programId,
+    this.name = '',
     required this.step,
     required this.of,
+    this.label = '',
     required this.state,
     this.reason,
+    this.stepRemainingS = 0,
   });
 
-  final String programId;
+  static const idle = SequenceState(
+    step: 0,
+    of: 0,
+    state: SequenceRunState.idle,
+  );
+
+  /// `null` bei Programmen, die die App direkt mitgeschickt hat.
+  final String? programId;
+  final String name;
+
+  /// Aktueller Schritt ab 1, `0` = kein Programm.
   final int step;
   final int of;
+  final String label;
   final SequenceRunState state;
+
+  /// Warum gewartet, pausiert oder abgebrochen wurde, z. B. `press_start`,
+  /// `lid_open`, `bowl_missing`, `machine_paused`, `disconnected`, `no_ack`,
+  /// `user`, `timeout`.
   final String? reason;
+  final int stepRemainingS;
+
+  /// Läuft gerade ein Programm (wartend, laufend oder pausiert)?
+  bool get active =>
+      state == SequenceRunState.waitingStart ||
+      state == SequenceRunState.running ||
+      state == SequenceRunState.paused;
 
   factory SequenceState.fromJson(Json json) => SequenceState(
-    programId: readString(json['programId']),
+    programId: json['programId'] is String ? json['programId'] as String : null,
+    name: readString(json['name']),
     step: readInt(json['step']),
     of: readInt(json['of']),
+    label: readString(json['label']),
     state: switch (json['state']) {
+      'idle' => SequenceRunState.idle,
       'running' => SequenceRunState.running,
       'waiting_start' => SequenceRunState.waitingStart,
       'paused' => SequenceRunState.paused,
@@ -115,6 +154,25 @@ class SequenceState {
       'aborted' => SequenceRunState.aborted,
       _ => SequenceRunState.unknown,
     },
-    reason: json['reason'] as String?,
+    reason: json['reason'] is String ? json['reason'] as String : null,
+    stepRemainingS: readInt(json['stepRemainingS']),
+  );
+
+  SequenceState copyWith({
+    int? step,
+    String? label,
+    SequenceRunState? state,
+    String? reason,
+    bool clearReason = false,
+    int? stepRemainingS,
+  }) => SequenceState(
+    programId: programId,
+    name: name,
+    step: step ?? this.step,
+    of: of,
+    label: label ?? this.label,
+    state: state ?? this.state,
+    reason: clearReason ? null : (reason ?? this.reason),
+    stepRemainingS: stepRemainingS ?? this.stepRemainingS,
   );
 }

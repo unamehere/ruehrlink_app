@@ -65,6 +65,7 @@ class HttpBridgeApi implements BridgeApi {
         >= 400 && < 500 => throw BridgeException(
           BridgeErrorKind.rejected,
           response.statusCode,
+          _errorCode(response),
         ),
         _ => throw BridgeException(
           BridgeErrorKind.protocol,
@@ -76,6 +77,15 @@ class HttpBridgeApi implements BridgeApi {
     } on Exception {
       // SocketException, TimeoutException, ClientException …
       throw const BridgeException(BridgeErrorKind.unreachable);
+    }
+  }
+
+  static String? _errorCode(http.Response r) {
+    try {
+      final e = readMap(jsonDecode(utf8.decode(r.bodyBytes)))['error'];
+      return e is String ? e : null;
+    } on FormatException {
+      return null;
     }
   }
 
@@ -101,6 +111,30 @@ class HttpBridgeApi implements BridgeApi {
 
   @override
   Future<void> stop() => _send('POST', 'machine/stop');
+
+  @override
+  Future<SequenceState> startSequence(Program program) async =>
+      SequenceState.fromJson(
+        _decode(
+          await _send('POST', 'sequence/start', {
+            'name': program.name,
+            'steps': [for (final s in program.steps) s.toJson()],
+          }),
+        ),
+      );
+
+  @override
+  Future<void> abortSequence() => _send('POST', 'sequence/abort');
+
+  @override
+  Future<SequenceState> sequence() async =>
+      SequenceState.fromJson(_decode(await _send('GET', 'sequence')));
+
+  @override
+  Future<List<Program>> programs() async => readList(
+    _decode(await _send('GET', 'programs'))['programs'],
+    Program.fromJson,
+  );
 
   @override
   Future<void> onboardMachine() => _send('POST', 'machine/onboard');
