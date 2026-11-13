@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -169,33 +168,8 @@ class _SequencePanelState extends ConsumerState<_SequencePanel> {
     return _stepMax == 0 ? 0 : (1 - left / _stepMax).clamp(0.0, 1.0);
   }
 
-  /// Kurz vibrieren, sobald die Nutzerin etwas tun muss (Knopf drücken, Kopf schließen …) –
-  /// z. B. nach einer Ruhephase, die die Maschine nicht von selbst beendet (Fehlerliste F10).
-  void _nudgeOnUserAction(SequenceState? prev, SequenceState? next) {
-    if (next == null) return;
-    final needsUser =
-        next.state == SequenceRunState.waitingStart ||
-        next.state == SequenceRunState.paused;
-    final changed =
-        prev?.state != next.state ||
-        prev?.reason != next.reason ||
-        prev?.step != next.step;
-    if (needsUser && changed) {
-      HapticFeedback.heavyImpact();
-      Future.delayed(
-        const Duration(milliseconds: 250),
-        HapticFeedback.heavyImpact,
-      );
-      SystemSound.play(SystemSoundType.alert);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    ref.listen<SequenceState?>(
-      sequenceProvider.select((s) => s.value),
-      _nudgeOnUserAction,
-    );
     final seq = ref.watch(sequenceProvider).value;
     if (seq == null || seq.state == SequenceRunState.idle || seq.step == 0) {
       return const SizedBox.shrink();

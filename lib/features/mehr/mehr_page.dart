@@ -35,6 +35,18 @@ class MehrPage extends ConsumerWidget {
             const SizedBox(height: Tokens.s),
             Card(
               child: ListTile(
+                leading: const Icon(
+                  Icons.notifications_active_outlined,
+                  size: 32,
+                ),
+                title: Text(l10n.nudgeTitle),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 32),
+                onTap: () => context.go('/mehr/hinweise'),
+              ),
+            ),
+            const SizedBox(height: Tokens.s),
+            Card(
+              child: ListTile(
                 leading: const Icon(Icons.restart_alt_rounded, size: 32),
                 title: Text(l10n.mehrRestartSetup),
                 onTap: () => ref.read(setupDoneProvider.notifier).set(false),

@@ -215,5 +215,15 @@
   "statusKeepWarm": "Warmhalten",
   "statusKeepWarmHint": "Die Maschine hält warm – mit Stopp beenden",
   "statusTargetSmall": "Ziel {temp} °C",
-  "@statusTargetSmall": {"placeholders": {"temp": {"type": "int"}}}
+  "@statusTargetSmall": {"placeholders": {"temp": {"type": "int"}}},
+  "nudgeTitle": "Hinweise beim Kochen",
+  "nudgeExplain": "Die App meldet sich nur, wenn die Maschine auf dich wartet: nach einer Ruhephase (Knopf drücken), wenn ein Programm fertig ist und wenn es unerwartet abgebrochen wurde. Nicht bei Dingen, die du gerade selbst tust, z. B. Kopf öffnen.",
+  "nudgeVibration": "Vibration",
+  "nudgeOff": "Aus",
+  "nudgeNormal": "Normal",
+  "nudgeStrong": "Kräftig",
+  "nudgeBigHint": "Großer Hinweis auf dem Bildschirm",
+  "nudgeBigHintDetail": "Zusätzlich ein gut lesbares Fenster, egal welcher Tab offen ist.",
+  "nudgeLockedNote": "Bei gesperrtem Handy kommen die Hinweise noch nicht an – das folgt in einer späteren Version.",
+  "nudgeAborted": "Programm abgebrochen"
 }
