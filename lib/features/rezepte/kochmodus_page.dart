@@ -112,7 +112,17 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
     final base = recipe.servings < 1 ? 1 : recipe.servings;
     final servings = widget.servings ?? base;
     final factor = servings / base;
-    final total = recipe.steps.length + 2; // Bereitstellen + Schritte + Fertig
+    // Seiten: Bereitstellen, je Schritt ggf. erst „Werkzeug wechseln“, dann der Schritt, Fertig.
+    final pages = <_Seite>[
+      const _Seite.bereitstellen(),
+      for (final (i, s) in recipe.steps.indexed) ...[
+        if (s.tool case final t? when t != werkzeugVor(recipe.steps, i))
+          _Seite.wechsel(t, werkzeugVor(recipe.steps, i)),
+        _Seite.schritt(i),
+      ],
+      const _Seite.fertig(),
+    ];
+    final total = pages.length;
     final last = total - 1;
 
     // Maschinenschritt fertig → automatisch weiter.
@@ -157,28 +167,23 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
               itemCount: total,
               onPageChanged: (p) => setState(() => _page = p),
               itemBuilder: (context, p) {
-                if (p == 0) {
+                final seite = pages[p];
+                if (seite.art == _Art.bereitstellen) {
                   return _PreparePage(recipe: recipe, factor: factor);
                 }
-                if (p == last) return const _DonePage();
-                final step = recipe.steps[p - 1];
-                // Werkzeug nur zeigen, wenn es sich gegenüber dem vorigen ändert
-                final before = recipe.steps
-                    .take(p - 1)
-                    .map((s) => s.tool)
-                    .whereType<Werkzeug>()
-                    .lastOrNull;
-                final toolChange = step.tool != null && step.tool != before
-                    ? step.tool
-                    : null;
+                if (seite.art == _Art.fertig) return const _DonePage();
+                if (seite.art == _Art.wechsel) {
+                  return _WechselPage(neu: seite.neu!, alt: seite.alt);
+                }
+                final step = recipe.steps[seite.schritt!];
                 return _StepPage(
                   key: ValueKey(p),
                   recipe: recipe,
                   step: step,
-                  number: p,
+                  number: seite.schritt! + 1,
                   of: recipe.steps.length,
                   factor: factor,
-                  toolChange: toolChange,
+                  toolChange: null,
                   startedHere: _startedOn == p,
                   sending: _sending,
                   onStart: () => _start(recipe, step),
@@ -223,7 +228,9 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                                 onPressed: _close,
                               )
                             : BigButton(
-                                label: l10n.cookNext,
+                                label: pages[_page].art == _Art.wechsel
+                                    ? l10n.toolSwapDone
+                                    : l10n.cookNext,
                                 icon: _weighReached.contains(_page)
                                     ? Icons.check_circle_rounded
                                     : Icons.arrow_forward_rounded,
@@ -237,6 +244,102 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+enum _Art { bereitstellen, wechsel, schritt, fertig }
+
+/// Eine Seite im Kochmodus.
+class _Seite {
+  const _Seite.bereitstellen()
+    : art = _Art.bereitstellen,
+      schritt = null,
+      neu = null,
+      alt = null;
+  const _Seite.fertig()
+    : art = _Art.fertig,
+      schritt = null,
+      neu = null,
+      alt = null;
+  const _Seite.schritt(int this.schritt)
+    : art = _Art.schritt,
+      neu = null,
+      alt = null;
+  const _Seite.wechsel(Werkzeug this.neu, this.alt)
+    : art = _Art.wechsel,
+      schritt = null;
+
+  final _Art art;
+  final int? schritt;
+  final Werkzeug? neu;
+  final Werkzeug? alt;
+}
+
+/// „Werkzeug wechseln“: eigene Seite, nur wenn sich das Werkzeug gegenüber dem vorigen Schritt ändert.
+class _WechselPage extends StatelessWidget {
+  const _WechselPage({required this.neu, this.alt});
+
+  final Werkzeug neu;
+  final Werkzeug? alt;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final name = werkzeugName(l10n, neu);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(Tokens.l),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Tokens.maxContentWidth),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.toolSwapTitle.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: Tokens.l),
+              Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: WerkzeugBild(
+                  neu,
+                  size: 112,
+                  background: scheme.surfaceContainerHighest,
+                ),
+              ),
+              const SizedBox(height: Tokens.l),
+              Text(
+                l10n.toolInsert(name),
+                style: theme.textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: Tokens.s),
+              Text(
+                alt == null
+                    ? l10n.toolSwapHintFirst(name)
+                    : l10n.toolSwapHint(werkzeugName(l10n, alt!), name),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -394,7 +497,8 @@ class _StepPage extends StatelessWidget {
           const SizedBox(height: Tokens.s),
           if (toolChange case final t?) ...[
             HintCard(
-              icon: werkzeugIcon(t),
+              icon: Icons.handyman_rounded,
+              leading: WerkzeugBild(t, size: 36),
               text: l10n.toolInsert(werkzeugName(l10n, t)),
             ),
             const SizedBox(height: Tokens.m),
