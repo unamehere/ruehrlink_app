@@ -7,6 +7,15 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.3.9 – 15.11.2026
+
+### Behoben
+- Wird der Rührlink ausgesteckt oder ist das WLAN weg, zeigt die App nach wenigen Sekunden „nicht erreichbar“
+  (vorher blieb der letzte Stand stehen). Ist er wieder da, verbindet sie sich von selbst.
+
+### Geändert
+- Kochen-Tab: Begrüßung kleiner, die zusätzliche Zeile „Waage“ ist weg (Waage über das Symbol oben rechts).
+
 ## 0.3.8 – 15.11.2026
 
 ### Geändert
