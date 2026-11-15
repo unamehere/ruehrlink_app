@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../models/json.dart';
@@ -24,6 +25,10 @@ class HttpBridgeApi implements BridgeApi {
 
   static const _timeout = Duration(seconds: 5);
   static const _reconnectDelay = Duration(seconds: 2);
+
+  /// Herzschlag auf dem Live-Kanal: Ping so oft; kommt bis zum nächsten kein Pong, gilt die Box als weg
+  /// (ausgesteckt sendet sie kein „Tschüss“ – ohne Ping merkt die App das sonst nie).
+  static const _pingInterval = Duration(seconds: 3);
 
   late final StreamController<BridgeEvent> _events = StreamController.broadcast(
     onListen: _connect,
@@ -328,8 +333,20 @@ class HttpBridgeApi implements BridgeApi {
 
   void _connect() {
     if (_closed || _channel != null) return;
-    final channel = WebSocketChannel.connect(_uri('ws', scheme: 'ws'));
+    final channel = IOWebSocketChannel.connect(
+      _uri('ws', scheme: 'ws'),
+      pingInterval: _pingInterval,
+      connectTimeout: _timeout,
+    );
     _channel = channel;
+    channel.ready.then(
+      (_) {
+        if (identical(_channel, channel)) {
+          _setOnline(true);
+        }
+      },
+      onError: (Object _) {}, // meldet der Stream selbst (onError)
+    );
     _wsSub = channel.stream.listen(
       (message) {
         if (message is! String) return;
@@ -344,8 +361,17 @@ class HttpBridgeApi implements BridgeApi {
     );
   }
 
+  bool? _online;
+
+  void _setOnline(bool online) {
+    if (_online == online || _events.isClosed) return;
+    _online = online;
+    _events.add(ConnectionEvent(online: online));
+  }
+
   void _scheduleReconnect() {
     _dropChannel();
+    _setOnline(false);
     if (_closed || !_events.hasListener) return;
     _reconnect?.cancel();
     _reconnect = Timer(_reconnectDelay, _connect);

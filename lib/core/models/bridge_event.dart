@@ -88,6 +88,13 @@ class OnboardEvent extends BridgeEvent {
   final String? reason;
 }
 
+/// Kein Ereignis der Box, sondern der App selbst: Der Live-Kanal zur Box steht ([online]) oder ist
+/// abgerissen (Box ausgesteckt, WLAN weg). Abgerissen erkennt die App am ausbleibenden Pong.
+class ConnectionEvent extends BridgeEvent {
+  const ConnectionEvent({required this.online});
+  final bool online;
+}
+
 /// Unbekannter Typ – neuere Brücke. Wird ignoriert, nicht als Fehler behandelt.
 class UnknownEvent extends BridgeEvent {
   const UnknownEvent(this.type);

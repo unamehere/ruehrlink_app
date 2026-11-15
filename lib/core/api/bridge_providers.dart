@@ -60,12 +60,37 @@ final bridgeInfoProvider = FutureProvider<BridgeInfo>((ref) async {
 });
 
 /// Live-Status: erst `GET /state`, dann jede `status`-Nachricht vom WebSocket.
-final applianceStatusProvider = StreamProvider<ApplianceStatus>((ref) async* {
+/// Reißt der Live-Kanal ab (Box ausgesteckt), wird der Status zum Fehler („Rührlink nicht erreichbar“);
+/// steht er wieder, holt die App den Stand neu.
+final applianceStatusProvider = StreamProvider<ApplianceStatus>((ref) {
   final api = ref.watch(bridgeApiProvider);
-  yield await api.state();
+  final out = StreamController<ApplianceStatus>();
+  Future<void> fetch() async {
+    try {
+      final s = await api.state();
+      if (!out.isClosed) out.add(s);
+    } on BridgeException catch (e, st) {
+      if (!out.isClosed) out.addError(e, st);
+    }
+  }
+
   // Der Stream liefert bei jeder Änderung den vollständigen Status – eine
   // kurze Lücke zwischen Abfrage und Abo ist daher unkritisch.
-  await for (final e in api.events()) {
-    if (e is StatusEvent) yield e.status;
-  }
+  final sub = api.events().listen((e) {
+    switch (e) {
+      case StatusEvent(:final status):
+        out.add(status);
+      case ConnectionEvent(online: false):
+        out.addError(const BridgeException(BridgeErrorKind.unreachable));
+      case ConnectionEvent(online: true):
+        unawaited(fetch());
+      default:
+    }
+  });
+  unawaited(fetch());
+  ref.onDispose(() {
+    unawaited(sub.cancel());
+    unawaited(out.close());
+  });
+  return out.stream;
 });

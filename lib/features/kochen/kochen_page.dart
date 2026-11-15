@@ -49,7 +49,6 @@ class KochenPage extends ConsumerWidget {
                 const _FirmwareHint(),
                 const _StatusLine(),
                 const SizedBox(height: Tokens.l),
-                const _ScaleEntry(),
                 const _SequencePanel(),
                 const _ProgramSection(),
                 const SizedBox(height: Tokens.l),
@@ -57,35 +56,6 @@ class KochenPage extends ConsumerWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Waage öffnen – nur wenn das Gerät eine hat und verbunden ist.
-class _ScaleEntry extends ConsumerWidget {
-  const _ScaleEntry();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final hasScale =
-        ref.watch(bridgeInfoProvider).value?.appliance?.caps?.hasScale ?? false;
-    final connected =
-        ref.watch(applianceStatusProvider).value?.connected ?? false;
-    if (!hasScale || !connected) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Tokens.l),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          minTileHeight: Tokens.bigButton,
-          leading: const Icon(Icons.scale_rounded, size: 32),
-          title: Text(l10n.scaleOpen),
-          subtitle: Text(l10n.scaleOpenDetail),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => showScaleSheet(context),
         ),
       ),
     );
@@ -166,8 +136,8 @@ class _Greeting extends ConsumerWidget {
           dark
               ? 'assets/brand/zeichen_dunkel.png'
               : 'assets/brand/zeichen_hell.png',
-          width: 56,
-          height: 56,
+          width: 44,
+          height: 44,
           excludeFromSemantics: true,
         ),
         const SizedBox(width: Tokens.m),
@@ -177,11 +147,11 @@ class _Greeting extends ConsumerWidget {
             children: [
               Text(
                 context.l10n.kochenGreeting,
-                style: theme.textTheme.headlineMedium,
+                style: theme.textTheme.titleLarge,
               ),
               Text(
                 context.l10n.kochenGreetingSub,
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
