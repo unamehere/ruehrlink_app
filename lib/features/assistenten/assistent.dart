@@ -111,8 +111,6 @@ class ZutatMenge {
       '$menge ${einheit.name}';
 }
 
-enum Werkzeug { knethaken, schneebesen, kochRuehrelement }
-
 /// Hinweise im Ergebnis. [sicherheit]-Hinweise lassen sich abschalten (Grundsatz im Backlog:
 /// „Rührlink soll nicht nerven“), [kritisch] nur mit „aus“. Tipps und Ablauf-Infos bleiben.
 enum Hinweis {

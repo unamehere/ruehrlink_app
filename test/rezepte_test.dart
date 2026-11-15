@@ -20,11 +20,10 @@ Recipe _recipe(String id, {int rev = 0, String title = 'Test'}) => Recipe(
   updated: DateTime.utc(2026, 11, 15),
   title: title,
   servings: 2,
-  ingredients: const [Ingredient(amount: 250, unit: 'g', name: 'Mehl')],
   steps: const [
     RecipeStep(
       text: 'Wiegen',
-      weigh: WeighTarget(target: 250, unit: 'g'),
+      ingredients: [Ingredient(amount: 250, unit: 'g', name: 'Mehl')],
     ),
   ],
 );
@@ -257,14 +256,15 @@ void main() {
         expect(find.text('Bereitstellen'), findsOneWidget);
         expect(find.text('315 g Weizenmehl'), findsOneWidget);
 
-        // Schritt 1: Wiegen – Platzhalter mit skalierter Zielmenge
+        // Schritt 1: Zutaten des Schritts, Waage mit skalierter Zielmenge
         await tester.tap(find.text('Weiter'));
         await settle(tester);
-        expect(find.text('315 g abwiegen'), findsOneWidget);
+        expect(find.text('Schneebesen einsetzen'), findsOneWidget);
+        expect(find.text('315 g Weizenmehl abwiegen'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // bis zum Maschinenschritt (Schritt 4)
-        for (var i = 0; i < 3; i++) {
+        // bis zum Maschinenschritt (Schritt 3)
+        for (var i = 0; i < 2; i++) {
           await tester.tap(find.text('Weiter'));
           await settle(tester);
         }

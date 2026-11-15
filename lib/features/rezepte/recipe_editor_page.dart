@@ -13,6 +13,7 @@ import '../../ui/format.dart';
 import '../../ui/input.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
+import '../../ui/werkzeug.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../kochen/programs.dart';
@@ -49,21 +50,13 @@ class _IngredientRow {
   }
 }
 
-enum _StepKind { text, weigh, machine }
-
 class _StepRow {
   _StepRow([RecipeStep? s])
     : text = TextEditingController(text: s?.text ?? ''),
       photo = s?.photo,
-      kind = s?.weigh != null
-          ? _StepKind.weigh
-          : s?.machine != null
-          ? _StepKind.machine
-          : _StepKind.text,
-      weighTarget = TextEditingController(
-        text: s?.weigh == null ? '' : formatAmount(s!.weigh!.target),
-      ),
-      weighUnit = TextEditingController(text: s?.weigh?.unit ?? 'g'),
+      ingredients = [...?s?.ingredients.map(_IngredientRow.new)],
+      tool = s?.tool,
+      hasMachine = s?.machine != null,
       useProgram = s?.machine?.programId != null,
       programId = s?.machine?.programId,
       temperature = TextEditingController(
@@ -76,17 +69,32 @@ class _StepRow {
       ),
       speed = s?.machine?.settings?.speed;
 
-  final TextEditingController text, weighTarget, weighUnit, temperature, time;
+  final TextEditingController text, temperature, time;
   final String?
   photo; // Schrittfotos bleiben erhalten, werden hier (noch) nicht bearbeitet
-  _StepKind kind;
+  final List<_IngredientRow> ingredients;
+  Werkzeug? tool;
+  bool hasMachine;
   bool useProgram;
   String? programId;
   int? speed;
 
+  List<Ingredient> get builtIngredients => [
+    for (final r in ingredients)
+      if (r.name.text.trim().isNotEmpty)
+        Ingredient(
+          amount: _parseNumber(r.amount.text) ?? 0,
+          unit: r.unit.text.trim(),
+          name: r.name.text.trim(),
+        ),
+  ];
+
   void dispose() {
-    for (final c in [text, weighTarget, weighUnit, temperature, time]) {
+    for (final c in [text, temperature, time]) {
       c.dispose();
+    }
+    for (final r in ingredients) {
+      r.dispose();
     }
   }
 }
@@ -99,7 +107,6 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
   final _title = TextEditingController();
   final _tags = TextEditingController();
   int _servings = 4;
-  final _ingredients = <_IngredientRow>[];
   final _steps = <_StepRow>[];
 
   Uint8List? _newPhoto; // gewählt, noch nicht hochgeladen
@@ -127,9 +134,7 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
     _title.text = _original.title;
     _tags.text = _original.tags.join(', ');
     _servings = _original.servings < 1 ? 1 : _original.servings;
-    _ingredients.addAll(_original.ingredients.map(_IngredientRow.new));
     _steps.addAll(_original.steps.map(_StepRow.new));
-    if (_ingredients.isEmpty) _ingredients.add(_IngredientRow());
     if (_steps.isEmpty) _steps.add(_StepRow());
   }
 
@@ -137,9 +142,6 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
   void dispose() {
     _title.dispose();
     _tags.dispose();
-    for (final r in _ingredients) {
-      r.dispose();
-    }
     for (final s in _steps) {
       s.dispose();
     }
@@ -151,43 +153,33 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
     final steps = <RecipeStep>[];
     for (final s in _steps) {
       final text = s.text.text.trim();
-      switch (s.kind) {
-        case _StepKind.text:
-          if (text.isEmpty) continue;
-          steps.add(RecipeStep(text: text, photo: s.photo));
-        case _StepKind.weigh:
-          final target = _parseNumber(s.weighTarget.text);
-          steps.add(
-            RecipeStep(
-              text: text,
-              photo: s.photo,
-              weigh: target == null || target <= 0
-                  ? null
-                  : WeighTarget(
-                      target: target,
-                      unit: s.weighUnit.text.trim().isEmpty
-                          ? 'g'
-                          : s.weighUnit.text.trim(),
-                    ),
-            ),
-          );
-        case _StepKind.machine:
-          StepMachine machine;
-          if (s.useProgram) {
-            if (s.programId == null) return null;
-            machine = StepMachine.program(s.programId!);
-          } else {
-            final time = parseDurationText(s.time.text);
-            final temp = int.tryParse(s.temperature.text.trim()) ?? 0;
-            if (time == null || time <= 0 || s.speed == null || temp < 0) {
-              return null;
-            }
-            machine = StepMachine.settings(
-              MachineSettings(temperature: temp, time: time, speed: s.speed!),
-            );
+      final ingredients = s.builtIngredients;
+      StepMachine? machine;
+      if (s.hasMachine) {
+        if (s.useProgram) {
+          if (s.programId == null) return null;
+          machine = StepMachine.program(s.programId!);
+        } else {
+          final time = parseDurationText(s.time.text);
+          final temp = int.tryParse(s.temperature.text.trim()) ?? 0;
+          if (time == null || time <= 0 || s.speed == null || temp < 0) {
+            return null;
           }
-          steps.add(RecipeStep(text: text, photo: s.photo, machine: machine));
+          machine = StepMachine.settings(
+            MachineSettings(temperature: temp, time: time, speed: s.speed!),
+          );
+        }
       }
+      if (text.isEmpty && ingredients.isEmpty && machine == null) continue;
+      steps.add(
+        RecipeStep(
+          text: text,
+          photo: s.photo,
+          ingredients: ingredients,
+          tool: s.tool,
+          machine: machine,
+        ),
+      );
     }
     return _original.copyWith(
       title: _title.text.trim(),
@@ -198,15 +190,6 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
       ],
       photo: _uploadedSha,
       clearPhoto: _removePhoto && _uploadedSha == null,
-      ingredients: [
-        for (final r in _ingredients)
-          if (r.name.text.trim().isNotEmpty)
-            Ingredient(
-              amount: _parseNumber(r.amount.text) ?? 0,
-              unit: r.unit.text.trim(),
-              name: r.name.text.trim(),
-            ),
-      ],
       steps: steps,
     );
   }
@@ -434,23 +417,20 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
         ),
         const SizedBox(height: Tokens.l),
         Text(l10n.editorIngredients, style: theme.textTheme.headlineSmall),
-        const SizedBox(height: Tokens.s),
-        for (final (i, row) in _ingredients.indexed)
-          _IngredientEditor(
-            key: ObjectKey(row),
-            row: row,
-            onRemove: () => setState(() {
-              _ingredients.removeAt(i).dispose();
-            }),
-          ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () => setState(() => _ingredients.add(_IngredientRow())),
-            icon: const Icon(Icons.add_rounded),
-            label: Text(l10n.editorAddIngredient),
+        Text(
+          l10n.recipeIngredientsAuto,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        const SizedBox(height: Tokens.s),
+        for (final i in sumIngredients([
+          for (final st in _steps) ...st.builtIngredients,
+        ]))
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(ingredientText(i, 1), style: theme.textTheme.bodyLarge),
+          ),
       ],
     );
 
@@ -530,10 +510,12 @@ class _IngredientEditor extends StatelessWidget {
     super.key,
     required this.row,
     required this.onRemove,
+    this.onChanged,
   });
 
   final _IngredientRow row;
   final VoidCallback onRemove;
+  final VoidCallback? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -546,6 +528,7 @@ class _IngredientEditor extends StatelessWidget {
             width: 96,
             child: TextField(
               controller: row.amount,
+              onChanged: (_) => onChanged?.call(),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -560,6 +543,7 @@ class _IngredientEditor extends StatelessWidget {
             width: 80,
             child: TextField(
               controller: row.unit,
+              onChanged: (_) => onChanged?.call(),
               decoration: InputDecoration(labelText: l10n.editorUnit),
             ),
           ),
@@ -567,6 +551,7 @@ class _IngredientEditor extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: row.name,
+              onChanged: (_) => onChanged?.call(),
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(labelText: l10n.editorIngredientName),
             ),
@@ -635,56 +620,73 @@ class _StepEditor extends StatelessWidget {
                 decoration: InputDecoration(labelText: l10n.editorStepText),
               ),
               const SizedBox(height: Tokens.s),
-              SegmentedButton<_StepKind>(
-                segments: [
-                  ButtonSegment(
-                    value: _StepKind.text,
-                    label: Text(l10n.editorStepKindText),
-                  ),
-                  ButtonSegment(
-                    value: _StepKind.weigh,
-                    icon: const Icon(Icons.scale_rounded),
-                    label: Text(l10n.editorStepKindWeigh),
-                  ),
-                  ButtonSegment(
-                    value: _StepKind.machine,
-                    icon: const Icon(Icons.blender_rounded),
-                    label: Text(l10n.editorStepKindMachine),
-                  ),
+              Text(
+                l10n.editorStepIngredients,
+                style: theme.textTheme.titleSmall,
+              ),
+              const SizedBox(height: Tokens.s),
+              for (final (i, ing) in row.ingredients.indexed)
+                _IngredientEditor(
+                  key: ObjectKey(ing),
+                  row: ing,
+                  onChanged: onChanged,
+                  onRemove: () {
+                    row.ingredients.removeAt(i).dispose();
+                    onChanged();
+                  },
+                ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () {
+                    row.ingredients.add(_IngredientRow());
+                    onChanged();
+                  },
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(l10n.editorAddIngredient),
+                ),
+              ),
+              const SizedBox(height: Tokens.s),
+              DropdownButtonFormField<Werkzeug?>(
+                isExpanded: true,
+                initialValue: row.tool,
+                decoration: InputDecoration(labelText: l10n.editorTool),
+                items: [
+                  DropdownMenuItem(value: null, child: Text(l10n.toolNone)),
+                  for (final w in Werkzeug.values)
+                    DropdownMenuItem(
+                      value: w,
+                      child: Row(
+                        children: [
+                          Icon(werkzeugIcon(w), size: 20),
+                          const SizedBox(width: Tokens.s),
+                          Flexible(
+                            child: Text(
+                              werkzeugName(l10n, w),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
-                selected: {row.kind},
-                onSelectionChanged: (v) {
-                  row.kind = v.first;
+                onChanged: (w) {
+                  row.tool = w;
                   onChanged();
                 },
               ),
-              if (row.kind == _StepKind.weigh) ...[
-                const SizedBox(height: Tokens.s),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: row.weighTarget,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: l10n.editorWeighTarget,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Tokens.s),
-                    SizedBox(
-                      width: 96,
-                      child: TextField(
-                        controller: row.weighUnit,
-                        decoration: InputDecoration(labelText: l10n.editorUnit),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              if (row.kind == _StepKind.machine) ..._machine(context),
+              const SizedBox(height: Tokens.s),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.blender_rounded),
+                title: Text(l10n.editorStepKindMachine),
+                value: row.hasMachine,
+                onChanged: (on) {
+                  row.hasMachine = on;
+                  onChanged();
+                },
+              ),
+              if (row.hasMachine) ..._machine(context),
             ],
           ),
         ),
