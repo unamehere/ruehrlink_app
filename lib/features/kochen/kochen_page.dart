@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
+import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
 import '../../ui/illustrations.dart';
@@ -41,6 +43,7 @@ class KochenPage extends ConsumerWidget {
                   HintCard(icon: Icons.science_outlined, text: l10n.demoBanner),
                   const SizedBox(height: Tokens.m),
                 ],
+                const _FirmwareHint(),
                 const _StatusLine(),
                 const SizedBox(height: Tokens.l),
                 const _SequencePanel(),
@@ -48,6 +51,38 @@ class KochenPage extends ConsumerWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Brücke älter als die Firmware der App → Update anbieten; neuer → App aktualisieren.
+class _FirmwareHint extends ConsumerWidget {
+  const _FirmwareHint();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final check = ref.watch(firmwareCheckProvider);
+    if (check == FirmwareCheck.current) return const SizedBox.shrink();
+    final older = check != FirmwareCheck.bridgeNewer;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Tokens.m),
+      child: GestureDetector(
+        onTap: older ? () => context.go('/mehr/update') : null,
+        child: HintCard(
+          icon: older
+              ? Icons.system_update_rounded
+              : Icons.info_outline_rounded,
+          text: switch (check) {
+            FirmwareCheck.bugfix => l10n.updateBugfixAvailable,
+            FirmwareCheck.bridgeNewer => l10n.updateAppOlder,
+            _ => l10n.updateAvailable,
+          },
+          detail: older ? l10n.updateTapHint : l10n.updateAppOlderDetail,
+          // Bugfix nur dezent, ein nötiges Update hervorgehoben.
+          emphasized: check == FirmwareCheck.bridgeOlder,
         ),
       ),
     );
