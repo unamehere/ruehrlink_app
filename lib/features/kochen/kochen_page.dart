@@ -17,6 +17,7 @@ import '../assistenten/assistenten_section.dart';
 import '../maschine/live_status_band.dart';
 import '../waage/scale_sheet.dart';
 import 'programs.dart';
+import 'schnellprogramme.dart';
 
 /// Start-Tab: Begrüßung, Statusband, laufendes Programm, Programme.
 /// Später: „Weiterkochen“, Lieblingsrezepte, Assistenten.
@@ -50,8 +51,9 @@ class KochenPage extends ConsumerWidget {
                 const SizedBox(height: Tokens.l),
                 const _ScaleEntry(),
                 const _SequencePanel(),
-                const AssistentenSection(),
                 const _ProgramSection(),
+                const SizedBox(height: Tokens.l),
+                const AssistentenSection(),
               ],
             ),
           ),
@@ -469,15 +471,18 @@ class _ProgramSection extends ConsumerWidget {
     children
       ..add(
         Text(
-          l10n.programsHint,
+          l10n.qpHint,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
       )
       ..add(const SizedBox(height: Tokens.m));
+    children.add(_ProgramGrid(programs: quickPrograms(caps, l10n), caps: caps));
     if (fromBridge.isNotEmpty) {
-      children.add(_ProgramGrid(programs: fromBridge, caps: caps));
+      children
+        ..add(const SizedBox(height: Tokens.m))
+        ..add(_ProgramGrid(programs: fromBridge, caps: caps));
     }
     final tests = testPrograms(caps, l10n);
     if (tests.isNotEmpty) {
@@ -533,15 +538,26 @@ class _ProgramTile extends ConsumerWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showProgram(context, ref),
+        onTap: () => _quickStart(context, ref),
         child: Padding(
           padding: const EdgeInsets.all(Tokens.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Illustration(
-                programIllustration(program.id, program.name),
-                size: 72,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Illustration(
+                    programIllustration(program.id, program.name),
+                    size: 72,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    tooltip: l10n.qpDetails,
+                    icon: const Icon(Icons.info_outline_rounded),
+                    onPressed: () => _showProgram(context, ref),
+                  ),
+                ],
               ),
               const SizedBox(height: Tokens.m),
               Text(
@@ -580,6 +596,20 @@ class _ProgramTile extends ConsumerWidget {
           )
         : l10n.programStepLine(speedText(context, caps, v.speed), time);
     return s.label.isEmpty ? line : '${s.label} – $line';
+  }
+
+  /// Ein Tipp: Werte senden. Gestartet wird ohnehin erst am Knopf der Maschine.
+  Future<void> _quickStart(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    if (ref.read(sequenceProvider).value?.active ?? false) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.programBusy)));
+      return;
+    }
+    final error = await ref
+        .read(sequenceControllerProvider)
+        .start(program, l10n);
+    messenger.showSnackBar(SnackBar(content: Text(error ?? l10n.qpStarted)));
   }
 
   Future<void> _showProgram(BuildContext context, WidgetRef ref) async {

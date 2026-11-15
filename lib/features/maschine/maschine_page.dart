@@ -261,21 +261,27 @@ class _SendFeedback extends StatelessWidget {
   }
 }
 
-/// „Schüssel einsetzen und Kopf schließen“, wenn die Maschine es meldet.
+/// Nur das nennen, was wirklich fehlt: Schüssel, Kopf oder beides (vorher immer kombiniert).
 class _BowlHint extends ConsumerWidget {
   const _BowlHint();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final status = ref.watch(applianceStatusProvider).value;
     if (status == null || !status.connected || status.readyToStart) {
       return const SizedBox.shrink();
     }
+    final text = switch ((status.bowlFitted, status.lidClosed)) {
+      (false, false) => l10n.checkBowlAndLid,
+      (false, true) => l10n.checkBowl,
+      _ => l10n.checkLid,
+    };
     return Padding(
       padding: const EdgeInsets.only(top: Tokens.m),
       child: HintCard(
         icon: Icons.warning_amber_rounded,
-        text: context.l10n.checkBowl,
+        text: text,
         emphasized: true,
       ),
     );

@@ -67,6 +67,14 @@ class _AssistentPageState extends ConsumerState<AssistentPage> {
             tooltip: l10n.asBack,
             onPressed: _zurueck,
           ),
+          actions: [
+            // Ein Tipp zurück zum Koch-Tab, egal bei welcher Frage
+            IconButton(
+              icon: const Icon(Icons.close_rounded),
+              tooltip: l10n.asClose,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(6),
             child: LinearProgressIndicator(
