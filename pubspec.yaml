@@ -3,7 +3,7 @@ description: "Rührlink – die App zur Rührlink. Strikt lokal im Heim-WLAN."
 publish_to: 'none'
 
 # Später: aus der Datei VERSION abgeleitet (App-Version = Firmware-Version).
-version: 0.3.0+15
+version: 0.3.1+16
 
 environment:
   sdk: ^3.14.0

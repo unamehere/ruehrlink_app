@@ -9,7 +9,10 @@ sealed class BridgeEvent {
     final d = readMap(json['d']);
     return switch (json['t']) {
       'status' => StatusEvent(ApplianceStatus.fromJson(d)),
-      'weight' => WeightEvent(readDouble(d['g'])),
+      'weight' => WeightEvent(
+        readDouble(d['g']),
+        gross: d['gross'] is num ? readDouble(d['gross']) : null,
+      ),
       'seq' => SequenceEvent(SequenceState.fromJson(d)),
       'ack' => AckEvent(cmd: readString(d['cmd']), ok: readBool(d['ok'])),
       'recipes' => RecipesChangedEvent(readInt(d['rev'])),
@@ -34,10 +37,16 @@ class StatusEvent extends BridgeEvent {
   final ApplianceStatus status;
 }
 
-/// Gewicht auf der Waage in Gramm (max. 10 Nachrichten/s).
+/// Gewicht auf der Waage in Gramm (max. 10 Nachrichten/s, mindestens eine pro Sekunde,
+/// solange die Waage läuft – siehe `POST /api/v1/scale/watch`).
 class WeightEvent extends BridgeEvent {
-  const WeightEvent(this.grams);
+  const WeightEvent(this.grams, {this.gross});
+
+  /// Netto nach Tara (Tara rechnet die Brücke, alle Apps sehen dasselbe).
   final double grams;
+
+  /// Rohwert der Maschine; `null` bei älterer Firmware.
+  final double? gross;
 }
 
 class SequenceEvent extends BridgeEvent {

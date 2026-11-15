@@ -40,6 +40,16 @@ abstract class BridgeApi {
   /// nicht erreichbar, das Ergebnis steht danach in [info] (`appliance.connected`).
   Future<void> onboardMachine();
 
+  /// `POST /api/v1/scale/watch` – Waage für [seconds] Sekunden liefern lassen. Solange die App
+  /// die Waage zeigt, alle ~10 s erneuern; danach schaltet die Brücke sie ab (spart RAM).
+  /// Werte kommen als [WeightEvent]. Ohne Waage → [BridgeException] `no_scale` (501),
+  /// Maschine nicht verbunden → `not_connected` (409).
+  Future<void> watchScale({int seconds = 30});
+
+  /// `POST /api/v1/scale/tare` – aktuelles Gewicht als Null setzen; liefert die Tara in Gramm.
+  /// Noch kein Messwert → [BridgeException] `no_weight` (409).
+  Future<double> tareScale();
+
   /// `POST /api/v1/pair` mit `{"name"}` – Kopplung anfragen, liefert die Anfrage-ID.
   /// Ein schon gekoppeltes Handy muss die Anfrage bestätigen.
   Future<String> requestPairing(String deviceName);

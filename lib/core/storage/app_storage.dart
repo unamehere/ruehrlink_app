@@ -48,6 +48,12 @@ class AppStorage {
   /// Großer Hinweis auf dem Bildschirm.
   bool get nudgeBigHint => _prefs.getBool(_kNudgeBigHint) ?? true;
   Future<void> setNudgeBigHint(bool on) => _prefs.setBool(_kNudgeBigHint, on);
+
+  static const _kScalePopup = 'scalePopup';
+
+  /// Waage im Koch-Tab automatisch zeigen, wenn der Kopf der Maschine hochgeklappt wird.
+  bool get scalePopup => _prefs.getBool(_kScalePopup) ?? true;
+  Future<void> setScalePopup(bool on) => _prefs.setBool(_kScalePopup, on);
 }
 
 /// Wird in `main.dart` mit der geladenen Instanz überschrieben.

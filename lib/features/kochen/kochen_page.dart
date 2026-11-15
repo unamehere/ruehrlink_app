@@ -14,6 +14,7 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/smooth_countdown.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../maschine/live_status_band.dart';
+import '../waage/scale_sheet.dart';
 import 'programs.dart';
 
 /// Start-Tab: Begrüßung, Statusband, laufendes Programm, Programme.
@@ -46,11 +47,42 @@ class KochenPage extends ConsumerWidget {
                 const _FirmwareHint(),
                 const _StatusLine(),
                 const SizedBox(height: Tokens.l),
+                const _ScaleEntry(),
                 const _SequencePanel(),
                 const _ProgramSection(),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Waage öffnen – nur wenn das Gerät eine hat und verbunden ist.
+class _ScaleEntry extends ConsumerWidget {
+  const _ScaleEntry();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final hasScale =
+        ref.watch(bridgeInfoProvider).value?.appliance?.caps?.hasScale ??
+        false;
+    final connected =
+        ref.watch(applianceStatusProvider).value?.connected ?? false;
+    if (!hasScale || !connected) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Tokens.l),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          minTileHeight: Tokens.bigButton,
+          leading: const Icon(Icons.scale_rounded, size: 32),
+          title: Text(l10n.scaleOpen),
+          subtitle: Text(l10n.scaleOpenDetail),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () => showScaleSheet(context),
         ),
       ),
     );

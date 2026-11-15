@@ -12,6 +12,7 @@ import 'core/api/bridge_providers.dart';
 import 'features/kochen/kochen_page.dart';
 import 'features/kochen/programs.dart';
 import 'features/kochen/sequence_nudge.dart';
+import 'features/waage/scale_sheet.dart';
 import 'features/maschine/maschine_page.dart';
 import 'features/mehr/update_page.dart';
 import 'features/mehr/mehr_page.dart';
@@ -101,7 +102,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => PairRequestWatcher(
-          child: SequenceNudgeWatcher(child: AppShell(shell: shell)),
+          child: SequenceNudgeWatcher(
+            child: ScalePopupWatcher(
+              shell: shell,
+              child: AppShell(shell: shell),
+            ),
+          ),
         ),
         branches: [
           StatefulShellBranch(
