@@ -151,12 +151,14 @@ class _StatusLineState extends State<_StatusLine> {
   );
 }
 
-class _Greeting extends StatelessWidget {
+class _Greeting extends ConsumerWidget {
   const _Greeting();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final hasScale =
+        ref.watch(bridgeInfoProvider).value?.readyCaps?.hasScale ?? false;
     final dark = theme.brightness == Brightness.dark;
     return Row(
       children: [
@@ -186,6 +188,13 @@ class _Greeting extends StatelessWidget {
             ],
           ),
         ),
+        // Waage wie im Maschinen-Tab oben rechts
+        if (hasScale)
+          IconButton(
+            tooltip: context.l10n.scaleOpen,
+            icon: const Icon(Icons.scale_rounded),
+            onPressed: () => showScaleSheet(context),
+          ),
       ],
     );
   }
