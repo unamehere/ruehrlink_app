@@ -229,7 +229,7 @@
   "nudgeAborted": "Programm abgebrochen",
   "updateTitle": "Rührlink-Firmware",
   "updateBridgeVersion": "Auf dem Rührlink",
-  "updateAppVersion": "In dieser App",
+  "updateAppVersion": "In der App enthalten",
   "updateBridgeVersionShort": "Version {version}",
   "@updateBridgeVersionShort": {"placeholders": {"version": {"type": "String"}}},
   "updateAvailable": "Update für deinen Rührlink",
