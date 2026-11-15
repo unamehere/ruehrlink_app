@@ -1,4 +1,4 @@
-package de.freikoch.freikoch
+package de.ruehrlink.app
 
 import io.flutter.embedding.android.FlutterActivity
 

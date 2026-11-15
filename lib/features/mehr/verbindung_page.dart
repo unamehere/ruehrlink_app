@@ -296,5 +296,5 @@ Future<String> deviceName() async {
         break;
     }
   } catch (_) {}
-  return 'Freikoch-App';
+  return 'Rührlink-App';
 }

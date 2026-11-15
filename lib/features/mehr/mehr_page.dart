@@ -91,14 +91,14 @@ class MehrPage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right_rounded, size: 32),
                 onTap: () => showLicensePage(
                   context: context,
-                  applicationName: 'Freikoch',
+                  applicationName: 'Rührlink',
                   applicationVersion: appVersion,
                 ),
               ),
             ),
             const SizedBox(height: Tokens.l),
             Text(
-              'Freikoch App $appVersion',
+              'Rührlink App $appVersion',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

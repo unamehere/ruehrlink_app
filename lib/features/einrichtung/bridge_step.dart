@@ -109,7 +109,7 @@ class _BridgeStepState extends ConsumerState<BridgeStep> {
     _timeout = Timer(BridgeStep.searchTimeout, () {
       if (_phase == _Phase.searching && _found.isEmpty) {
         _stopSearch();
-        _log.add('Keine Brücke nach ${BridgeStep.searchTimeout.inSeconds} s');
+        _log.add('Kein Rührlink nach ${BridgeStep.searchTimeout.inSeconds} s');
         _fail(l10n.setupBridgeNotFound);
       }
     });

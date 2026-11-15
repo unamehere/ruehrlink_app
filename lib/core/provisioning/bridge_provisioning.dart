@@ -9,13 +9,13 @@ import 'ble_bridge_provisioning.dart';
 import 'diag_log.dart';
 
 /// Einrichtung einer Brücke per Bluetooth (ESP-IDF protocomm, Security 2).
-/// Ablauf siehe `freikoch_esp/docs/architektur.md`, „Einrichtung per Bluetooth“:
+/// Ablauf siehe `ruehrlink_esp/docs/architektur.md`, „Einrichtung per Bluetooth“:
 ///
-/// 1. [scan] findet Brücken im Einrichtungsmodus (`Freikoch-XXXX`).
+/// 1. [scan] findet Brücken im Einrichtungsmodus (`Ruehrlink-XXXX`).
 /// 2. [connect] öffnet mit dem Code vom QR-Etikett eine verschlüsselte Sitzung.
-/// 3. [info] (`fk-info`): Ist das Heim-WLAN schon verbunden, entfällt 4.
-/// 4. [scanWifi] (`fk-scan`) und [joinWifi] (`fk-wifi`, dann `fk-info` abfragen).
-/// 5. [finish] holt den Token (`fk-token`) und liefert das Ziel im WLAN.
+/// 3. [info] (`rl-info`): Ist das Heim-WLAN schon verbunden, entfällt 4.
+/// 4. [scanWifi] (`rl-scan`) und [joinWifi] (`rl-wifi`, dann `rl-info` abfragen).
+/// 5. [finish] holt den Token (`rl-token`) und liefert das Ziel im WLAN.
 abstract class BridgeProvisioning {
   Stream<List<ProvisionableBridge>> scan();
 
@@ -38,12 +38,12 @@ abstract class BridgeProvisioning {
 
 /// Inhalt des QR-Codes auf dem Etikett – oder nur der abgetippte Code.
 class SetupCode {
-  const SetupCode({required this.pop, this.name, this.username = 'freikoch'});
+  const SetupCode({required this.pop, this.name, this.username = 'ruehrlink'});
 
   /// Einrichtungs-Code (Proof of Possession).
   final String pop;
 
-  /// Bluetooth-Name, z. B. `Freikoch-98C0` (nur aus dem QR-Code bekannt).
+  /// Bluetooth-Name, z. B. `Ruehrlink-98C0` (nur aus dem QR-Code bekannt).
   final String? name;
   final String username;
 
@@ -61,7 +61,7 @@ class SetupCode {
         return SetupCode(
           pop: pop,
           name: name.isEmpty ? null : name,
-          username: readString(j['username'], 'freikoch'),
+          username: readString(j['username'], 'ruehrlink'),
         );
       } on FormatException {
         return null;
@@ -79,11 +79,11 @@ class ProvisionableBridge {
   /// Plattform-ID des Bluetooth-Geräts.
   final String id;
 
-  /// Bluetooth-Name, z. B. `Freikoch-98C0`.
+  /// Bluetooth-Name, z. B. `Ruehrlink-98C0`.
   final String name;
 }
 
-/// Antwort von `fk-info`.
+/// Antwort von `rl-info`.
 class BridgeSetupInfo {
   const BridgeSetupInfo({
     required this.id,
@@ -100,7 +100,7 @@ class BridgeSetupInfo {
   final String name;
   final String fw;
 
-  /// mDNS-Name, z. B. `freikoch-98c0.local`.
+  /// mDNS-Name, z. B. `ruehrlink-98c0.local`.
   final String host;
   final bool homeConfigured;
   final bool homeConnected;
@@ -131,7 +131,7 @@ class WifiNetwork {
     required this.secured,
   });
 
-  /// Aus `fk-scan`: `{"ssid","rssi","secure"}`.
+  /// Aus `rl-scan`: `{"ssid","rssi","secure"}`.
   factory WifiNetwork.fromJson(Json j) {
     final rssi = readInt(j['rssi'], -100);
     return WifiNetwork(

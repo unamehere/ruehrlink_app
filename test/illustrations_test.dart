@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/ui/illustrations.dart';
+import 'package:ruehrlink/ui/illustrations.dart';
 
 void main() {
   test('Zutaten finden ihr Bild, kurze Stichwörter nur als ganzes Wort', () {

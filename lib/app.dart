@@ -22,14 +22,14 @@ import 'l10n/l10n.dart';
 import 'ui/layout.dart';
 import 'ui/theme.dart';
 
-class FreikochApp extends ConsumerStatefulWidget {
-  const FreikochApp({super.key});
+class RuehrlinkApp extends ConsumerStatefulWidget {
+  const RuehrlinkApp({super.key});
 
   @override
-  ConsumerState<FreikochApp> createState() => _FreikochAppState();
+  ConsumerState<RuehrlinkApp> createState() => _RuehrlinkAppState();
 }
 
-class _FreikochAppState extends ConsumerState<FreikochApp> {
+class _RuehrlinkAppState extends ConsumerState<RuehrlinkApp> {
   // Zurück im Vordergrund (z. B. nach dem Entsperren): sofort neu verbinden und den Stand holen,
   // statt auf das Zeitlimit der eingeschlafenen Verbindung zu warten (Fehlerliste F5).
   late final _lifecycle = AppLifecycleListener(

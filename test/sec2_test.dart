@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/core/provisioning/sec2/protobuf.dart';
-import 'package:freikoch/core/provisioning/sec2/sec2_session.dart';
-import 'package:freikoch/core/provisioning/sec2/srp6a.dart';
+import 'package:ruehrlink/core/provisioning/sec2/protobuf.dart';
+import 'package:ruehrlink/core/provisioning/sec2/sec2_session.dart';
+import 'package:ruehrlink/core/provisioning/sec2/srp6a.dart';
 import 'package:pointycastle/export.dart';
 
 BigInt _h(String hex) =>
@@ -73,7 +73,7 @@ void main() {
   test(
     'Handshake gegen eine nachgebaute Brücke (3072 Bit, SHA-512, esp_srp.c)',
     () {
-      const user = 'freikoch', pop = 'abcde23456';
+      const user = 'ruehrlink', pop = 'abcde23456';
       final group = SrpGroup.rfc5054x3072;
       final n = group.n, g = group.g, len = group.byteLength;
       Uint8List pad(BigInt v) {

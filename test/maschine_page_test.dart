@@ -1,8 +1,8 @@
 // Maschinen-Bildschirm gegen die simulierte Brücke, in Handy- und Tablet-Größe.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/app.dart';
-import 'package:freikoch/core/storage/app_storage.dart';
+import 'package:ruehrlink/app.dart';
+import 'package:ruehrlink/core/storage/app_storage.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,7 +17,7 @@ Future<void> _openMaschine(WidgetTester tester, Size size) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [appStorageProvider.overrideWithValue(AppStorage(prefs))],
-      child: const FreikochApp(),
+      child: const RuehrlinkApp(),
     ),
   );
   await tester.pump();
@@ -44,7 +44,7 @@ void main() {
       expect(find.text('Stopp'), findsOneWidget);
       // Auf schmalen Bildschirmen liegen die Regler weiter unten.
       await tester.scrollUntilVisible(
-        find.text('An Maschine senden'),
+        find.text('Senden'),
         200,
         scrollable: find.byType(Scrollable).last,
       );
@@ -71,7 +71,7 @@ void main() {
     await tester.pump();
     expect(find.text('max'), findsNWidgets(2)); // Skala + großes Label
     expect(find.text('Geschwindigkeit'), findsWidgets);
-    await tester.tap(find.text('An Maschine senden'));
+    await tester.tap(find.text('Senden'));
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('Die Maschine hat die Werte übernommen.'), findsOneWidget);
     await _close(tester);
@@ -89,7 +89,7 @@ void main() {
     expect(find.textContaining('Bitte eine Zeit bis'), findsOneWidget);
     FilledButton send() => tester.widget<FilledButton>(
       find.ancestor(
-        of: find.text('An Maschine senden'),
+        of: find.text('Senden'),
         matching: find.byType(FilledButton),
       ),
     );

@@ -14,7 +14,7 @@ import 'bridge_api.dart';
 /// Echte Brücke im Heim-WLAN: HTTP für Abfragen und Befehle, WebSocket für Live-Daten.
 ///
 /// Im MVP unverschlüsselt (HTTP + Token) – TLS mit Zertifikats-Pinning folgt
-/// nach dem MVP (siehe `freikoch_esp/docs/architektur.md`).
+/// nach dem MVP (siehe `ruehrlink_esp/docs/architektur.md`).
 class HttpBridgeApi implements BridgeApi {
   HttpBridgeApi(this.target, {http.Client? client})
     : _client = client ?? http.Client();

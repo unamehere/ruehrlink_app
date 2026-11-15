@@ -1,8 +1,8 @@
 // Grenzwerte kommen aus den caps – auch für ein anderes Gerät.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/core/models/models.dart';
-import 'package:freikoch/features/maschine/regler.dart';
-import 'package:freikoch/ui/input.dart';
+import 'package:ruehrlink/core/models/models.dart';
+import 'package:ruehrlink/features/maschine/regler.dart';
+import 'package:ruehrlink/ui/input.dart';
 
 const caps = ApplianceCaps(
   model: 'test',

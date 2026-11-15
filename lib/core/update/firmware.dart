@@ -8,7 +8,7 @@ import '../models/json.dart';
 import '../models/models.dart';
 
 /// Die Firmware, die diese App mitbringt (`assets/firmware/manifest.json`, erzeugt von
-/// `freikoch_esp/tools/firmware_sign.py`). Ablauf: `freikoch_esp/docs/updates.md`.
+/// `ruehrlink_esp/tools/firmware_sign.py`). Ablauf: `ruehrlink_esp/docs/updates.md`.
 class FirmwareManifest {
   const FirmwareManifest({
     required this.version,
@@ -105,7 +105,7 @@ final firmwareCheckProvider = Provider<FirmwareCheck>((ref) {
   if (info == null || bundled == null || info.fw.isEmpty) {
     return FirmwareCheck.current;
   }
-  // Regeln: freikoch_esp/docs/updates.md – MAJOR.MINOR muss passen, der Patch nicht.
+  // Regeln: ruehrlink_esp/docs/updates.md – MAJOR.MINOR muss passen, der Patch nicht.
   return switch (compareVersions(info.fw, bundled.version, parts: 2)) {
     < 0 => FirmwareCheck.bridgeOlder,
     > 0 => FirmwareCheck.bridgeNewer,

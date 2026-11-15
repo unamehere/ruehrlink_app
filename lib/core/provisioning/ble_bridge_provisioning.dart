@@ -23,13 +23,13 @@ class BleBridgeProvisioning implements BridgeProvisioning {
   final DiagLog log;
   final BridgeDiscovery discovery;
 
-  static const namePrefix = 'Freikoch-';
+  static const namePrefix = 'Ruehrlink-';
 
   /// Standard-Dienst von ESP-IDF `network_provisioning` (Fallback, falls die
   /// Deskriptoren nicht lesbar sind, wird darüber gesucht).
   static const defaultServiceUuid = '1775244d-6b43-439b-877c-060f2d9bed07';
   static const _userDescription = '2901';
-  static const _required = ['prov-session', 'fk-info', 'fk-token'];
+  static const _required = ['prov-session', 'rl-info', 'rl-token'];
 
   String? _deviceId;
   BridgeSetupInfo? _info;
@@ -278,10 +278,10 @@ class BleBridgeProvisioning implements BridgeProvisioning {
 
   @override
   Future<BridgeSetupInfo> info() async {
-    final info = BridgeSetupInfo.fromJson(await _call('fk-info'));
+    final info = BridgeSetupInfo.fromJson(await _call('rl-info'));
     _info = info;
     log.add(
-      'fk-info: ${info.id} fw ${info.fw}, WLAN '
+      'rl-info: ${info.id} fw ${info.fw}, WLAN '
       '${info.homeConnected ? 'verbunden' : (info.homeConfigured ? 'eingerichtet' : 'leer')}'
       '${info.homeError == null ? '' : ' (Fehler ${info.homeError})'}',
     );
@@ -293,11 +293,11 @@ class BleBridgeProvisioning implements BridgeProvisioning {
     // Die Brücke sucht im Hintergrund (eine blockierende Suche würde Bluetooth
     // stören): erster Aufruf startet die Suche, danach nachfragen, bis
     // `scanning` false ist – max. 15 s.
-    log.add('fk-scan…');
-    var j = await _call('fk-scan', const {'refresh': true});
+    log.add('rl-scan…');
+    var j = await _call('rl-scan', const {'refresh': true});
     for (var i = 0; i < 15 && j['scanning'] == true; i++) {
       await Future<void>.delayed(const Duration(seconds: 1));
-      j = await _call('fk-scan');
+      j = await _call('rl-scan');
     }
     // Seitenweise abholen: eine BLE-Antwort darf max. 512 Byte haben.
     final list = <WifiNetwork>[
@@ -305,28 +305,28 @@ class BleBridgeProvisioning implements BridgeProvisioning {
     ];
     final total = (j['total'] as num?)?.toInt() ?? list.length;
     while (list.length < total) {
-      final page = await _call('fk-scan', {'start': list.length});
+      final page = await _call('rl-scan', {'start': list.length});
       final more = readList(page['networks'], WifiNetwork.fromJson);
       if (more.isEmpty) break;
       list.addAll(more);
     }
     log.add(
-      'fk-scan: ${list.length} Netze${j['scanning'] == true ? ' (Suche läuft noch)' : ''}',
+      'rl-scan: ${list.length} Netze${j['scanning'] == true ? ' (Suche läuft noch)' : ''}',
     );
     return list;
   }
 
   @override
   Future<void> joinWifi(String ssid, String password) async {
-    log.add('fk-wifi: „$ssid“');
-    final r = await _call('fk-wifi', {'ssid': ssid, 'password': password});
+    log.add('rl-wifi: „$ssid“');
+    final r = await _call('rl-wifi', {'ssid': ssid, 'password': password});
     if (!readBool(r['ok'])) {
       throw const ProvisioningException(
         ProvisioningError.wifiFailed,
-        'fk-wifi ok=false',
+        'rl-wifi ok=false',
       );
     }
-    // Ergebnis per fk-info abfragen (alle 1,5 s, max. 30 s).
+    // Ergebnis per rl-info abfragen (alle 1,5 s, max. 30 s).
     for (var i = 0; i < 20; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 1500));
       final info = await this.info();
@@ -352,11 +352,11 @@ class BleBridgeProvisioning implements BridgeProvisioning {
   @override
   Future<BridgeTarget> finish() async {
     final info = _info ?? await this.info();
-    final token = readString((await _call('fk-token'))['token']);
+    final token = readString((await _call('rl-token'))['token']);
     if (token.isEmpty) {
       throw const ProvisioningException(
         ProvisioningError.connectionLost,
-        'fk-token leer',
+        'rl-token leer',
       );
     }
     log.add('Token erhalten');
