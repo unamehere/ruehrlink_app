@@ -105,7 +105,7 @@ class Sec2Session {
       throw const Sec2Exception('Antwort 1 unvollständig');
     }
     if (!_srp.verifyServerProof(proof)) {
-      throw const Sec2Exception('Beweis der Brücke ungültig');
+      throw const Sec2Exception('Beweis des Rührlinks ungültig');
     }
     _key = Uint8List.fromList(_srp.sessionKey.sublist(0, 32));
     _nonce = Uint8List.fromList(nonce);

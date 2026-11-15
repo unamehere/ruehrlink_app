@@ -14,9 +14,9 @@ import 'bridge_step.dart' show setupErrorText;
 import 'setup_controller.dart';
 import 'setup_step_layout.dart';
 
-/// Schritt 3: Heim-WLAN. Ist die Brücke schon im WLAN (`fk-info`), entfällt die
-/// Auswahl. Sonst `fk-scan` → Netz wählen → Passwort → `fk-wifi`. Danach
-/// `fk-token` und die Brücke im WLAN suchen – die App ist gekoppelt.
+/// Schritt 3: Heim-WLAN. Ist die Brücke schon im WLAN (`rl-info`), entfällt die
+/// Auswahl. Sonst `rl-scan` → Netz wählen → Passwort → `rl-wifi`. Danach
+/// `rl-token` und die Brücke im WLAN suchen – die App ist gekoppelt.
 class WifiStep extends ConsumerStatefulWidget {
   const WifiStep({super.key});
 
@@ -127,7 +127,7 @@ class _WifiStepState extends ConsumerState<WifiStep> {
 
     final Widget body;
     if (_loadingInfo) {
-      body = SetupProgress(l10n.setupBridgeConnecting('Freikoch'));
+      body = SetupProgress(l10n.setupBridgeConnecting('Rührlink'));
     } else if (already != null) {
       body = HintCard(
         icon: Icons.wifi_rounded,

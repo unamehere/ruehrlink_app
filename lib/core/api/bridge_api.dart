@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import '../models/models.dart';
 
-/// Die Schnittstelle zur Freikoch Brücke nach `freikoch_esp/docs/api.md`.
+/// Die Schnittstelle zum Rührlink nach `ruehrlink_esp/docs/api.md`.
 ///
 /// Die Brücke ist die Quelle der Wahrheit; die App fragt ab, hört auf Ereignisse
 /// und sendet Befehle. Neue Endpunkte kommen hier hinzu, sobald ein Feature sie

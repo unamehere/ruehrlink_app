@@ -182,7 +182,7 @@ class _Controls extends ConsumerWidget {
   }
 }
 
-/// „An Maschine senden“ – unten neben Stopp. Gesperrt ohne Gerät oder solange ein Feld ungültig ist.
+/// „Senden“ – unten neben Stopp. Gesperrt ohne Gerät oder solange ein Feld ungültig ist.
 class _SendButton extends ConsumerWidget {
   const _SendButton();
 

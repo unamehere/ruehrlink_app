@@ -30,6 +30,6 @@ Thumbs.db
 # Von `flutter gen-l10n` erzeugt (läuft automatisch bei `flutter pub get`)
 lib/l10n/app_localizations*.dart
 
-# Firmware der Brücke: wird beim Release aus freikoch_esp erzeugt (tools/firmware_sign.py)
+# Firmware der Brücke: wird beim Release aus ruehrlink_esp erzeugt (tools/firmware_sign.py)
 assets/firmware/*
 !assets/firmware/.gitkeep

@@ -6,7 +6,7 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// Vorerst Platzhalter aus Microsoft Fluent Emoji 3D (MIT, siehe
 /// `assets/illustrations/LICENSE-fluentui-emoji.txt` und `docs/illustrationen.md`).
-/// Später ersetzt ein eigener Satz im Freikoch-Stil die Dateien – die Namen hier bleiben.
+/// Später ersetzt ein eigener Satz im Rührlink-Stil die Dateien – die Namen hier bleiben.
 abstract final class Illustrations {
   static const _dir = 'assets/illustrations';
 

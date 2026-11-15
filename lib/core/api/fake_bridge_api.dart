@@ -85,7 +85,7 @@ class FakeBridgeApi implements BridgeApi {
     await _wait();
     return BridgeInfo(
       id: 'DEMO',
-      name: 'Freikoch Brücke (Demo)',
+      name: 'Rührlink (Demo)',
       fw: '0.1.0',
       api: 1,
       storage: const StorageInfo(

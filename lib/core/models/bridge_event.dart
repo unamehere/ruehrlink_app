@@ -98,7 +98,7 @@ enum SequenceRunState {
 }
 
 /// Fortschritt eines Programms auf der Brücke (intern „sequence“), siehe
-/// `GET /api/v1/sequence` und WS `seq` in `freikoch_esp/docs/api.md`.
+/// `GET /api/v1/sequence` und WS `seq` in `ruehrlink_esp/docs/api.md`.
 class SequenceState {
   const SequenceState({
     this.programId,

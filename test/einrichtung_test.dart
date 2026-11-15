@@ -1,10 +1,10 @@
 // Einrichtung einmal komplett gegen den Provisioning-Fake durchlaufen.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/app.dart';
-import 'package:freikoch/core/provisioning/bridge_provisioning.dart';
-import 'package:freikoch/core/provisioning/fake_bridge_provisioning.dart';
-import 'package:freikoch/core/storage/app_storage.dart';
+import 'package:ruehrlink/app.dart';
+import 'package:ruehrlink/core/provisioning/bridge_provisioning.dart';
+import 'package:ruehrlink/core/provisioning/fake_bridge_provisioning.dart';
+import 'package:ruehrlink/core/storage/app_storage.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,7 +24,7 @@ void main() {
             FakeBridgeProvisioning(),
           ),
         ],
-        child: const FreikochApp(),
+        child: const RuehrlinkApp(),
       ),
     );
     await tester.pump();
@@ -37,15 +37,15 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300)); // Übergang
     }
 
-    expect(find.text('Willkommen bei Freikoch'), findsOneWidget);
+    expect(find.text('Willkommen bei Rührlink'), findsOneWidget);
     await tapAndWait(find.text("Los geht's"), 2000);
 
     // Code vom Etikett (hier der QR-Inhalt abgetippt) → Brücke wird per
     // Bluetooth (Fake) gefunden und automatisch verbunden.
     await tester.enterText(
       find.byType(TextField),
-      '{"ver":"v1","name":"Freikoch-98C0","pop":"abcde23456",'
-      '"transport":"ble","security":2,"username":"freikoch"}',
+      '{"ver":"v1","name":"Ruehrlink-98C0","pop":"abcde23456",'
+      '"transport":"ble","security":2,"username":"ruehrlink"}',
     );
     await tapAndWait(find.text('Weiter'), 3000);
 

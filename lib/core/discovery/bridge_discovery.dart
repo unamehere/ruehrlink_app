@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Eine im Heim-WLAN gefundene Brücke (mDNS `_freikoch._tcp`).
+/// Eine im Heim-WLAN gefundene Brücke (mDNS `_ruehrlink._tcp`).
 class DiscoveredBridge {
   const DiscoveredBridge({
     required this.id,
@@ -31,7 +31,7 @@ abstract class BridgeDiscovery {
 
 /// mDNS über `bonsoir` (Android NSD, Apple Bonjour).
 class BonsoirBridgeDiscovery implements BridgeDiscovery {
-  static const serviceType = '_freikoch._tcp';
+  static const serviceType = '_ruehrlink._tcp';
 
   @override
   Stream<List<DiscoveredBridge>> scan() {

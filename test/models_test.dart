@@ -1,8 +1,8 @@
-// JSON-Modelle gegen die Beispiele aus freikoch_esp/docs/api.md.
+// JSON-Modelle gegen die Beispiele aus ruehrlink_esp/docs/api.md.
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/core/models/models.dart';
+import 'package:ruehrlink/core/models/models.dart';
 
 Json _json(String s) => jsonDecode(s) as Json;
 
@@ -11,7 +11,7 @@ void main() {
     const raw = '''
 {
   "id": "98C0",
-  "name": "Freikoch Brücke",
+  "name": "Rührlink",
   "fw": "0.1.0",
   "api": 1,
   "storage": {"backend": "sd", "totalKB": 30000000, "freeKB": 29000000},
