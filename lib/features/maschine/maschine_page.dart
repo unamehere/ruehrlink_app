@@ -13,6 +13,7 @@ import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/widgets/value_dial.dart';
+import '../assistenten/temperatur_schnellwahl.dart';
 import 'live_status_band.dart';
 import 'machine_controller.dart';
 import 'regler.dart';
@@ -138,6 +139,8 @@ class _Controls extends ConsumerWidget {
             onValidityChanged: (ok) => invalid.report('temp', valid: ok),
           ),
         ),
+        const SizedBox(height: Tokens.s),
+        TemperaturSchnellwahl(caps: caps),
         const SizedBox(height: Tokens.m),
         ValueDial(
           label: l10n.dialTime,

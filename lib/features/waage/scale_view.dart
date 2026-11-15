@@ -40,10 +40,7 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
   void initState() {
     super.initState();
     // Neu zeichnen, damit „verbindet …“ erscheint, wenn keine Werte mehr kommen.
-    _tick = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => setState(() {}),
-    );
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
   }
 
   @override
@@ -142,7 +139,9 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
                       : scaleProgress(net ?? 0, target),
                   strokeWidth: 16,
                   strokeCap: StrokeCap.round,
-                  color: target == null ? scheme.surfaceContainerHighest : color,
+                  color: target == null
+                      ? scheme.surfaceContainerHighest
+                      : color,
                   backgroundColor: scheme.surfaceContainerHighest,
                 ),
                 Center(

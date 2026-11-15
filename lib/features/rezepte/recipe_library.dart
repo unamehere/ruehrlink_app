@@ -9,7 +9,6 @@ import 'package:pointycastle/digests/sha256.dart';
 import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
-import '../../core/storage/app_storage.dart';
 import '../../core/storage/recipe_store.dart';
 
 /// Rezeptbibliothek, wie die App sie gerade kennt: lokale Kopie, abgeglichen mit der Brücke.
@@ -267,21 +266,4 @@ String ingredientText(Ingredient i, double factor) {
     if (amount.isNotEmpty && i.unit.isNotEmpty) i.unit,
     i.name,
   ].join(' ');
-}
-
-// ---------------------------------------------------------------------------
-// Einstellung: Sicherheitshinweise in Rezepten (dezent, abschaltbar)
-
-final safetyHintsProvider = NotifierProvider<SafetyHints, bool>(
-  SafetyHints.new,
-);
-
-class SafetyHints extends Notifier<bool> {
-  @override
-  bool build() => ref.read(appStorageProvider).safetyHints;
-
-  Future<void> set(bool on) async {
-    state = on;
-    await ref.read(appStorageProvider).setSafetyHints(on);
-  }
 }

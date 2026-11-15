@@ -1,3 +1,5 @@
+import '../assistenten/sicherheit.dart';
+
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -422,7 +424,9 @@ class _MachinePanel extends ConsumerWidget {
         v != null &&
         v.temperature > 0 &&
         v.temperature >= (caps?.hotTemp ?? 60);
-    final showHot = hot && ref.watch(safetyHintsProvider);
+    final showHot =
+        hot &&
+        ref.watch(sicherheitsHinweiseProvider) != SicherheitsHinweise.aus;
 
     final values = v == null
         ? _programInfo(context, ref, m.programId!)

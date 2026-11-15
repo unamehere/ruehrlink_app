@@ -13,6 +13,7 @@ import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/smooth_countdown.dart';
 import '../../ui/widgets/speed_slider.dart';
+import '../assistenten/assistenten_section.dart';
 import '../maschine/live_status_band.dart';
 import '../waage/scale_sheet.dart';
 import 'programs.dart';
@@ -49,6 +50,7 @@ class KochenPage extends ConsumerWidget {
                 const SizedBox(height: Tokens.l),
                 const _ScaleEntry(),
                 const _SequencePanel(),
+                const AssistentenSection(),
                 const _ProgramSection(),
               ],
             ),
@@ -67,8 +69,7 @@ class _ScaleEntry extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final hasScale =
-        ref.watch(bridgeInfoProvider).value?.appliance?.caps?.hasScale ??
-        false;
+        ref.watch(bridgeInfoProvider).value?.appliance?.caps?.hasScale ?? false;
     final connected =
         ref.watch(applianceStatusProvider).value?.connected ?? false;
     if (!hasScale || !connected) return const SizedBox.shrink();
@@ -189,9 +190,10 @@ class _Greeting extends StatelessWidget {
 }
 
 /// Bild zu einem Programm: passend zum Namen, sonst Schüssel bzw. Reagenzglas für Tests.
-String programIllustration(String id, String name) => id.startsWith('test')
-    ? Illustrations.test
-    : Illustrations.forName(name) ?? Illustrations.bowl;
+/// (Inline-Programme wie die der Assistenten haben auf der Brücke keine id.)
+String programIllustration(String id, String name) =>
+    Illustrations.forName(name) ??
+    (id.startsWith('test') ? Illustrations.test : Illustrations.bowl);
 
 // ---------------------------------------------------------------------------
 // Laufendes Programm

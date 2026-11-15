@@ -57,9 +57,9 @@ class AppStorage {
 
   static const _kSafetyHints = 'safetyHints';
 
-  /// Kurze Sicherheitshinweise in Rezepten (z. B. „heiß“) – dezent, abschaltbar.
-  bool get safetyHints => _prefs.getBool(_kSafetyHints) ?? true;
-  Future<void> setSafetyHints(bool on) => _prefs.setBool(_kSafetyHints, on);
+  /// Sicherheitshinweise: 0 alle, 1 nur kritische, 2 aus.
+  int get safetyHints => _prefs.getInt(_kSafetyHints) ?? 0;
+  Future<void> setSafetyHints(int v) => _prefs.setInt(_kSafetyHints, v);
 }
 
 /// Wird in `main.dart` mit der geladenen Instanz überschrieben.
