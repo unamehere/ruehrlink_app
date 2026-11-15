@@ -265,6 +265,59 @@ class FakeBridgeApi implements BridgeApi {
   }
 
   /// Kopplung wie bei der echten Brücke: Gerät kurz weg, „sucht“, „gesendet“, verbunden.
+  // --- Waage (Demo): Es wird langsam etwas eingefüllt, dann Pause, dann die nächste Zutat. -------
+  Timer? _scaleTimer;
+  DateTime _scaleUntil = DateTime.fromMillisecondsSinceEpoch(0);
+  double _scaleGross = 0;
+  double _scaleTare = 0;
+  int _scaleTick = 0;
+
+  /// Simulierter Rohwert der Waage (für Tests).
+  double get scaleGross => _scaleGross;
+
+  @override
+  Future<void> watchScale({int seconds = 30}) async {
+    await _wait();
+    if (!_status.connected) {
+      throw const BridgeException(
+        BridgeErrorKind.rejected,
+        409,
+        'not_connected',
+      );
+    }
+    final until = DateTime.now().add(Duration(seconds: seconds));
+    if (until.isAfter(_scaleUntil)) _scaleUntil = until;
+    _scaleTimer ??= Timer.periodic(
+      const Duration(milliseconds: 100),
+      (_) => _scaleStep(),
+    );
+  }
+
+  void _scaleStep() {
+    if (DateTime.now().isAfter(_scaleUntil)) {
+      _scaleTimer?.cancel();
+      _scaleTimer = null;
+      _scaleTare = 0;
+      return;
+    }
+    // 6 s einfüllen (≈ 40 g/s), 4 s Pause – wie jemand, der Mehl und Wasser einwiegt.
+    _scaleTick = (_scaleTick + 1) % 100;
+    if (_scaleTick < 60) _scaleGross += 4;
+    if (_scaleGross > 2500) _scaleGross = 0;
+    _emit(WeightEvent(_scaleGross - _scaleTare, gross: _scaleGross));
+  }
+
+  @override
+  Future<double> tareScale() async {
+    await _wait();
+    if (_scaleTimer == null) {
+      throw const BridgeException(BridgeErrorKind.rejected, 409, 'no_weight');
+    }
+    _scaleTare = _scaleGross;
+    _emit(WeightEvent(0, gross: _scaleGross));
+    return _scaleTare;
+  }
+
   @override
   Future<void> onboardMachine() async {
     await _wait();
@@ -392,6 +445,7 @@ class FakeBridgeApi implements BridgeApi {
     _knob?.cancel();
     _onboard?.cancel();
     _pairTimer?.cancel();
+    _scaleTimer?.cancel();
     unawaited(_events.close());
   }
 }

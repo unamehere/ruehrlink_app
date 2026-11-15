@@ -143,6 +143,14 @@ class HttpBridgeApi implements BridgeApi {
   Future<void> onboardMachine() => _send('POST', 'machine/onboard');
 
   @override
+  Future<void> watchScale({int seconds = 30}) =>
+      _send('POST', 'scale/watch', {'seconds': seconds});
+
+  @override
+  Future<double> tareScale() async =>
+      readDouble(_decode(await _send('POST', 'scale/tare'))['tare']);
+
+  @override
   Future<String> requestPairing(String deviceName) async {
     final response = await _send('POST', 'pair', {'name': deviceName});
     final id = _decode(response)['id'];
