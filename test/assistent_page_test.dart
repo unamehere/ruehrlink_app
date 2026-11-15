@@ -79,8 +79,10 @@ void main() {
       await tester.tap(find.text('Starten'));
       await tester.pump(const Duration(seconds: 1));
       await _pumpFrames(tester);
-      // zurück auf dem Kochen-Tab, Programm läuft
+      // zurück auf dem Kochen-Tab, Programm läuft (oben – Assistenten stehen unter den Programmen)
       expect(find.text('Zutaten'), findsNothing);
+      await tester.drag(find.byType(ListView).first, const Offset(0, 5000));
+      await _pumpFrames(tester);
       expect(find.textContaining('Brotteig Dinkel 630'), findsWidgets);
       await _close(tester);
     });
