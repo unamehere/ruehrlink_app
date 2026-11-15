@@ -14,9 +14,9 @@ void main() {
   });
 
   test('eingebaute Firmware: Manifest und Datei passen zusammen', () {
-    final manifest =
-        jsonDecode(File('assets/firmware/manifest.json').readAsStringSync())
-            as Map<String, dynamic>;
+    final manifest = jsonDecode(
+      File('assets/firmware/manifest.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
     final bin = File('assets/firmware/${manifest['file']}');
     expect(bin.existsSync(), isTrue);
     expect(bin.lengthSync(), manifest['size']);

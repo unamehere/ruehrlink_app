@@ -5,6 +5,7 @@ import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
 import '../../ui/illustrations.dart';
+import '../../ui/theme.dart';
 import '../../ui/widgets/speed_slider.dart';
 import 'recipe_library.dart';
 
@@ -98,4 +99,57 @@ String machineValues(
   return v.temperature > 0
       ? l10n.programStepLineHeat(speed, time, v.temperature)
       : l10n.programStepLine(speed, time);
+}
+
+/// F21: kleines Symbol, ob die Rezepte auf dem Stand des Rührlinks sind. [withText] schreibt es
+/// zusätzlich aus (Rezeptseite); sonst nur das Symbol mit Tooltip (Liste).
+class RecipeSyncBadge extends ConsumerWidget {
+  const RecipeSyncBadge({super.key, this.withText = false});
+
+  final bool withText;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final status = ref.watch(recipeLibraryProvider.select((s) => s.syncStatus));
+    final (icon, text, color) = switch (status) {
+      RecipeSyncStatus.synced => (
+        Icons.check_circle_outline_rounded,
+        l10n.recipeSyncSynced,
+        scheme.onSurfaceVariant,
+      ),
+      RecipeSyncStatus.syncing => (
+        Icons.sync_rounded,
+        l10n.recipeSyncSyncing,
+        scheme.onSurfaceVariant,
+      ),
+      RecipeSyncStatus.offline => (
+        Icons.sync_problem_rounded,
+        l10n.recipeSyncOffline,
+        scheme.error,
+      ),
+    };
+    final symbol = Icon(icon, size: 18, color: color);
+    if (!withText) {
+      return Tooltip(
+        message: text,
+        child: Semantics(label: text, child: symbol),
+      );
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        symbol,
+        const SizedBox(width: Tokens.s / 2),
+        Flexible(
+          child: Text(
+            text,
+            style: theme.textTheme.bodySmall?.copyWith(color: color),
+          ),
+        ),
+      ],
+    );
+  }
 }

@@ -7,10 +7,10 @@ import '../../ui/theme.dart';
 import '../maschine/machine_controller.dart';
 import 'werte.dart';
 
-/// B5: Temperatur-Richtwerte als Schnellwahl im manuellen Modus („Anbraten 180 °C“).
-/// Setzt nur den Entwurf – gesendet wird wie immer mit „An Maschine senden“.
-class TemperaturSchnellwahl extends ConsumerWidget {
-  const TemperaturSchnellwahl({super.key, required this.caps});
+/// B5 / F19: Temperatur-Richtwerte („Anbraten 180 °C“) als kleiner Knopf im Temperatur-Regler,
+/// der ein Menü öffnet. Setzt nur den Entwurf – gesendet wird wie immer mit „An Maschine senden“.
+class TemperaturVorschlaege extends ConsumerWidget {
+  const TemperaturVorschlaege({super.key, required this.caps});
 
   final ApplianceCaps caps;
 
@@ -24,26 +24,43 @@ class TemperaturSchnellwahl extends ConsumerWidget {
         if (caps.clampTemperature(r.grad) == r.grad) r,
     ];
     if (werte.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: Tokens.s,
-      runSpacing: Tokens.s,
-      children: [
+    return PopupMenuButton<int>(
+      tooltip: l10n.tempPresetsTooltip,
+      position: PopupMenuPosition.under,
+      onSelected: (grad) => ref
+          .read(machineControllerProvider.notifier)
+          .edit(waehleRichtwert(caps, s, grad)),
+      itemBuilder: (context) => [
         for (final r in werte)
-          ChoiceChip(
-            label: Text(
-              l10n.tempPresetLabel(richtwertName(l10n, r), r.grad),
-              style: theme.textTheme.titleSmall,
-            ),
-            selected: s.temperature == r.grad,
-            padding: const EdgeInsets.symmetric(
-              horizontal: Tokens.s,
-              vertical: Tokens.s,
-            ),
-            onSelected: (_) => ref
-                .read(machineControllerProvider.notifier)
-                .edit(waehleRichtwert(caps, s, r.grad)),
+          CheckedPopupMenuItem<int>(
+            value: r.grad,
+            checked: s.temperature == r.grad,
+            child: Text(l10n.tempPresetLabel(richtwertName(l10n, r), r.grad)),
           ),
       ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Tokens.s,
+          vertical: Tokens.s / 2,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.tune_rounded,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              l10n.tempPresets,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

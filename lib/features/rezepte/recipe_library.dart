@@ -11,6 +11,19 @@ import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../core/storage/recipe_store.dart';
 
+/// Abgleich-Stand eines Rezepts (F21). Gespeichert wird nur direkt auf der Brücke – eine Kopie
+/// ist also entweder auf dem Stand des Rührlinks, wird gerade abgeglichen oder ist nur zum Lesen da.
+enum RecipeSyncStatus {
+  /// Gleich mit dem Rührlink (letzter Abgleich ok).
+  synced,
+
+  /// Abgleich läuft.
+  syncing,
+
+  /// Rührlink nicht erreichbar – gezeigt wird die gespeicherte Kopie.
+  offline,
+}
+
 /// Rezeptbibliothek, wie die App sie gerade kennt: lokale Kopie, abgeglichen mit der Brücke.
 class RecipeLibraryState {
   const RecipeLibraryState({
@@ -18,6 +31,7 @@ class RecipeLibraryState {
     this.recipes = const {},
     this.loading = false,
     this.offline = false,
+    this.syncing = false,
   });
 
   /// Stand der Bibliothek auf der Brücke, bis zu dem die Kopie reicht.
@@ -30,15 +44,26 @@ class RecipeLibraryState {
   /// Letzter Abgleich ging nicht (Brücke nicht erreichbar) – gezeigt wird die lokale Kopie.
   final bool offline;
 
+  /// Ein (weiterer) Abgleich läuft gerade.
+  final bool syncing;
+
+  RecipeSyncStatus get syncStatus => loading || syncing
+      ? RecipeSyncStatus.syncing
+      : offline
+      ? RecipeSyncStatus.offline
+      : RecipeSyncStatus.synced;
+
   RecipeLibraryState copyWith({
     Map<String, Recipe>? recipes,
     bool? loading,
     bool? offline,
+    bool? syncing,
   }) => RecipeLibraryState(
     rev: rev,
     recipes: recipes ?? this.recipes,
     loading: loading ?? this.loading,
     offline: offline ?? this.offline,
+    syncing: syncing ?? this.syncing,
   );
 
   /// Alphabetisch nach Titel.
@@ -99,6 +124,7 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
       _again = true;
       return _running;
     }
+    if (ref.mounted) state = state.copyWith(syncing: true);
     final run = _running = _sync();
     try {
       await run;
@@ -134,7 +160,9 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
         CachedLibrary(rev: changes.rev, recipes: next.values.toList()),
       );
     } on BridgeException {
-      if (ref.mounted) state = state.copyWith(loading: false, offline: true);
+      if (ref.mounted) {
+        state = state.copyWith(loading: false, offline: true, syncing: false);
+      }
     }
   }
 

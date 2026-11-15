@@ -14,6 +14,7 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/widgets/value_dial.dart';
 import '../assistenten/temperatur_schnellwahl.dart';
+import '../waage/scale_sheet.dart';
 import 'live_status_band.dart';
 import 'machine_controller.dart';
 import 'regler.dart';
@@ -43,7 +44,17 @@ class MaschinePage extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.machineTitle)),
+      appBar: AppBar(
+        title: Text(l10n.machineTitle),
+        actions: [
+          if (ref.watch(bridgeInfoProvider).value?.readyCaps?.hasScale ?? false)
+            IconButton(
+              tooltip: l10n.scaleOpen,
+              icon: const Icon(Icons.scale_rounded),
+              onPressed: () => showScaleSheet(context),
+            ),
+        ],
+      ),
       body: AdaptivePage(
         primary: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -138,9 +149,8 @@ class _Controls extends ConsumerWidget {
                 edit(s.copyWith(temperature: Regler.parseTemperature(caps, t))),
             onValidityChanged: (ok) => invalid.report('temp', valid: ok),
           ),
+          action: TemperaturVorschlaege(caps: caps),
         ),
-        const SizedBox(height: Tokens.s),
-        TemperaturSchnellwahl(caps: caps),
         const SizedBox(height: Tokens.m),
         ValueDial(
           label: l10n.dialTime,

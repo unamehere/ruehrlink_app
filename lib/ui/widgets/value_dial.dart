@@ -21,6 +21,7 @@ class ValueDial extends StatefulWidget {
     required this.onIncrement,
     this.icon,
     this.editor,
+    this.action,
   });
 
   final String label;
@@ -31,6 +32,9 @@ class ValueDial extends StatefulWidget {
   final VoidCallback? onIncrement;
   final IconData? icon;
   final ValueEditor? editor;
+
+  /// Kleiner Zusatzknopf rechts in der Kopfzeile (über dem Plus), z. B. Temperatur-Vorschläge.
+  final Widget? action;
 
   @override
   State<ValueDial> createState() => _ValueDialState();
@@ -217,7 +221,10 @@ class _ValueDialState extends State<ValueDial> {
                   Icon(widget.icon, color: theme.colorScheme.primary),
                   const SizedBox(width: Tokens.s),
                 ],
-                Text(widget.label, style: theme.textTheme.titleMedium),
+                Expanded(
+                  child: Text(widget.label, style: theme.textTheme.titleMedium),
+                ),
+                ?widget.action,
               ],
             ),
             const SizedBox(height: Tokens.s),

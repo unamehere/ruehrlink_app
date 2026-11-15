@@ -57,6 +57,11 @@ class _RecipePageState extends ConsumerState<RecipePage> {
         ),
         const SizedBox(height: Tokens.m),
         Text(recipe.title, style: theme.textTheme.headlineMedium),
+        const SizedBox(height: Tokens.s / 2),
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: RecipeSyncBadge(withText: true),
+        ),
         if (recipe.tags.isNotEmpty) ...[
           const SizedBox(height: Tokens.s),
           Wrap(
