@@ -114,18 +114,22 @@ void main() {
     await _close(tester);
   });
 
-  testWidgets('Temperatur-Schnellwahl im Maschinen-Tab', (tester) async {
+  testWidgets('Temperatur-Vorschläge im Maschinen-Tab (F19)', (tester) async {
     await _start(tester, const Size(390, 844));
     await tester.tap(find.text('Maschine'));
     await tester.pump(const Duration(seconds: 1));
-    final chip = find.text('Anbraten 180 °C');
+    final knopf = find.byTooltip('Temperatur-Vorschläge');
     await tester.scrollUntilVisible(
-      chip,
+      knopf,
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(chip);
-    await tester.pump();
+    await tester.tap(knopf);
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.text('Anbraten 180 °C'));
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('180 °C'), findsWidgets);
     await _close(tester);
   });

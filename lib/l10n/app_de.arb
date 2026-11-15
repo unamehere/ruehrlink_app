@@ -275,6 +275,9 @@
 
   "recipesSearch": "Rezept suchen",
   "recipesHelp": "Hilfe zu Rezepten",
+  "recipeSyncSynced": "Auf dem Rührlink gespeichert",
+  "recipeSyncSyncing": "Wird abgeglichen …",
+  "recipeSyncOffline": "Nur Kopie – Rührlink nicht erreichbar",
   "helpTitle": "So funktionieren Rezepte",
   "helpWhereTitle": "Gespeichert auf dem Rührlink",
   "helpWhereText": "Alle gekoppelten Handys sehen dieselben Rezepte – ganz ohne Internet. Bist du nicht zu Hause, siehst du die zuletzt geladene Fassung.",
@@ -551,6 +554,8 @@
   "asHintSplashGuard": "Spritzschutz aufsetzen.",
   "tempPresetLabel": "{name} {temp} °C",
   "@tempPresetLabel": {"placeholders": {"name": {"type": "String"}, "temp": {"type": "int"}}},
+  "tempPresets": "Vorschläge",
+  "tempPresetsTooltip": "Temperatur-Vorschläge",
   "tempPresetMelt": "Schmelzen",
   "tempPresetPoach": "Pochieren",
   "tempPresetSimmer": "Sieden",
