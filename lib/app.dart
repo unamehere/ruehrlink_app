@@ -12,6 +12,7 @@ import 'core/api/bridge_providers.dart';
 import 'features/kochen/kochen_page.dart';
 import 'features/kochen/programs.dart';
 import 'features/kochen/sequence_nudge.dart';
+import 'features/waage/scale.dart';
 import 'features/waage/scale_sheet.dart';
 import 'features/maschine/maschine_page.dart';
 import 'features/mehr/update_page.dart';
@@ -37,6 +38,8 @@ class _RuehrlinkAppState extends ConsumerState<RuehrlinkApp> {
   // Zurück im Vordergrund (z. B. nach dem Entsperren): sofort neu verbinden und den Stand holen,
   // statt auf das Zeitlimit der eingeschlafenen Verbindung zu warten (Fehlerliste F5).
   late final _lifecycle = AppLifecycleListener(
+    onShow: () => ref.read(appForegroundProvider.notifier).set(true),
+    onHide: () => ref.read(appForegroundProvider.notifier).set(false),
     onResume: () {
       ref.read(bridgeApiProvider).reconnect();
       ref.invalidate(applianceStatusProvider);
@@ -57,7 +60,13 @@ class _RuehrlinkAppState extends ConsumerState<RuehrlinkApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp.router(
+  Widget build(BuildContext context) {
+    // Waage vorhalten, solange die App offen ist (nur zuhören, kein Neubau).
+    ref.listen(scaleKeepAliveProvider, (_, _) {});
+    return _app();
+  }
+
+  Widget _app() => MaterialApp.router(
     onGenerateTitle: (context) => context.l10n.appTitle,
     theme: buildTheme(Brightness.light),
     darkTheme: buildTheme(Brightness.dark),

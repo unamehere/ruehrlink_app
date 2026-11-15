@@ -52,6 +52,42 @@ final scaleProvider = StreamProvider.autoDispose<ScaleReading>((ref) async* {
   }
 });
 
+/// Ist die App gerade im Vordergrund? Gesetzt von `RuehrlinkApp` (Lebenszyklus).
+class AppForegroundNotifier extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  void set(bool foreground) => state = foreground;
+}
+
+final appForegroundProvider = NotifierProvider<AppForegroundNotifier, bool>(
+  AppForegroundNotifier.new,
+);
+
+/// Waage vorhalten: Solange die App offen ist und die Maschine verbunden, bleibt die Waage auf der
+/// Brücke an. Der Aufbau zur Maschine dauert ~5 s (die Maschine rechnet langsam) – so zeigt die
+/// Waage sofort Werte. Im Hintergrund erneuert die App nicht mehr, die Brücke schaltet nach 30 s ab
+/// und gibt den RAM frei.
+final scaleKeepAliveProvider = Provider<void>((ref) {
+  if (!ref.watch(appForegroundProvider)) return;
+  final connected = ref.watch(
+    applianceStatusProvider.select((s) => s.value?.connected ?? false),
+  );
+  if (!connected) return;
+  final api = ref.watch(bridgeApiProvider);
+  Future<void> renew() async {
+    try {
+      await api.watchScale(seconds: _leaseSeconds);
+    } on BridgeException {
+      // Maschine gerade weg oder ohne Waage – beim nächsten Mal wieder.
+    }
+  }
+
+  unawaited(renew());
+  final timer = Timer.periodic(_renewEvery, (_) => renew());
+  ref.onDispose(timer.cancel);
+});
+
 /// Wie nah das Gewicht am Ziel ist.
 enum ScaleZone {
   /// Noch deutlich zu wenig.
