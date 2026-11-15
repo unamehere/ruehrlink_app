@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
+import '../models/json.dart';
 import '../models/models.dart';
 import 'bridge_api.dart';
+import 'demo_recipes.dart';
 
 /// Simulierte Brücke samt Gerät – für Entwicklung ohne Hardware und den Demo-Modus.
 ///
@@ -262,6 +265,88 @@ class FakeBridgeApi implements BridgeApi {
     } else {
       _seqSet(_seq.copyWith(stepRemainingS: _status.remainingS));
     }
+  }
+
+  // --- Rezepte: wie die Brücke mit Revisionen und Löschvermerken ---------------
+
+  final Map<String, Json> _recipes = {
+    for (final r in demoRecipes()) r['id'] as String: r,
+  };
+  final Map<String, int> _tombstones = {};
+  late int _recipeRev = _recipes.values.fold(
+    0,
+    (m, r) => max(m, readInt(r['rev'])),
+  );
+  final Map<String, Uint8List> _media = {};
+
+  @override
+  Future<RecipeChanges> recipeChanges(int since) async {
+    await _wait();
+    return RecipeChanges(
+      rev: _recipeRev,
+      changed: [
+        for (final r in _recipes.values)
+          if (readInt(r['rev']) > since) Recipe.fromJson(r),
+      ],
+      deleted: since == 0
+          ? const []
+          : [
+              for (final e in _tombstones.entries)
+                if (e.value > since) e.key,
+            ],
+    );
+  }
+
+  @override
+  Future<RecipeWriteResult> putRecipe(Recipe recipe) async {
+    await _wait();
+    final live = readInt(_recipes[recipe.id]?['rev']);
+    if (recipe.rev != live) {
+      return RecipeConflict(
+        currentRev: live,
+        deleted: live == 0 && _tombstones.containsKey(recipe.id),
+      );
+    }
+    final rev = ++_recipeRev;
+    final updated = DateTime.now().toUtc();
+    _recipes[recipe.id] = recipe.copyWith(rev: rev, updated: updated).toJson();
+    _tombstones.remove(recipe.id);
+    _emit(RecipesChangedEvent(rev));
+    return RecipeWritten(rev: rev, updated: updated);
+  }
+
+  @override
+  Future<RecipeWriteResult> deleteRecipe(String id, {required int rev}) async {
+    await _wait();
+    final live = readInt(_recipes[id]?['rev']);
+    if (live == 0) {
+      throw const BridgeException(BridgeErrorKind.rejected, 404, 'recipe');
+    }
+    if (rev != live) return RecipeConflict(currentRev: live, deleted: false);
+    final next = ++_recipeRev;
+    _recipes.remove(id);
+    _tombstones[id] = next;
+    _emit(RecipesChangedEvent(next));
+    return RecipeWritten(rev: next);
+  }
+
+  @override
+  Future<Uint8List> media(String sha256) async {
+    await _wait();
+    final bytes = _media[sha256];
+    if (bytes == null) {
+      throw const BridgeException(BridgeErrorKind.rejected, 404, 'media');
+    }
+    return bytes;
+  }
+
+  @override
+  Future<void> putMedia(String sha256, Uint8List webp) async {
+    await _wait();
+    if (webp.length > 1024 * 1024) {
+      throw const BridgeException(BridgeErrorKind.rejected, 413, 'size');
+    }
+    _media[sha256] = webp;
   }
 
   /// Kopplung wie bei der echten Brücke: Gerät kurz weg, „sucht“, „gesendet“, verbunden.

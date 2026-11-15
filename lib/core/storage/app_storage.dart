@@ -48,6 +48,12 @@ class AppStorage {
   /// Großer Hinweis auf dem Bildschirm.
   bool get nudgeBigHint => _prefs.getBool(_kNudgeBigHint) ?? true;
   Future<void> setNudgeBigHint(bool on) => _prefs.setBool(_kNudgeBigHint, on);
+
+  static const _kSafetyHints = 'safetyHints';
+
+  /// Kurze Sicherheitshinweise in Rezepten (z. B. „heiß“) – dezent, abschaltbar.
+  bool get safetyHints => _prefs.getBool(_kSafetyHints) ?? true;
+  Future<void> setSafetyHints(bool on) => _prefs.setBool(_kSafetyHints, on);
 }
 
 /// Wird in `main.dart` mit der geladenen Instanz überschrieben.
