@@ -1,7 +1,12 @@
 import 'json.dart';
 import 'machine_settings.dart';
+import 'werkzeug.dart';
 
 /// Rezept, wie es auf der Brücke liegt (`/api/v1/recipes/{id}`).
+///
+/// Zutaten gehören zu den Schritten ([RecipeStep.ingredients]); die Gesamtliste [ingredients]
+/// wird daraus zusammengezählt. Sie wird trotzdem mitgespeichert (`ingredients` oben im JSON),
+/// damit z. B. eine Einkaufsliste auf der Brücke sie lesen kann, ohne Schritte zu durchsuchen.
 class Recipe {
   const Recipe({
     required this.id,
@@ -11,7 +16,6 @@ class Recipe {
     required this.servings,
     this.photo,
     this.tags = const [],
-    this.ingredients = const [],
     this.steps = const [],
   });
 
@@ -26,24 +30,47 @@ class Recipe {
   /// SHA-256 des Fotos (`/api/v1/media/{sha256}`).
   final String? photo;
   final List<String> tags;
-  final List<Ingredient> ingredients;
   final List<RecipeStep> steps;
 
-  factory Recipe.fromJson(Json json) => Recipe(
-    id: readString(json['id']),
-    rev: readInt(json['rev']),
-    updated:
-        DateTime.tryParse(readString(json['updated'])) ??
-        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-    title: readString(json['title']),
-    servings: readInt(json['servings'], 1),
-    photo: json['photo'] as String?,
-    tags: json['tags'] is List
-        ? List.unmodifiable((json['tags'] as List).whereType<String>())
-        : const [],
-    ingredients: readList(json['ingredients'], Ingredient.fromJson),
-    steps: readList(json['steps'], RecipeStep.fromJson),
-  );
+  /// Alle Zutaten des Rezepts, gleiche Zutat (Name + Einheit) zusammengezählt.
+  List<Ingredient> get ingredients =>
+      sumIngredients([for (final s in steps) ...s.ingredients]);
+
+  factory Recipe.fromJson(Json json) {
+    final rawSteps = json['steps'] is List ? json['steps'] as List : const [];
+    final perStep = rawSteps.any((s) => s is Map && s['ingredients'] is List);
+    var steps = readList(json['steps'], RecipeStep.fromJson);
+    if (!perStep) {
+      // Altes Format (bis App 0.3.2): Zutatenliste oben, Schritte nur mit `weigh`.
+      steps = migrateLegacySteps(
+        readList(json['ingredients'], Ingredient.fromJson),
+        steps,
+        [
+          for (final s in rawSteps)
+            s is Map && s['weigh'] is Map
+                ? (
+                    readDouble((s['weigh'] as Map)['target']),
+                    readString((s['weigh'] as Map)['unit'], 'g'),
+                  )
+                : null,
+        ],
+      );
+    }
+    return Recipe(
+      id: readString(json['id']),
+      rev: readInt(json['rev']),
+      updated:
+          DateTime.tryParse(readString(json['updated'])) ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      title: readString(json['title']),
+      servings: readInt(json['servings'], 1),
+      photo: json['photo'] as String?,
+      tags: json['tags'] is List
+          ? List.unmodifiable((json['tags'] as List).whereType<String>())
+          : const [],
+      steps: steps,
+    );
+  }
 
   Recipe copyWith({
     int? rev,
@@ -53,7 +80,6 @@ class Recipe {
     String? photo,
     bool clearPhoto = false,
     List<String>? tags,
-    List<Ingredient>? ingredients,
     List<RecipeStep>? steps,
   }) => Recipe(
     id: id,
@@ -63,7 +89,6 @@ class Recipe {
     servings: servings ?? this.servings,
     photo: clearPhoto ? null : (photo ?? this.photo),
     tags: tags ?? this.tags,
-    ingredients: ingredients ?? this.ingredients,
     steps: steps ?? this.steps,
   );
 
@@ -87,9 +112,22 @@ class Ingredient {
     required this.name,
   });
 
+  /// 0 = ohne Menge (z. B. „Prise Salz“).
   final double amount;
   final String unit;
   final String name;
+
+  /// Lässt sich mit der Waage abwiegen? Dann die Menge in Gramm, sonst `null`.
+  double? get grams => amount <= 0
+      ? null
+      : switch (unit.trim().toLowerCase()) {
+          'g' => amount,
+          'kg' => amount * 1000,
+          _ => null,
+        };
+
+  Ingredient scaled(double factor) =>
+      Ingredient(amount: amount * factor, unit: unit, name: name);
 
   factory Ingredient.fromJson(Json json) => Ingredient(
     amount: readDouble(json['amount']),
@@ -105,20 +143,104 @@ class Ingredient {
   };
 }
 
+/// Gleiche Zutaten (Name und Einheit, Groß-/Kleinschreibung egal) zusammenzählen; Reihenfolge
+/// nach erstem Auftreten.
+List<Ingredient> sumIngredients(Iterable<Ingredient> all) {
+  final order = <String>[];
+  final sums = <String, Ingredient>{};
+  for (final i in all) {
+    if (i.name.trim().isEmpty) continue;
+    final key = '${i.name.trim().toLowerCase()}|${i.unit.trim().toLowerCase()}';
+    final prev = sums[key];
+    if (prev == null) {
+      order.add(key);
+      sums[key] = i;
+    } else {
+      sums[key] = Ingredient(
+        amount: prev.amount + i.amount,
+        unit: prev.unit,
+        name: prev.name,
+      );
+    }
+  }
+  return List.unmodifiable([for (final k in order) sums[k]!]);
+}
+
+/// Altes Format → Zutaten pro Schritt. Ein `weigh`-Schritt bekommt die passende Zutat aus der
+/// Liste (gleiche Menge und Einheit), sonst eine namenlose mit dem Schritttext. Was übrig bleibt,
+/// kommt in den ersten Schritt – so geht keine Zutat verloren.
+List<RecipeStep> migrateLegacySteps(
+  List<Ingredient> legacy,
+  List<RecipeStep> steps,
+  List<(double, String)?> weighs,
+) {
+  final rest = [...legacy];
+  final out = <RecipeStep>[];
+  for (var n = 0; n < steps.length; n++) {
+    final s = steps[n];
+    final w = n < weighs.length ? weighs[n] : null;
+    if (w == null) {
+      out.add(s);
+      continue;
+    }
+    final (target, unit) = w;
+    final i = rest.indexWhere(
+      (x) =>
+          x.amount == target &&
+          x.unit.trim().toLowerCase() == unit.trim().toLowerCase(),
+    );
+    final ing = i >= 0
+        ? rest.removeAt(i)
+        : Ingredient(amount: target, unit: unit, name: s.text);
+    out.add(s.copyWith(ingredients: [ing]));
+  }
+  if (rest.isNotEmpty) {
+    if (out.isEmpty) {
+      out.add(RecipeStep(text: '', ingredients: rest));
+    } else {
+      out[0] = out[0].copyWith(ingredients: [...rest, ...out[0].ingredients]);
+    }
+  }
+  return out;
+}
+
 class RecipeStep {
-  const RecipeStep({required this.text, this.photo, this.weigh, this.machine});
+  const RecipeStep({
+    required this.text,
+    this.photo,
+    this.ingredients = const [],
+    this.tool,
+    this.machine,
+  });
 
   final String text;
   final String? photo;
-  final WeighTarget? weigh;
+
+  /// Was in diesem Schritt dazukommt. Gramm-Zutaten wiegt der Kochmodus nacheinander ab.
+  final List<Ingredient> ingredients;
+
+  /// Werkzeug für diesen Schritt (`null` = wie vorher / egal).
+  final Werkzeug? tool;
   final StepMachine? machine;
+
+  RecipeStep copyWith({
+    String? text,
+    List<Ingredient>? ingredients,
+    Werkzeug? tool,
+    bool clearTool = false,
+  }) => RecipeStep(
+    text: text ?? this.text,
+    photo: photo,
+    ingredients: ingredients ?? this.ingredients,
+    tool: clearTool ? null : (tool ?? this.tool),
+    machine: machine,
+  );
 
   factory RecipeStep.fromJson(Json json) => RecipeStep(
     text: readString(json['text']),
     photo: json['photo'] as String?,
-    weigh: json['weigh'] is Map
-        ? WeighTarget.fromJson(readMap(json['weigh']))
-        : null,
+    ingredients: readList(json['ingredients'], Ingredient.fromJson),
+    tool: Werkzeug.fromJson(json['tool']),
     machine: json['machine'] is Map
         ? StepMachine.fromJson(readMap(json['machine']))
         : null,
@@ -127,25 +249,10 @@ class RecipeStep {
   Json toJson() => {
     'text': text,
     if (photo != null) 'photo': photo,
-    if (weigh != null) 'weigh': weigh!.toJson(),
+    if (ingredients.isNotEmpty)
+      'ingredients': [for (final i in ingredients) i.toJson()],
+    if (tool != null) 'tool': tool!.name,
     if (machine != null) 'machine': machine!.toJson(),
-  };
-}
-
-class WeighTarget {
-  const WeighTarget({required this.target, required this.unit});
-
-  final double target;
-  final String unit;
-
-  factory WeighTarget.fromJson(Json json) => WeighTarget(
-    target: readDouble(json['target']),
-    unit: readString(json['unit'], 'g'),
-  );
-
-  Json toJson() => {
-    'target': target == target.roundToDouble() ? target.toInt() : target,
-    'unit': unit,
   };
 }
 

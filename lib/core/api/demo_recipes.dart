@@ -5,31 +5,31 @@ import '../models/json.dart';
 /// Das sind Daten, keine Oberflächentexte (daher nicht in `app_de.arb`). Ohne Fotos: die
 /// App zeigt dann eine Illustration passend zum Titel. Maschinenwerte nutzen die Stufen der
 /// Demo-Maschine (`FakeBridgeApi.demoSpeeds`, wie KCL95): 1–4 Rührintervall, 5 = min … 12 = max.
+///
+/// Zutaten stehen bei den Schritten; die Gesamtliste oben (`ingredients`) zählt die App daraus
+/// zusammen und schreibt sie beim Speichern mit.
 List<Json> demoRecipes() => [
-  {
-    'id': '4f1c2a8e-0d1b-4c6e-9a51-6d0b1e7f2a01',
-    'rev': 1,
-    'updated': '2026-11-14T08:00:00Z',
-    'title': 'Dinkel-Brot',
-    'servings': 1,
-    'photo': null,
-    'tags': ['Brot', 'Teig'],
-    'ingredients': [
-      {'amount': 500, 'unit': 'g', 'name': 'Dinkelmehl 630'},
-      {'amount': 330, 'unit': 'g', 'name': 'Wasser, lauwarm'},
-      {'amount': 10, 'unit': 'g', 'name': 'Salz'},
-      {'amount': 7, 'unit': 'g', 'name': 'Trockenhefe'},
-    ],
-    'steps': [
+  _recipe(
+    n: 1,
+    title: 'Dinkel-Brot',
+    servings: 1,
+    tags: ['Brot', 'Teig'],
+    steps: [
       {
-        'text': 'Knethaken einsetzen. Mehl in die Schüssel wiegen.',
-        'weigh': {'target': 500, 'unit': 'g'},
+        'text': 'Mehl und Wasser in die Schüssel wiegen.',
+        'tool': 'knethaken',
+        'ingredients': [
+          {'amount': 500, 'unit': 'g', 'name': 'Dinkelmehl 630'},
+          {'amount': 330, 'unit': 'g', 'name': 'Wasser, lauwarm'},
+        ],
       },
       {
-        'text': 'Wasser dazuwiegen.',
-        'weigh': {'target': 330, 'unit': 'g'},
+        'text': 'Salz und Hefe dazugeben.',
+        'ingredients': [
+          {'amount': 10, 'unit': 'g', 'name': 'Salz'},
+          {'amount': 7, 'unit': 'g', 'name': 'Trockenhefe'},
+        ],
       },
-      {'text': 'Salz und Hefe dazugeben.'},
       {
         'text': 'Langsam unterrühren.',
         'machine': {'temperature': 0, 'time': 60, 'speed': 5},
@@ -44,31 +44,28 @@ List<Json> demoRecipes() => [
             'etwa 40 Minuten backen.',
       },
     ],
-  },
-  {
-    'id': '4f1c2a8e-0d1b-4c6e-9a51-6d0b1e7f2a02',
-    'rev': 2,
-    'updated': '2026-11-14T08:00:00Z',
-    'title': 'Pfannkuchen',
-    'servings': 4,
-    'photo': null,
-    'tags': ['Süß', 'Schnell'],
-    'ingredients': [
-      {'amount': 250, 'unit': 'g', 'name': 'Weizenmehl'},
-      {'amount': 500, 'unit': 'ml', 'name': 'Milch'},
-      {'amount': 3, 'unit': '', 'name': 'Eier'},
-      {'amount': 0, 'unit': '', 'name': 'Prise Salz'},
-    ],
-    'steps': [
+  ),
+  _recipe(
+    n: 2,
+    title: 'Pfannkuchen',
+    servings: 4,
+    tags: ['Süß', 'Schnell'],
+    steps: [
       {
-        'text': 'Rührbesen einsetzen. Mehl in die Schüssel wiegen.',
-        'weigh': {'target': 250, 'unit': 'g'},
+        'text': 'Mehl und Milch in die Schüssel geben.',
+        'tool': 'schneebesen',
+        'ingredients': [
+          {'amount': 250, 'unit': 'g', 'name': 'Weizenmehl'},
+          {'amount': 500, 'unit': 'g', 'name': 'Milch'},
+        ],
       },
       {
-        'text': 'Milch dazuwiegen.',
-        'weigh': {'target': 500, 'unit': 'g'},
+        'text': 'Eier und Salz dazugeben.',
+        'ingredients': [
+          {'amount': 3, 'unit': '', 'name': 'Eier'},
+          {'amount': 0, 'unit': '', 'name': 'Prise Salz'},
+        ],
       },
-      {'text': 'Eier und Salz dazugeben.'},
       {
         'text': 'Glatt rühren.',
         'machine': {'temperature': 0, 'time': 60, 'speed': 8},
@@ -79,81 +76,65 @@ List<Json> demoRecipes() => [
             'etwas Butter dünn ausbacken.',
       },
     ],
-  },
-  {
-    'id': '4f1c2a8e-0d1b-4c6e-9a51-6d0b1e7f2a03',
-    'rev': 3,
-    'updated': '2026-11-14T08:00:00Z',
-    'title': 'Risotto mit Parmesan',
-    'servings': 4,
-    'photo': null,
-    'tags': ['Herzhaft', 'Warm'],
-    'ingredients': [
-      {'amount': 1, 'unit': '', 'name': 'Zwiebel'},
-      {'amount': 2, 'unit': 'EL', 'name': 'Olivenöl'},
-      {'amount': 300, 'unit': 'g', 'name': 'Risottoreis'},
-      {'amount': 900, 'unit': 'ml', 'name': 'Gemüsebrühe, heiß'},
-      {'amount': 60, 'unit': 'g', 'name': 'Parmesan'},
-      {'amount': 30, 'unit': 'g', 'name': 'Butter'},
-    ],
-    'steps': [
+  ),
+  _recipe(
+    n: 3,
+    title: 'Risotto mit Parmesan',
+    servings: 4,
+    tags: ['Herzhaft', 'Warm'],
+    steps: [
       {
-        'text':
-            'Rührelement einsetzen. Zwiebel fein würfeln, mit dem Öl '
-            'in die Schüssel geben.',
-      },
-      {
-        'text': 'Zwiebel andünsten.',
+        'text': 'Zwiebel fein würfeln, mit dem Öl anbraten.',
+        'tool': 'kochRuehrelement',
+        'ingredients': [
+          {'amount': 100, 'unit': 'g', 'name': 'Zwiebel'},
+          {'amount': 10, 'unit': 'g', 'name': 'Olivenöl'},
+        ],
         'machine': {'temperature': 140, 'time': 180, 'speed': 1},
       },
       {
-        'text': 'Reis dazuwiegen.',
-        'weigh': {'target': 300, 'unit': 'g'},
-      },
-      {
-        'text': 'Reis glasig dünsten.',
+        'text': 'Reis hinzufügen und glasig dünsten.',
+        'ingredients': [
+          {'amount': 300, 'unit': 'g', 'name': 'Risottoreis'},
+        ],
         'machine': {'temperature': 140, 'time': 120, 'speed': 1},
       },
       {
-        'text': 'Brühe dazugießen.',
-        'weigh': {'target': 900, 'unit': 'g'},
-      },
-      {
-        'text': 'Garen, bis der Reis bissfest ist.',
+        'text': 'Brühe dazugießen und garen, bis der Reis bissfest ist.',
+        'ingredients': [
+          {'amount': 900, 'unit': 'g', 'name': 'Gemüsebrühe, heiß'},
+        ],
         'machine': {'temperature': 100, 'time': 1080, 'speed': 3},
       },
-      {'text': 'Parmesan und Butter unterrühren, abschmecken.'},
-    ],
-  },
-  {
-    'id': '4f1c2a8e-0d1b-4c6e-9a51-6d0b1e7f2a04',
-    'rev': 4,
-    'updated': '2026-11-14T08:00:00Z',
-    'title': 'Baiser',
-    'servings': 20,
-    'photo': null,
-    'tags': ['Süß', 'Backen'],
-    'ingredients': [
-      {'amount': 4, 'unit': '', 'name': 'Eiweiß'},
-      {'amount': 200, 'unit': 'g', 'name': 'Zucker'},
-      {'amount': 0, 'unit': '', 'name': 'Prise Salz'},
-    ],
-    'steps': [
       {
-        'text':
-            'Rührbesen einsetzen. Eiweiß und Salz in die saubere, '
-            'fettfreie Schüssel geben.',
+        'text': 'Parmesan und Butter unterrühren, abschmecken.',
+        'ingredients': [
+          {'amount': 60, 'unit': 'g', 'name': 'Parmesan'},
+          {'amount': 30, 'unit': 'g', 'name': 'Butter'},
+        ],
       },
+    ],
+  ),
+  _recipe(
+    n: 4,
+    title: 'Baiser',
+    servings: 20,
+    tags: ['Süß', 'Backen'],
+    steps: [
       {
-        'text': 'Steif schlagen.',
+        'text': 'Eiweiß und Salz in die saubere, fettfreie Schüssel geben, steif schlagen.',
+        'tool': 'schneebesen',
+        'ingredients': [
+          {'amount': 4, 'unit': '', 'name': 'Eiweiß'},
+          {'amount': 0, 'unit': '', 'name': 'Prise Salz'},
+        ],
         'machine': {'temperature': 0, 'time': 90, 'speed': 12},
       },
       {
-        'text': 'Zucker abwiegen.',
-        'weigh': {'target': 200, 'unit': 'g'},
-      },
-      {
         'text': 'Zucker langsam einrieseln lassen und weiterschlagen.',
+        'ingredients': [
+          {'amount': 200, 'unit': 'g', 'name': 'Zucker'},
+        ],
         'machine': {'temperature': 0, 'time': 120, 'speed': 11},
       },
       {
@@ -162,5 +143,22 @@ List<Json> demoRecipes() => [
             'trocknen lassen.',
       },
     ],
-  },
+  ),
 ];
+
+Json _recipe({
+  required int n,
+  required String title,
+  required int servings,
+  required List<String> tags,
+  required List<Json> steps,
+}) => {
+  'id': '4f1c2a8e-0d1b-4c6e-9a51-6d0b1e7f2a0$n',
+  'rev': n,
+  'updated': '2026-11-14T08:00:00Z',
+  'title': title,
+  'servings': servings,
+  'photo': null,
+  'tags': tags,
+  'steps': steps,
+};

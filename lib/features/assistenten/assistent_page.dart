@@ -10,6 +10,7 @@ import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import '../../ui/werkzeug.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../kochen/programs.dart';
 import 'assistent.dart';
@@ -383,12 +384,6 @@ String mengeText(AppLocalizations l10n, ZutatMenge z) {
     Einheit.prise => l10n.asPinch,
   };
 }
-
-String werkzeugName(AppLocalizations l10n, Werkzeug w) => switch (w) {
-  Werkzeug.knethaken => l10n.asToolDoughHook,
-  Werkzeug.schneebesen => l10n.asToolWhisk,
-  Werkzeug.kochRuehrelement => l10n.asToolStirrer,
-};
 
 String hinweisText(AppLocalizations l10n, Hinweis h) => switch (h) {
   Hinweis.knopfNachRuhe => l10n.asHintPressAfterRest,

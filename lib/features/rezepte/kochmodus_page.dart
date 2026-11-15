@@ -1,5 +1,3 @@
-import '../assistenten/sicherheit.dart';
-
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +14,8 @@ import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
+import '../../ui/werkzeug.dart';
+import '../assistenten/sicherheit.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
 import 'weigh_step_slot.dart';
@@ -162,6 +162,15 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                 }
                 if (p == last) return const _DonePage();
                 final step = recipe.steps[p - 1];
+                // Werkzeug nur zeigen, wenn es sich gegenüber dem vorigen ändert
+                final before = recipe.steps
+                    .take(p - 1)
+                    .map((s) => s.tool)
+                    .whereType<Werkzeug>()
+                    .lastOrNull;
+                final toolChange = step.tool != null && step.tool != before
+                    ? step.tool
+                    : null;
                 return _StepPage(
                   key: ValueKey(p),
                   recipe: recipe,
@@ -169,6 +178,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   number: p,
                   of: recipe.steps.length,
                   factor: factor,
+                  toolChange: toolChange,
                   startedHere: _startedOn == p,
                   sending: _sending,
                   onStart: () => _start(recipe, step),
@@ -309,7 +319,8 @@ class _DonePage extends StatelessWidget {
   }
 }
 
-/// Ein Schritt: Text (groß), optional Foto; daneben bzw. darunter Waage oder Maschine.
+/// Ein Schritt: ggf. „Werkzeug einsetzen“, Text (groß), Zutaten, optional Foto; daneben bzw.
+/// darunter die Waage (Gramm-Zutaten nacheinander) und die Maschine.
 class _StepPage extends StatelessWidget {
   const _StepPage({
     super.key,
@@ -318,6 +329,7 @@ class _StepPage extends StatelessWidget {
     required this.number,
     required this.of,
     required this.factor,
+    required this.toolChange,
     required this.startedHere,
     required this.sending,
     required this.onStart,
@@ -329,6 +341,9 @@ class _StepPage extends StatelessWidget {
   final int number;
   final int of;
   final double factor;
+
+  /// Werkzeug, das jetzt neu eingesetzt werden muss (`null` = kein Wechsel).
+  final Werkzeug? toolChange;
   final bool startedHere;
   final bool sending;
   final VoidCallback onStart;
@@ -336,19 +351,14 @@ class _StepPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
-    final weigh = step.weigh;
-    final Widget? slot = weigh != null
-        // Hier hängt später das Waage-Widget (siehe weigh_step_slot.dart).
-        ? WeighStepSlot(
-            target: WeighTarget(
-              target: weigh.target * factor,
-              unit: weigh.unit,
-            ),
-            label: step.text,
-            onReached: onWeighReached,
-          )
-        : step.machine != null
+    final ingredients = [for (final i in step.ingredients) i.scaled(factor)];
+    final toWeigh = [
+      for (final i in ingredients)
+        if (i.grams != null) i,
+    ];
+    final machine = step.machine != null
         ? _MachinePanel(
             step: step,
             startedHere: startedHere,
@@ -356,18 +366,69 @@ class _StepPage extends StatelessWidget {
             onStart: onStart,
           )
         : null;
+    final Widget? side = toWeigh.isEmpty
+        ? machine
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _WeighSequence(
+                ingredients: toWeigh,
+                onAllReached: onWeighReached,
+              ),
+              if (machine != null) ...[
+                const SizedBox(height: Tokens.l),
+                machine,
+              ],
+            ],
+          );
     return AdaptivePage(
       primary: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            context.l10n.seqStep(number, of),
+            l10n.seqStep(number, of),
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: Tokens.s),
-          Text(step.text, style: theme.textTheme.headlineMedium),
+          if (toolChange case final t?) ...[
+            HintCard(
+              icon: werkzeugIcon(t),
+              text: l10n.toolInsert(werkzeugName(l10n, t)),
+            ),
+            const SizedBox(height: Tokens.m),
+          ],
+          if (step.text.isNotEmpty)
+            Text(step.text, style: theme.textTheme.headlineMedium),
+          if (ingredients.isNotEmpty) ...[
+            const SizedBox(height: Tokens.m),
+            Text(
+              l10n.cookIngredients,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            for (final i in ingredients)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Illustration(
+                      Illustrations.forName(i.name) ?? Illustrations.bowl,
+                      size: 40,
+                    ),
+                    const SizedBox(width: Tokens.m),
+                    Expanded(
+                      child: Text(
+                        ingredientText(i, 1),
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
           if (step.photo case final sha?) ...[
             const SizedBox(height: Tokens.m),
             ClipRRect(
@@ -377,7 +438,79 @@ class _StepPage extends StatelessWidget {
           ],
         ],
       ),
-      secondary: slot,
+      secondary: side,
+    );
+  }
+}
+
+/// Waage für alle Gramm-Zutaten eines Schritts, eine nach der anderen. Jede Zutat bekommt eine
+/// eigene Waage-Ansicht (Key = Index) und damit ihre eigene Tara.
+class _WeighSequence extends StatefulWidget {
+  const _WeighSequence({required this.ingredients, required this.onAllReached});
+
+  final List<Ingredient> ingredients;
+  final VoidCallback onAllReached;
+
+  @override
+  State<_WeighSequence> createState() => _WeighSequenceState();
+}
+
+class _WeighSequenceState extends State<_WeighSequence> {
+  int _i = 0;
+  bool _reached = false;
+
+  void _next() {
+    if (_i + 1 >= widget.ingredients.length) return;
+    setState(() {
+      _i++;
+      _reached = false;
+    });
+  }
+
+  void _onReached() {
+    setState(() => _reached = true);
+    if (_i + 1 >= widget.ingredients.length) widget.onAllReached();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final n = widget.ingredients.length;
+    final last = _i + 1 >= n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (n > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Tokens.s),
+            child: Text(
+              '${_i + 1} / $n',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+        WeighStepSlot(
+          key: ValueKey(_i),
+          ingredient: widget.ingredients[_i],
+          onReached: _onReached,
+        ),
+        if (!last) ...[
+          const SizedBox(height: Tokens.m),
+          BigButton(
+            label: l10n.cookWeighNext,
+            icon: Icons.arrow_forward_rounded,
+            kind: _reached ? BigButtonKind.primary : BigButtonKind.secondary,
+            onPressed: _next,
+          ),
+        ] else if (_reached && n > 1) ...[
+          const SizedBox(height: Tokens.m),
+          Text(
+            l10n.cookWeighAllDone,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ],
+      ],
     );
   }
 }

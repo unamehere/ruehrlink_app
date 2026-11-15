@@ -60,8 +60,8 @@ class RecipeIllustration extends StatelessWidget {
   );
 }
 
-/// Kurzbeschreibung eines Schritts für Listen: „Wiegen: 500 g“, „Maschine: Stufe 2 · 1:00“.
-/// `null` bei reinen Textschritten.
+/// Maschinenteil eines Schritts für Listen: „Maschine: Stufe 2 · 1:00“, „Programm: …“.
+/// `null` ohne Maschine. (Zutaten und Werkzeug zeigt die Rezeptseite eigens.)
 String? stepSummary(
   BuildContext context,
   RecipeStep step, {
@@ -70,12 +70,6 @@ String? stepSummary(
   List<Program> programs = const [],
 }) {
   final l10n = context.l10n;
-  final w = step.weigh;
-  if (w != null) {
-    return l10n.recipeStepWeigh(
-      '${formatAmount(w.target * factor)} ${w.unit}'.trim(),
-    );
-  }
   final m = step.machine;
   if (m == null) return null;
   final id = m.programId;

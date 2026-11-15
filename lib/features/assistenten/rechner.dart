@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../../core/models/models.dart';
 import 'assistent.dart';
 import 'werte.dart';
 

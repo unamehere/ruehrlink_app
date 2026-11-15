@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../../ui/illustrations.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
+import '../../ui/werkzeug.dart';
 import '../../ui/widgets/big_button.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
@@ -118,7 +119,40 @@ class _RecipePageState extends ConsumerState<RecipePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (s.tool case final t?)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                werkzeugIcon(t),
+                                size: 22,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: Tokens.s),
+                              Expanded(
+                                child: Text(
+                                  l10n.toolInsert(werkzeugName(l10n, t)),
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       Text(s.text, style: theme.textTheme.bodyLarge),
+                      if (s.ingredients.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            [
+                              for (final i in s.ingredients)
+                                ingredientText(i, factor),
+                            ].join(' · '),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
                       if (stepSummary(
                             context,
                             s,
@@ -132,9 +166,7 @@ class _RecipePageState extends ConsumerState<RecipePage> {
                           child: Row(
                             children: [
                               Icon(
-                                s.weigh != null
-                                    ? Icons.scale_rounded
-                                    : Icons.blender_rounded,
+                                Icons.blender_rounded,
                                 size: 22,
                                 color: theme.colorScheme.primary,
                               ),
