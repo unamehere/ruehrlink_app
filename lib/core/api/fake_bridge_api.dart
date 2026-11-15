@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import '../models/models.dart';
 import 'bridge_api.dart';
@@ -28,6 +29,8 @@ class FakeBridgeApi implements BridgeApi {
     timeMaxS: 8 * 60 * 60,
     hasScale: true,
     remoteStart: false,
+    hotTemp: 60,
+    hotSpeedMax: 7,
   );
 
   /// Stufen des Demo-Geräts – gleiche Werte wie die echte Brücke liefert.
@@ -147,6 +150,120 @@ class FakeBridgeApi implements BridgeApi {
     }
   }
 
+  // --- Programme: vereinfachter Sequencer wie auf der Brücke --------------------
+
+  List<ProgramStep> _seqSteps = const [];
+  SequenceState _seq = SequenceState.idle;
+
+  @override
+  Future<SequenceState> startSequence(Program program) async {
+    await _wait();
+    if (!_status.connected) {
+      throw const BridgeException(
+        BridgeErrorKind.rejected,
+        409,
+        'not_connected',
+      );
+    }
+    if (_seq.active) {
+      throw const BridgeException(BridgeErrorKind.rejected, 409, 'busy');
+    }
+    if (program.steps.isEmpty) {
+      throw const BridgeException(BridgeErrorKind.rejected, 400, 'empty');
+    }
+    for (final step in program.steps) {
+      final v = step.settings;
+      if (caps.clamp(v) != v || v.time == 0) {
+        throw const BridgeException(BridgeErrorKind.rejected, 400, 'range');
+      }
+      if (v.temperature >= (caps.hotTemp ?? 1 << 30) &&
+          caps.tooFastWhenHot(v.speed)) {
+        throw const BridgeException(BridgeErrorKind.rejected, 400, 'hot_speed');
+      }
+    }
+    _seqSteps = program.steps;
+    _applyStep(0);
+    _seqSet(
+      SequenceState(
+        name: program.name,
+        step: 1,
+        of: program.steps.length,
+        label: program.steps.first.label,
+        state: SequenceRunState.waitingStart,
+        reason: 'press_start',
+        stepRemainingS: program.steps.first.settings.time,
+      ),
+    );
+    _knob?.cancel();
+    _knob = Timer(knobDelay, () {
+      if (_seq.state != SequenceRunState.waitingStart) return;
+      _update(_status.copyWith(running: true));
+      _seqSet(
+        _seq.copyWith(state: SequenceRunState.running, clearReason: true),
+      );
+    });
+    return _seq;
+  }
+
+  @override
+  Future<void> abortSequence() async {
+    if (!_seq.active) {
+      await _wait();
+      throw const BridgeException(BridgeErrorKind.rejected, 409, 'idle');
+    }
+    _seqSet(_seq.copyWith(state: SequenceRunState.aborted, reason: 'user'));
+    await stop();
+  }
+
+  @override
+  Future<SequenceState> sequence() async {
+    await _wait();
+    return _seq;
+  }
+
+  @override
+  Future<List<Program>> programs() async {
+    await _wait();
+    return const [];
+  }
+
+  void _applyStep(int i) {
+    final v = _seqSteps[i].settings;
+    _set = v;
+    _update(
+      _status.copyWith(
+        speedSet: v.speed,
+        tempSet: v.temperature,
+        remainingS: v.time,
+      ),
+    );
+  }
+
+  void _seqSet(SequenceState s) {
+    _seq = s;
+    _emit(SequenceEvent(s));
+  }
+
+  /// Wie die Brücke: nächsten Schritt 2 s vor Ablauf nachschieben, ohne Knopfdruck.
+  void _tickSequence() {
+    if (_seq.state != SequenceRunState.running) return;
+    if (!_status.running) {
+      _seqSet(_seq.copyWith(state: SequenceRunState.done, stepRemainingS: 0));
+    } else if (_status.remainingS <= 2 && _seq.step < _seq.of) {
+      final next = _seq.step; // Index des nächsten Schritts
+      _applyStep(next);
+      _seqSet(
+        _seq.copyWith(
+          step: next + 1,
+          label: _seqSteps[next].label,
+          stepRemainingS: _seqSteps[next].settings.time,
+        ),
+      );
+    } else {
+      _seqSet(_seq.copyWith(stepRemainingS: _status.remainingS));
+    }
+  }
+
   /// Kopplung wie bei der echten Brücke: Gerät kurz weg, „sucht“, „gesendet“, verbunden.
   @override
   Future<void> onboardMachine() async {
@@ -198,6 +315,23 @@ class FakeBridgeApi implements BridgeApi {
   Future<void> setTime(DateTime now) => _wait();
 
   /// Demo: Zurücksetzen trennt das Gerät (wie nach einem echten Werksreset).
+  /// Tut so, als würde hochgeladen (im Demo-Modus wird kein Update angeboten).
+  @override
+  Future<void> uploadFirmware(
+    Uint8List image, {
+    required String sha256,
+    required String signature,
+    void Function(double progress)? onProgress,
+  }) async {
+    if (_status.active) {
+      throw const BridgeException(BridgeErrorKind.rejected, 409, 'busy');
+    }
+    for (var i = 1; i <= 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      onProgress?.call(i / 20);
+    }
+  }
+
   @override
   Future<void> reset() async {
     await _wait();
@@ -207,6 +341,9 @@ class FakeBridgeApi implements BridgeApi {
 
   @override
   Stream<BridgeEvent> events() => _events.stream;
+
+  @override
+  void reconnect() {}
 
   void _tick() {
     var s = _status;
@@ -237,6 +374,7 @@ class FakeBridgeApi implements BridgeApi {
       if (rest <= 0) _set = null;
     }
     _update(s);
+    _tickSequence();
   }
 
   void _update(ApplianceStatus s) {

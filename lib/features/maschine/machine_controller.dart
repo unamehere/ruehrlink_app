@@ -46,7 +46,7 @@ class MachineController extends Notifier<MachineDraft> {
 
   @override
   MachineDraft build() => const MachineDraft(
-    settings: MachineSettings(temperature: 0, time: 60, speed: 1),
+    settings: MachineSettings(temperature: 0, time: 60, speed: 0),
   );
 
   /// Neue Werte setzen – eine frühere Sende-Rückmeldung gilt dann nicht mehr.

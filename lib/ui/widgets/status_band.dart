@@ -4,6 +4,7 @@ import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../format.dart';
 import '../theme.dart';
+import 'smooth_countdown.dart';
 
 /// Verbindungszustand für das [StatusBand].
 enum BandState { connecting, bridgeUnreachable, ready }
@@ -17,6 +18,8 @@ class StatusBand extends StatelessWidget {
     required this.state,
     this.status,
     this.speedLabel,
+    this.compact = false,
+    this.onTap,
   });
 
   final BandState state;
@@ -24,6 +27,12 @@ class StatusBand extends StatelessWidget {
 
   /// Anzeige eines Stufenwerts (aus `caps.speeds`); ohne caps die Zahl.
   final String Function(int v)? speedLabel;
+
+  /// Nur eine Zeile (Zustand, Temperatur, Restzeit) – z. B. im Kochen-Tab, wo die Programme führen.
+  final bool compact;
+
+  /// Antippen, z. B. zum Auf-/Zuklappen.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +44,8 @@ class StatusBand extends StatelessWidget {
         ? status
         : null;
     final connected = s != null;
-    final running = s?.running ?? false;
+    final keepWarm = s?.keepWarm ?? false;
+    final running = (s?.running ?? false) || (s?.active ?? false) || keepWarm;
 
     final (Color bg, Color fg) = switch ((state, connected, running)) {
       (BandState.bridgeUnreachable, _, _) => (
@@ -51,9 +61,75 @@ class StatusBand extends StatelessWidget {
       BandState.connecting => l10n.statusConnecting,
       BandState.bridgeUnreachable => l10n.statusBridgeUnreachable,
       BandState.ready when !connected => l10n.statusMachineDisconnected,
+      BandState.ready when keepWarm => l10n.statusKeepWarm,
       BandState.ready when running => l10n.statusRunning,
       BandState.ready => l10n.statusMachineConnected,
     };
+
+    final radius = BorderRadius.circular(Tokens.radius);
+    if (compact) {
+      return Semantics(
+        container: true,
+        liveRegion: true,
+        button: onTap != null,
+        child: Material(
+          color: bg,
+          borderRadius: radius,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Tokens.m,
+                vertical: Tokens.s + 4,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    connected
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
+                    color: fg,
+                    size: 24,
+                  ),
+                  const SizedBox(width: Tokens.s),
+                  Expanded(
+                    child: Text(
+                      headline,
+                      style: theme.textTheme.titleMedium?.copyWith(color: fg),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (s != null) ...[
+                    Text(
+                      l10n.temperatureValue(s.bowlTemp),
+                      style: theme.textTheme.titleMedium?.copyWith(color: fg),
+                    ),
+                    if (running) ...[
+                      const SizedBox(width: Tokens.m),
+                      SmoothCountdown(
+                        seconds: s.remainingS,
+                        running: running,
+                        builder: (context, left) => Text(
+                          formatDuration(left),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: fg,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                  if (onTap != null) ...[
+                    const SizedBox(width: Tokens.s),
+                    Icon(Icons.expand_more_rounded, color: fg),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Semantics(
       container: true,
@@ -96,17 +172,15 @@ class StatusBand extends StatelessWidget {
                     spacing: Tokens.xl,
                     runSpacing: Tokens.m,
                     children: [
+                      // Ist-Temperatur groß, Ziel klein darunter – spart eine Spalte (F6)
                       _Value(
                         label: l10n.statusBowl,
                         value: l10n.temperatureValue(s.bowlTemp),
+                        detail: s.tempSet > 0
+                            ? l10n.statusTargetSmall(s.tempSet)
+                            : null,
                         color: fg,
                       ),
-                      if (s.tempSet > 0)
-                        _Value(
-                          label: l10n.statusTarget,
-                          value: l10n.temperatureValue(s.tempSet),
-                          color: fg,
-                        ),
                       _Value(
                         label: l10n.dialSpeed,
                         value: s.speedSet == 0
@@ -114,19 +188,29 @@ class StatusBand extends StatelessWidget {
                             : (speedLabel?.call(s.speedSet) ?? '${s.speedSet}'),
                         color: fg,
                       ),
-                      _Value(
-                        label: l10n.statusRemaining,
-                        value: formatDuration(s.remainingS),
-                        color: fg,
+                      SmoothCountdown(
+                        seconds: s.remainingS,
+                        running: running,
+                        builder: (context, left) => _Value(
+                          label: l10n.statusRemaining,
+                          value: formatDuration(left),
+                          color: fg,
+                        ),
                       ),
                     ],
                   ),
-                  if (s.heating || s.hot) ...[
+                  if (s.heating || s.hot || keepWarm) ...[
                     const SizedBox(height: Tokens.m),
                     Wrap(
                       spacing: Tokens.s,
                       runSpacing: Tokens.s,
                       children: [
+                        if (keepWarm)
+                          _Flag(
+                            icon: Icons.soup_kitchen_rounded,
+                            text: l10n.statusKeepWarmHint,
+                            color: fg,
+                          ),
                         if (s.heating)
                           _Flag(
                             icon: Icons.local_fire_department_rounded,
@@ -153,11 +237,19 @@ class StatusBand extends StatelessWidget {
 }
 
 class _Value extends StatelessWidget {
-  const _Value({required this.label, required this.value, required this.color});
+  const _Value({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.detail,
+  });
 
   final String label;
   final String value;
   final Color color;
+
+  /// Kleine Zusatzzeile unter dem Wert, z. B. „Ziel 40 °C“.
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +259,8 @@ class _Value extends StatelessWidget {
       children: [
         Text(label, style: text.bodyMedium?.copyWith(color: color)),
         Text(value, style: text.headlineMedium?.copyWith(color: color)),
+        if (detail != null)
+          Text(detail!, style: text.bodyMedium?.copyWith(color: color)),
       ],
     );
   }

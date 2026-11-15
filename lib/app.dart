@@ -8,8 +8,12 @@ import 'package:material_ui/material_ui.dart';
 
 import 'features/einrichtung/einrichtung_page.dart';
 import 'features/einrichtung/setup_controller.dart';
+import 'core/api/bridge_providers.dart';
 import 'features/kochen/kochen_page.dart';
+import 'features/kochen/programs.dart';
+import 'features/kochen/sequence_nudge.dart';
 import 'features/maschine/maschine_page.dart';
+import 'features/mehr/update_page.dart';
 import 'features/mehr/mehr_page.dart';
 import 'features/mehr/pair_request_watcher.dart';
 import 'features/mehr/verbindung_page.dart';
@@ -18,11 +22,38 @@ import 'l10n/l10n.dart';
 import 'ui/layout.dart';
 import 'ui/theme.dart';
 
-class FreikochApp extends ConsumerWidget {
+class FreikochApp extends ConsumerStatefulWidget {
   const FreikochApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
+  ConsumerState<FreikochApp> createState() => _FreikochAppState();
+}
+
+class _FreikochAppState extends ConsumerState<FreikochApp> {
+  // Zurück im Vordergrund (z. B. nach dem Entsperren): sofort neu verbinden und den Stand holen,
+  // statt auf das Zeitlimit der eingeschlafenen Verbindung zu warten (Fehlerliste F5).
+  late final _lifecycle = AppLifecycleListener(
+    onResume: () {
+      ref.read(bridgeApiProvider).reconnect();
+      ref.invalidate(applianceStatusProvider);
+      ref.invalidate(sequenceProvider);
+    },
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle; // anlegen
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp.router(
     onGenerateTitle: (context) => context.l10n.appTitle,
     theme: buildTheme(Brightness.light),
     darkTheme: buildTheme(Brightness.dark),
@@ -69,8 +100,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const EinrichtungPage(),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) =>
-            PairRequestWatcher(child: AppShell(shell: shell)),
+        builder: (context, state, shell) => PairRequestWatcher(
+          child: SequenceNudgeWatcher(child: AppShell(shell: shell)),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -105,6 +137,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'verbindung',
                     builder: (context, state) => const VerbindungPage(),
+                  ),
+                  GoRoute(
+                    path: 'update',
+                    builder: (context, state) => const UpdatePage(),
+                  ),
+                  GoRoute(
+                    path: 'hinweise',
+                    builder: (context, state) => const NudgeSettingsPage(),
                   ),
                 ],
               ),

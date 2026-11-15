@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../models/models.dart';
 
 /// Die Schnittstelle zur Freikoch Brücke nach `freikoch_esp/docs/api.md`.
@@ -18,6 +20,20 @@ abstract class BridgeApi {
 
   /// `POST /api/v1/machine/stop`
   Future<void> stop();
+
+  /// `POST /api/v1/sequence/start` mit dem ganzen Programm (Schritte inline).
+  /// Die Brücke prüft es und sendet Schritt 1; gestartet wird am Gerät.
+  /// Abgelehnt → [BridgeException] mit [BridgeException.code] (`hot_speed`, `not_ready` …).
+  Future<SequenceState> startSequence(Program program);
+
+  /// `POST /api/v1/sequence/abort` – Programm abbrechen, stoppt auch die Maschine.
+  Future<void> abortSequence();
+
+  /// `GET /api/v1/sequence` – aktueller Stand, z. B. nach dem Wiederverbinden.
+  Future<SequenceState> sequence();
+
+  /// `GET /api/v1/programs` – auf der Brücke gespeicherte Programme.
+  Future<List<Program>> programs();
 
   /// `POST /api/v1/machine/onboard` – Kopplung mit dem Gerät anstoßen.
   /// Fortschritt per [OnboardEvent]; währenddessen ist die Brücke im Heim-WLAN
@@ -44,9 +60,23 @@ abstract class BridgeApi {
   /// Maschinen-Kopplung werden gelöscht, die Brücke startet neu.
   Future<void> reset();
 
+  /// `POST /api/v1/ota` – Firmware-Image hochladen (Prüfsumme und Signatur aus dem Manifest).
+  /// [onProgress] bekommt 0…1. Danach startet die Brücke neu; ob die neue Firmware läuft,
+  /// zeigt `fw` in [info]. Abgelehnt → [BridgeException] mit `busy`, `signature`, `sha256` …
+  Future<void> uploadFirmware(
+    Uint8List image, {
+    required String sha256,
+    required String signature,
+    void Function(double progress)? onProgress,
+  });
+
   /// Ereignisse vom WebSocket (`/api/v1/ws`). Broadcast-Stream; die Verbindung
   /// steht, solange jemand zuhört, und wird bei Abbruch neu aufgebaut.
   Stream<BridgeEvent> events();
+
+  /// Live-Verbindung sofort neu aufbauen, z. B. wenn die App nach dem Entsperren wieder in den
+  /// Vordergrund kommt (eine schlafende Verbindung merkt man sonst erst nach Sekunden, F5).
+  void reconnect();
 
   /// Verbindungen schließen, Timer beenden.
   void close();
@@ -54,13 +84,16 @@ abstract class BridgeApi {
 
 /// Fehler beim Sprechen mit der Brücke.
 class BridgeException implements Exception {
-  const BridgeException(this.kind, [this.statusCode]);
+  const BridgeException(this.kind, [this.statusCode, this.code]);
 
   final BridgeErrorKind kind;
   final int? statusCode;
 
+  /// Fehlercode aus der Antwort (`{"error":"…"}`), z. B. `busy` oder `hot_speed`.
+  final String? code;
+
   @override
-  String toString() => 'BridgeException($kind, $statusCode)';
+  String toString() => 'BridgeException($kind, $statusCode, $code)';
 }
 
 enum BridgeErrorKind {

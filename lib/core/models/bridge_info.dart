@@ -112,6 +112,8 @@ class ApplianceCaps {
     required this.timeMaxS,
     required this.hasScale,
     required this.remoteStart,
+    this.hotTemp,
+    this.hotSpeedMax,
   });
 
   /// Technische Modellkennung, nur zur Anzeige/Diagnose.
@@ -133,6 +135,21 @@ class ApplianceCaps {
   /// Kann das Gerät aus der Ferne starten? Sonst: zum Starten den
   /// Knopf an der Maschine drücken.
   final bool remoteStart;
+
+  /// Ab dieser Temperatur (°C) gilt der Inhalt als heiß – dann sind nur Dauerstufen
+  /// bis [hotSpeedMax] erlaubt. `null` bei älteren Brücken: keine Einschränkung bekannt.
+  final int? hotTemp;
+  final int? hotSpeedMax;
+
+  /// Ist Stufe [v] bei heißem Inhalt zu schnell? (Rührintervalle sind immer erlaubt.)
+  bool tooFastWhenHot(int v) {
+    final limit = hotSpeedMax;
+    final o = speedOption(v);
+    if (limit == null || o == null || o.group != SpeedGroup.continuous) {
+      return false;
+    }
+    return speeds.indexOf(o) > speeds.indexWhere((s) => s.v == limit);
+  }
 
   /// Temperatur in den erlaubten Bereich bringen: unter [tempMin] → 0 (Heizung aus).
   int clampTemperature(int t) => t < tempMin ? 0 : (t > tempMax ? tempMax : t);
@@ -175,6 +192,10 @@ class ApplianceCaps {
     timeMaxS: readInt(json['timeMaxS']),
     hasScale: readBool(json['hasScale']),
     remoteStart: readBool(json['remoteStart']),
+    hotTemp: json['hotTemp'] is num ? readInt(json['hotTemp']) : null,
+    hotSpeedMax: json['hotSpeedMax'] is num
+        ? readInt(json['hotSpeedMax'])
+        : null,
   );
 
   Json toJson() => {
@@ -186,6 +207,8 @@ class ApplianceCaps {
     'timeMaxS': timeMaxS,
     'hasScale': hasScale,
     'remoteStart': remoteStart,
+    if (hotTemp != null) 'hotTemp': hotTemp,
+    if (hotSpeedMax != null) 'hotSpeedMax': hotSpeedMax,
   };
 }
 

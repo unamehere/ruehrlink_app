@@ -37,6 +37,17 @@ class AppStorage {
   bool get setupDone => _prefs.getBool(_kSetupDone) ?? false;
 
   Future<void> setSetupDone(bool done) => _prefs.setBool(_kSetupDone, done);
+
+  static const _kNudgeVibration = 'nudgeVibration';
+  static const _kNudgeBigHint = 'nudgeBigHint';
+
+  /// Vibration bei Hinweisen: 0 aus, 1 normal, 2 kräftig.
+  int get nudgeVibration => _prefs.getInt(_kNudgeVibration) ?? 1;
+  Future<void> setNudgeVibration(int v) => _prefs.setInt(_kNudgeVibration, v);
+
+  /// Großer Hinweis auf dem Bildschirm.
+  bool get nudgeBigHint => _prefs.getBool(_kNudgeBigHint) ?? true;
+  Future<void> setNudgeBigHint(bool on) => _prefs.setBool(_kNudgeBigHint, on);
 }
 
 /// Wird in `main.dart` mit der geladenen Instanz überschrieben.

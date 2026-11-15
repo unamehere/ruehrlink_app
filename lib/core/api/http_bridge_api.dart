@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -65,6 +68,7 @@ class HttpBridgeApi implements BridgeApi {
         >= 400 && < 500 => throw BridgeException(
           BridgeErrorKind.rejected,
           response.statusCode,
+          _errorCode(response),
         ),
         _ => throw BridgeException(
           BridgeErrorKind.protocol,
@@ -76,6 +80,15 @@ class HttpBridgeApi implements BridgeApi {
     } on Exception {
       // SocketException, TimeoutException, ClientException …
       throw const BridgeException(BridgeErrorKind.unreachable);
+    }
+  }
+
+  static String? _errorCode(http.Response r) {
+    try {
+      final e = readMap(jsonDecode(utf8.decode(r.bodyBytes)))['error'];
+      return e is String ? e : null;
+    } on FormatException {
+      return null;
     }
   }
 
@@ -101,6 +114,30 @@ class HttpBridgeApi implements BridgeApi {
 
   @override
   Future<void> stop() => _send('POST', 'machine/stop');
+
+  @override
+  Future<SequenceState> startSequence(Program program) async =>
+      SequenceState.fromJson(
+        _decode(
+          await _send('POST', 'sequence/start', {
+            'name': program.name,
+            'steps': [for (final s in program.steps) s.toJson()],
+          }),
+        ),
+      );
+
+  @override
+  Future<void> abortSequence() => _send('POST', 'sequence/abort');
+
+  @override
+  Future<SequenceState> sequence() async =>
+      SequenceState.fromJson(_decode(await _send('GET', 'sequence')));
+
+  @override
+  Future<List<Program>> programs() async => readList(
+    _decode(await _send('GET', 'programs'))['programs'],
+    Program.fromJson,
+  );
 
   @override
   Future<void> onboardMachine() => _send('POST', 'machine/onboard');
@@ -137,6 +174,63 @@ class HttpBridgeApi implements BridgeApi {
   @override
   Future<void> reset() => _send('POST', 'reset');
 
+  /// Eigener [HttpClient] statt `package:http`: nur so lässt sich der Fortschritt
+  /// beim Senden zählen (flush wartet, bis der Block raus ist).
+  @override
+  Future<void> uploadFirmware(
+    Uint8List image, {
+    required String sha256,
+    required String signature,
+    void Function(double progress)? onProgress,
+  }) async {
+    const chunk = 16 * 1024;
+    final client = HttpClient()..connectionTimeout = _timeout;
+    try {
+      final req = await client.postUrl(_uri('ota'));
+      req.headers
+        ..contentType = ContentType.binary
+        ..contentLength = image.length
+        ..set('X-Sha256', sha256)
+        ..set('X-Signature', signature);
+      if (target.token != null) {
+        req.headers.set('Authorization', 'Bearer ${target.token}');
+      }
+      for (var off = 0; off < image.length; off += chunk) {
+        final end = min(off + chunk, image.length);
+        req.add(Uint8List.sublistView(image, off, end));
+        await req.flush().timeout(const Duration(seconds: 20));
+        onProgress?.call(end / image.length);
+      }
+      // Prüfen (SHA-256, Signatur, Image) dauert auf der Brücke ein paar Sekunden.
+      final res = await req.close().timeout(const Duration(seconds: 30));
+      final body = await utf8.decodeStream(res);
+      if (res.statusCode >= 200 && res.statusCode < 300) return;
+      if (res.statusCode == 401 || res.statusCode == 403) {
+        throw BridgeException(BridgeErrorKind.unauthorized, res.statusCode);
+      }
+      String? code;
+      try {
+        final e = readMap(jsonDecode(body))['error'];
+        code = e is String ? e : null;
+      } on FormatException {
+        code = null;
+      }
+      throw BridgeException(
+        res.statusCode < 500
+            ? BridgeErrorKind.rejected
+            : BridgeErrorKind.protocol,
+        res.statusCode,
+        code,
+      );
+    } on BridgeException {
+      rethrow;
+    } on Exception {
+      throw const BridgeException(BridgeErrorKind.unreachable);
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   @override
   Stream<BridgeEvent> events() => _events.stream;
 
@@ -170,6 +264,14 @@ class HttpBridgeApi implements BridgeApi {
     unawaited(_channel?.sink.close());
     _wsSub = null;
     _channel = null;
+  }
+
+  @override
+  void reconnect() {
+    if (_closed || !_events.hasListener) return;
+    _reconnect?.cancel();
+    _dropChannel();
+    _connect();
   }
 
   void _disconnect() {

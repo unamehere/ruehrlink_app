@@ -19,8 +19,8 @@ import 'regler.dart';
 
 /// Manuelle Steuerung: Live-Status, drei Regler aus `caps`, Senden, Stopp.
 ///
-/// Breit (Tablet quer): Status und Stopp links, Regler rechts.
-/// Schmal: alles untereinander, Stopp unten fest.
+/// Breit (Tablet quer): Status, Senden und Stopp links, Regler rechts.
+/// Schmal: alles untereinander, Senden und Stopp nebeneinander unten fest.
 class MaschinePage extends ConsumerWidget {
   const MaschinePage({super.key});
 
@@ -31,6 +31,14 @@ class MaschinePage extends ConsumerWidget {
     final stop = BigButton.stop(
       label: l10n.stop,
       onPressed: () => _stop(context, ref),
+    );
+    // Die beiden wichtigsten Knöpfe nebeneinander – ohne Scrollen erreichbar.
+    final actions = Row(
+      children: [
+        const Expanded(child: _SendButton()),
+        const SizedBox(width: Tokens.m),
+        Expanded(child: stop),
+      ],
     );
 
     return Scaffold(
@@ -45,11 +53,11 @@ class MaschinePage extends ConsumerWidget {
             ],
             const LiveStatusBand(),
             const _BowlHint(),
-            if (twoPane) ...[const SizedBox(height: Tokens.l), stop],
+            if (twoPane) ...[const SizedBox(height: Tokens.l), actions],
           ],
         ),
         secondary: const _Controls(),
-        bottom: twoPane ? null : stop,
+        bottom: twoPane ? null : actions,
       ),
     );
   }
@@ -95,7 +103,6 @@ class _Controls extends ConsumerWidget {
     final controller = ref.read(machineControllerProvider.notifier);
     final s = caps.clamp(draft.settings);
     final invalid = ref.read(invalidInputsProvider.notifier);
-    final hasInvalid = ref.watch(invalidInputsProvider).isNotEmpty;
     void edit(MachineSettings next) => controller.edit(next);
     VoidCallback? step(int? next, MachineSettings Function(int) apply) =>
         next == null ? null : () => edit(apply(next));
@@ -162,25 +169,6 @@ class _Controls extends ConsumerWidget {
           onChanged: (v) => edit(s.copyWith(speed: v)),
         ),
         const SizedBox(height: Tokens.l),
-        BigButton(
-          label: draft.sendState == SendState.sending
-              ? l10n.sending
-              : l10n.sendToMachine,
-          icon: Icons.send_rounded,
-          busy: draft.sendState == SendState.sending,
-          // Gesperrt, solange ein Feld ungültig ist. Vor dem Senden die laufende
-          // Eingabe schließen, damit ein gültiger getippter Wert übernommen wird.
-          onPressed: hasInvalid
-              ? null
-              : () async {
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  await Future<void>.delayed(Duration.zero);
-                  if (ref.read(invalidInputsProvider).isEmpty) {
-                    await controller.send();
-                  }
-                },
-        ),
-        const SizedBox(height: Tokens.m),
         _SendFeedback(draft.sendState),
         if (!caps.remoteStart)
           HintCard(
@@ -190,6 +178,35 @@ class _Controls extends ConsumerWidget {
             emphasized: draft.sendState == SendState.confirmed,
           ),
       ],
+    );
+  }
+}
+
+/// „An Maschine senden“ – unten neben Stopp. Gesperrt ohne Gerät oder solange ein Feld ungültig ist.
+class _SendButton extends ConsumerWidget {
+  const _SendButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final caps = ref.watch(bridgeInfoProvider).value?.readyCaps;
+    final draft = ref.watch(machineControllerProvider);
+    final hasInvalid = ref.watch(invalidInputsProvider).isNotEmpty;
+    final sending = draft.sendState == SendState.sending;
+    return BigButton(
+      label: sending ? l10n.sending : l10n.sendToMachine,
+      icon: Icons.send_rounded,
+      busy: sending,
+      // Vor dem Senden die laufende Eingabe schließen, damit ein gültiger getippter Wert übernommen wird.
+      onPressed: caps == null || hasInvalid
+          ? null
+          : () async {
+              FocusManager.instance.primaryFocus?.unfocus();
+              await Future<void>.delayed(Duration.zero);
+              if (ref.read(invalidInputsProvider).isEmpty) {
+                await ref.read(machineControllerProvider.notifier).send();
+              }
+            },
     );
   }
 }

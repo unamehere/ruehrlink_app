@@ -108,6 +108,18 @@ class SpeedSlider extends StatelessWidget {
   }
 }
 
+/// Anzeige einer Stufe wie in der Bedienungsanleitung: „Aus“, „Rührintervall 2“, „Stufe 3“, „Stufe max“.
+/// Ohne Gruppe hieße „2“ sonst Rührintervall 2 oder Geschwindigkeit 2 – das verwechselt man leicht.
+String speedText(BuildContext context, ApplianceCaps? caps, int v) {
+  final o = caps?.speedOption(v);
+  if (o == null) return v == 0 ? context.l10n.valueOff : '$v';
+  return switch (o.group) {
+    SpeedGroup.off => context.l10n.valueOff,
+    SpeedGroup.stir => '${context.l10n.speedGroupStir} ${o.label}',
+    _ => context.l10n.testStepSpeed(o.label),
+  };
+}
+
 /// Lokalisierter Titel einer Stufen-Gruppe.
 String speedGroupTitle(BuildContext context, SpeedGroup group) =>
     switch (group) {

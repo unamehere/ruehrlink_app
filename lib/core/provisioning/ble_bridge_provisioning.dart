@@ -300,7 +300,9 @@ class BleBridgeProvisioning implements BridgeProvisioning {
       j = await _call('fk-scan');
     }
     // Seitenweise abholen: eine BLE-Antwort darf max. 512 Byte haben.
-    final list = <WifiNetwork>[...readList(j['networks'], WifiNetwork.fromJson)];
+    final list = <WifiNetwork>[
+      ...readList(j['networks'], WifiNetwork.fromJson),
+    ];
     final total = (j['total'] as num?)?.toInt() ?? list.length;
     while (list.length < total) {
       final page = await _call('fk-scan', {'start': list.length});
@@ -308,7 +310,9 @@ class BleBridgeProvisioning implements BridgeProvisioning {
       if (more.isEmpty) break;
       list.addAll(more);
     }
-    log.add('fk-scan: ${list.length} Netze${j['scanning'] == true ? ' (Suche läuft noch)' : ''}');
+    log.add(
+      'fk-scan: ${list.length} Netze${j['scanning'] == true ? ' (Suche läuft noch)' : ''}',
+    );
     return list;
   }
 
