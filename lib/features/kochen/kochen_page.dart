@@ -66,7 +66,7 @@ class _FirmwareHint extends ConsumerWidget {
     final l10n = context.l10n;
     final check = ref.watch(firmwareCheckProvider);
     if (check == FirmwareCheck.current) return const SizedBox.shrink();
-    final older = check == FirmwareCheck.bridgeOlder;
+    final older = check != FirmwareCheck.bridgeNewer;
     return Padding(
       padding: const EdgeInsets.only(bottom: Tokens.m),
       child: GestureDetector(
@@ -75,9 +75,14 @@ class _FirmwareHint extends ConsumerWidget {
           icon: older
               ? Icons.system_update_rounded
               : Icons.info_outline_rounded,
-          text: older ? l10n.updateAvailable : l10n.updateAppOlder,
+          text: switch (check) {
+            FirmwareCheck.bugfix => l10n.updateBugfixAvailable,
+            FirmwareCheck.bridgeNewer => l10n.updateAppOlder,
+            _ => l10n.updateAvailable,
+          },
           detail: older ? l10n.updateTapHint : l10n.updateAppOlderDetail,
-          emphasized: older,
+          // Bugfix nur dezent, ein nötiges Update hervorgehoben.
+          emphasized: check == FirmwareCheck.bridgeOlder,
         ),
       ),
     );

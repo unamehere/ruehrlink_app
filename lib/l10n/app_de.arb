@@ -232,6 +232,7 @@
   "updateBridgeVersionShort": "Version {version}",
   "@updateBridgeVersionShort": {"placeholders": {"version": {"type": "String"}}},
   "updateAvailable": "Update für deine Brücke",
+  "updateBugfixAvailable": "Verbesserungen für deine Brücke",
   "updateTapHint": "Antippen, um es jetzt zu installieren (ca. 1 Minute).",
   "updateExplain": "Die neue Firmware steckt in dieser App. Das Update dauert etwa eine Minute; deine Rezepte und Einstellungen bleiben erhalten.",
   "updateCurrent": "Die Brücke ist auf dem neuesten Stand.",

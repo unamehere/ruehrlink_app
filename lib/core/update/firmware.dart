@@ -62,15 +62,16 @@ class FirmwareManifest {
 }
 
 /// Vergleicht `0.1.12` mit `0.2.0` Zahl für Zahl (Zusätze wie `-dirty` werden ignoriert).
-int compareVersions(String a, String b) {
-  List<int> parts(String v) => v
+/// [parts] = 2 vergleicht nur `MAJOR.MINOR`.
+int compareVersions(String a, String b, {int parts = 3}) {
+  List<int> split(String v) => v
       .split(RegExp(r'[^0-9.]'))
       .first
       .split('.')
       .map((p) => int.tryParse(p) ?? 0)
       .toList();
-  final x = parts(a), y = parts(b);
-  for (var i = 0; i < 3; i++) {
+  final x = split(a), y = split(b);
+  for (var i = 0; i < parts; i++) {
     final d = (i < x.length ? x[i] : 0) - (i < y.length ? y[i] : 0);
     if (d != 0) return d.sign;
   }
@@ -82,13 +83,16 @@ final bundledFirmwareProvider = FutureProvider<FirmwareManifest?>(
 );
 
 enum FirmwareCheck {
-  /// Brücke hat die Firmware dieser App (oder es gibt nichts zu vergleichen).
+  /// Passt: gleiche Version, oder die Brücke hat nur einen neueren Bugfix (Patch).
   current,
 
-  /// Brücke ist älter → Update anbieten.
+  /// Gleiches `MAJOR.MINOR`, Brücke hat einen älteren Patch → Bugfix-Update anbieten, kein Muss.
+  bugfix,
+
+  /// `MAJOR.MINOR` der Brücke älter → Update nötig, die Funktionen passen sonst nicht zusammen.
   bridgeOlder,
 
-  /// Brücke ist neuer (z. B. von einem anderen Handy aktualisiert) → App aktualisieren.
+  /// `MAJOR.MINOR` der Brücke neuer (z. B. von einem anderen Handy aktualisiert) → App aktualisieren.
   bridgeNewer,
 }
 
@@ -101,9 +105,12 @@ final firmwareCheckProvider = Provider<FirmwareCheck>((ref) {
   if (info == null || bundled == null || info.fw.isEmpty) {
     return FirmwareCheck.current;
   }
-  return switch (compareVersions(info.fw, bundled.version)) {
+  // Regeln: freikoch_esp/docs/updates.md – MAJOR.MINOR muss passen, der Patch nicht.
+  return switch (compareVersions(info.fw, bundled.version, parts: 2)) {
     < 0 => FirmwareCheck.bridgeOlder,
     > 0 => FirmwareCheck.bridgeNewer,
+    _ when compareVersions(info.fw, bundled.version) < 0 =>
+      FirmwareCheck.bugfix,
     _ => FirmwareCheck.current,
   };
 });

@@ -185,21 +185,27 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
             else
               HintCard(
                 icon: Icons.system_update_rounded,
-                text: l10n.updateAvailable,
+                text: check == FirmwareCheck.bugfix
+                    ? l10n.updateBugfixAvailable
+                    : l10n.updateAvailable,
                 detail: l10n.updateExplain,
-                emphasized: true,
+                emphasized: check == FirmwareCheck.bridgeOlder,
               ),
-            const SizedBox(height: Tokens.l),
-            BigButton(
-              label: check == FirmwareCheck.current
-                  ? l10n.updateReinstall
-                  : l10n.updateStart,
-              icon: Icons.system_update_rounded,
-              kind: check == FirmwareCheck.current
-                  ? BigButtonKind.secondary
-                  : BigButtonKind.primary,
-              onPressed: info == null ? null : () => _start(bundled),
-            ),
+            // Brücke mit neuerem Bugfix nicht zurückstufen – „Erneut installieren“ nur bei gleicher Version.
+            if (info == null ||
+                compareVersions(info.fw, bundled.version) <= 0) ...[
+              const SizedBox(height: Tokens.l),
+              BigButton(
+                label: check == FirmwareCheck.current
+                    ? l10n.updateReinstall
+                    : l10n.updateStart,
+                icon: Icons.system_update_rounded,
+                kind: check == FirmwareCheck.current
+                    ? BigButtonKind.secondary
+                    : BigButtonKind.primary,
+                onPressed: info == null ? null : () => _start(bundled),
+              ),
+            ],
           ],
         ];
     }
