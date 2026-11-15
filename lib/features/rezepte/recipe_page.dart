@@ -124,15 +124,16 @@ class _RecipePageState extends ConsumerState<RecipePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (s.tool case final t?)
+                      if (s.tool case final t?
+                          when t != werkzeugVor(recipe.steps, n))
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Row(
                             children: [
-                              Icon(
-                                werkzeugIcon(t),
-                                size: 22,
-                                color: theme.colorScheme.onSurfaceVariant,
+                              WerkzeugBild(
+                                t,
+                                size: 30,
+                                background: theme.scaffoldBackgroundColor,
                               ),
                               const SizedBox(width: Tokens.s),
                               Expanded(

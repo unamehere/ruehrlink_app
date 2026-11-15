@@ -660,7 +660,7 @@ class _StepEditor extends StatelessWidget {
                       value: w,
                       child: Row(
                         children: [
-                          Icon(werkzeugIcon(w), size: 20),
+                          WerkzeugBild(w, size: 28),
                           const SizedBox(width: Tokens.s),
                           Flexible(
                             child: Text(

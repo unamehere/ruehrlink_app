@@ -260,7 +260,12 @@ void main() {
         // Schritt 1: Zutaten des Schritts, Waage mit skalierter Zielmenge
         await tester.tap(find.text('Weiter'));
         await settle(tester);
+        // Werkzeugwechsel als eigene Seite vor dem Schritt
         expect(find.text('Schneebesen einsetzen'), findsOneWidget);
+        expect(find.text('Erledigt, weiter'), findsOneWidget);
+        await tester.tap(find.text('Erledigt, weiter'));
+        await settle(tester);
+        expect(tester.takeException(), isNull);
         expect(find.text('315 g Weizenmehl abwiegen'), findsOneWidget);
         expect(tester.takeException(), isNull);
 

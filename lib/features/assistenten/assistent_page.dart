@@ -224,7 +224,8 @@ class _AssistentPageState extends ConsumerState<AssistentPage> {
         ),
         const SizedBox(height: Tokens.m),
         HintCard(
-          icon: werkzeugIcon(plan.werkzeug),
+          icon: Icons.handyman_rounded,
+          leading: WerkzeugBild(plan.werkzeug, size: 36),
           text: l10n.asTool(werkzeugName(l10n, plan.werkzeug)),
         ),
       ],

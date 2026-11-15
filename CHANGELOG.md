@@ -7,6 +7,8 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.3.8 – 15.11.2026
+
 ### Geändert
 - Stufenregler: Statt des langen Worts „Rührintervall“ steht über den Rührstufen ein eigenes Rühr-Symbol
   (Schüssel mit Kochlöffel).
@@ -14,6 +16,10 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ### Neu
 - Waage auch im Kochen-Tab über das Symbol oben rechts (wie im Maschinen-Tab).
+- Eigene Piktogramme für alle Rührelemente und den Dämpfeinsatz – im Kochmodus, auf der Rezeptseite, im Editor
+  und in den Assistenten.
+- Kochmodus: Muss das Werkzeug gewechselt werden, kommt dafür eine eigene Seite („Werkzeug wechseln“) mit großem
+  Piktogramm und „Erledigt, weiter“.
 
 ## 0.3.7 – 15.11.2026
 
