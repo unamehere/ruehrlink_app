@@ -88,6 +88,21 @@ void main() {
     });
   }
 
+  testWidgets('Tipp auf den Tab Kochen schließt den Assistenten', (
+    tester,
+  ) async {
+    await _start(tester, const Size(390, 844));
+    await _tapMitte(tester, find.text('Brot & Hefeteig'));
+    await _tapMitte(tester, find.text('Dinkel 630'));
+    expect(find.text('Wie viel Mehl?'), findsOneWidget);
+    await tester.tap(find.text('Kochen').last);
+    await tester.pump(const Duration(seconds: 1)); // Schließ-Animation
+    await _pumpFrames(tester);
+    expect(find.text('Wie viel Mehl?'), findsNothing);
+    expect(find.text('Brot & Hefeteig'), findsWidgets);
+    await _close(tester);
+  });
+
   testWidgets('Zurück führt zur vorigen Frage', (tester) async {
     await _start(tester, const Size(390, 844));
     await _tapMitte(tester, find.text('Eischnee'));

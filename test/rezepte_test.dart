@@ -1,3 +1,4 @@
+import 'dart:async';
 // Rezepte: Abgleich mit der Brücke (Revisionen, If-Match, Löschungen), Hilfen, Bildschirme.
 import 'dart:convert';
 import 'dart:typed_data';
@@ -273,6 +274,57 @@ void main() {
         await close(tester);
       });
     }
+
+    testWidgets('Rezept von der echten Box (15.11., altes Format) öffnen', (
+      tester,
+    ) async {
+      await open(tester, const Size(390, 844));
+      // genau so lag es auf der Box (GET /recipes/c2dc3faa-…)
+      final box = Recipe.fromJson({
+        'v': 1,
+        'id': 'c2dc3faa-def6-427d-818d-1723beabf97b',
+        'rev': 0,
+        'updated': '2026-11-15T13:54:04Z',
+        'title': 'Risotto',
+        'servings': 4,
+        'photo': null,
+        'tags': ['Reisgericht'],
+        'ingredients': [
+          {'amount': 100, 'unit': 'g', 'name': 'Zwiebel'},
+          {'amount': 10, 'unit': 'g', 'name': 'Öl'},
+        ],
+        'steps': [
+          {
+            'text': 'Glasig anschwitzen',
+            'machine': {'temperature': 120, 'time': 180, 'speed': 1},
+          },
+          {
+            'text': 'Reis hinzufügen',
+            'weigh': {'target': 320, 'unit': 'g'},
+          },
+        ],
+      });
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(Scaffold).first),
+      );
+      // nicht awaiten: die Demo-Brücke antwortet über Timer, die erst settle() weiterlaufen lässt
+      unawaited(container.read(recipeLibraryProvider.notifier).save(box));
+      await settle(tester);
+      await settle(tester);
+      await tester.scrollUntilVisible(
+        find.text('Risotto'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Risotto'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Glasig anschwitzen'), findsOneWidget);
+      await tester.tap(find.text('Jetzt kochen'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      await close(tester);
+    });
 
     testWidgets('Editor: neues Rezept anlegen', (tester) async {
       await open(tester, const Size(390, 844));
