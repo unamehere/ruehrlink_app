@@ -13,6 +13,7 @@ import 'features/kochen/kochen_page.dart';
 import 'features/kochen/programs.dart';
 import 'features/kochen/sequence_nudge.dart';
 import 'features/maschine/maschine_page.dart';
+import 'features/mehr/update_page.dart';
 import 'features/mehr/mehr_page.dart';
 import 'features/mehr/pair_request_watcher.dart';
 import 'features/mehr/verbindung_page.dart';
@@ -136,6 +137,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'verbindung',
                     builder: (context, state) => const VerbindungPage(),
+                  ),
+                  GoRoute(
+                    path: 'update',
+                    builder: (context, state) => const UpdatePage(),
                   ),
                   GoRoute(
                     path: 'hinweise',

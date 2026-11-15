@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import '../models/models.dart';
 import 'bridge_api.dart';
@@ -314,6 +315,23 @@ class FakeBridgeApi implements BridgeApi {
   Future<void> setTime(DateTime now) => _wait();
 
   /// Demo: Zurücksetzen trennt das Gerät (wie nach einem echten Werksreset).
+  /// Tut so, als würde hochgeladen (im Demo-Modus wird kein Update angeboten).
+  @override
+  Future<void> uploadFirmware(
+    Uint8List image, {
+    required String sha256,
+    required String signature,
+    void Function(double progress)? onProgress,
+  }) async {
+    if (_status.active) {
+      throw const BridgeException(BridgeErrorKind.rejected, 409, 'busy');
+    }
+    for (var i = 1; i <= 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      onProgress?.call(i / 20);
+    }
+  }
+
   @override
   Future<void> reset() async {
     await _wait();

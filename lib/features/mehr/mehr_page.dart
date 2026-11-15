@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
+import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
@@ -30,6 +31,24 @@ class MehrPage extends ConsumerWidget {
                 title: Text(l10n.mehrConnection),
                 trailing: const Icon(Icons.chevron_right_rounded, size: 32),
                 onTap: () => context.go('/mehr/verbindung'),
+              ),
+            ),
+            const SizedBox(height: Tokens.s),
+            Card(
+              child: ListTile(
+                leading: Badge(
+                  isLabelVisible:
+                      ref.watch(firmwareCheckProvider) != FirmwareCheck.current,
+                  child: const Icon(Icons.system_update_rounded, size: 32),
+                ),
+                title: Text(l10n.updateTitle),
+                subtitle: Text(
+                  l10n.updateBridgeVersionShort(
+                    ref.watch(bridgeInfoProvider).value?.fw ?? '–',
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 32),
+                onTap: () => context.go('/mehr/update'),
               ),
             ),
             const SizedBox(height: Tokens.s),

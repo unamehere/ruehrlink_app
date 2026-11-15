@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../models/models.dart';
 
 /// Die Schnittstelle zur Freikoch Brücke nach `freikoch_esp/docs/api.md`.
@@ -57,6 +59,16 @@ abstract class BridgeApi {
   /// `POST /api/v1/reset` – Werksreset: Heim-WLAN, App-Kopplungen und
   /// Maschinen-Kopplung werden gelöscht, die Brücke startet neu.
   Future<void> reset();
+
+  /// `POST /api/v1/ota` – Firmware-Image hochladen (Prüfsumme und Signatur aus dem Manifest).
+  /// [onProgress] bekommt 0…1. Danach startet die Brücke neu; ob die neue Firmware läuft,
+  /// zeigt `fw` in [info]. Abgelehnt → [BridgeException] mit `busy`, `signature`, `sha256` …
+  Future<void> uploadFirmware(
+    Uint8List image, {
+    required String sha256,
+    required String signature,
+    void Function(double progress)? onProgress,
+  });
 
   /// Ereignisse vom WebSocket (`/api/v1/ws`). Broadcast-Stream; die Verbindung
   /// steht, solange jemand zuhört, und wird bei Abbruch neu aufgebaut.
