@@ -45,6 +45,28 @@ class Recipe {
     steps: readList(json['steps'], RecipeStep.fromJson),
   );
 
+  Recipe copyWith({
+    int? rev,
+    DateTime? updated,
+    String? title,
+    int? servings,
+    String? photo,
+    bool clearPhoto = false,
+    List<String>? tags,
+    List<Ingredient>? ingredients,
+    List<RecipeStep>? steps,
+  }) => Recipe(
+    id: id,
+    rev: rev ?? this.rev,
+    updated: updated ?? this.updated,
+    title: title ?? this.title,
+    servings: servings ?? this.servings,
+    photo: clearPhoto ? null : (photo ?? this.photo),
+    tags: tags ?? this.tags,
+    ingredients: ingredients ?? this.ingredients,
+    steps: steps ?? this.steps,
+  );
+
   Json toJson() => {
     'id': id,
     'rev': rev,
@@ -142,6 +164,26 @@ class StepMachine {
 
   Json toJson() =>
       programId != null ? {'programId': programId} : settings!.toJson();
+}
+
+/// Ergebnis von `PUT`/`DELETE /api/v1/recipes/{id}` mit `If-Match`.
+sealed class RecipeWriteResult {
+  const RecipeWriteResult();
+}
+
+/// Gespeichert bzw. gelöscht; [rev] ist die neue Revision.
+class RecipeWritten extends RecipeWriteResult {
+  const RecipeWritten({required this.rev, this.updated});
+  final int rev;
+  final DateTime? updated;
+}
+
+/// Jemand anderes war schneller (`412`): die Brücke hat inzwischen Revision [currentRev]
+/// (0 = gibt es nicht mehr) bzw. das Rezept wurde [deleted].
+class RecipeConflict extends RecipeWriteResult {
+  const RecipeConflict({required this.currentRev, required this.deleted});
+  final int currentRev;
+  final bool deleted;
 }
 
 /// Antwort von `GET /api/v1/recipes?since=<rev>`.

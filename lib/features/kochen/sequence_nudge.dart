@@ -11,6 +11,7 @@ import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../waage/scale_sheet.dart';
+import '../rezepte/recipe_library.dart' show safetyHintsProvider;
 import 'programs.dart';
 
 /// Wie deutlich die App meldet, dass die Maschine auf dich wartet (Fehlerliste F14).
@@ -236,6 +237,15 @@ class NudgeSettingsPage extends ConsumerWidget {
                 subtitle: Text(l10n.scalePopupSettingDetail),
                 value: ref.watch(scalePopupProvider),
                 onChanged: ref.read(scalePopupProvider.notifier).set,
+              ),
+            ),
+            const SizedBox(height: Tokens.m),
+            Card(
+              child: SwitchListTile(
+                title: Text(l10n.safetyHintsTitle),
+                subtitle: Text(l10n.safetyHintsDetail),
+                value: ref.watch(safetyHintsProvider),
+                onChanged: ref.read(safetyHintsProvider.notifier).set,
               ),
             ),
             const SizedBox(height: Tokens.l),

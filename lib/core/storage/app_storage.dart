@@ -54,6 +54,12 @@ class AppStorage {
   /// Waage im Koch-Tab automatisch zeigen, wenn der Kopf der Maschine hochgeklappt wird.
   bool get scalePopup => _prefs.getBool(_kScalePopup) ?? true;
   Future<void> setScalePopup(bool on) => _prefs.setBool(_kScalePopup, on);
+
+  static const _kSafetyHints = 'safetyHints';
+
+  /// Kurze Sicherheitshinweise in Rezepten (z. B. „heiß“) – dezent, abschaltbar.
+  bool get safetyHints => _prefs.getBool(_kSafetyHints) ?? true;
+  Future<void> setSafetyHints(bool on) => _prefs.setBool(_kSafetyHints, on);
 }
 
 /// Wird in `main.dart` mit der geladenen Instanz überschrieben.
