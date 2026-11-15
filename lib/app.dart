@@ -211,8 +211,16 @@ class AppShell extends StatelessWidget {
 
   final StatefulNavigationShell shell;
 
-  void _select(int index) =>
-      shell.goBranch(index, initialLocation: index == shell.currentIndex);
+  /// Tipp auf den aktiven Tab = zurück zu seiner Startseite: auch Seiten schließen, die per
+  /// `Navigator.push` darüber liegen (z. B. ein Assistent) – `goBranch` allein sieht die nicht.
+  void _select(int index) {
+    if (index == shell.currentIndex) {
+      shell.route.branches[index].navigatorKey.currentState?.popUntil(
+        (r) => r.isFirst,
+      );
+    }
+    shell.goBranch(index, initialLocation: index == shell.currentIndex);
+  }
 
   @override
   Widget build(BuildContext context) {
