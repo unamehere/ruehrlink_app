@@ -9,9 +9,9 @@
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Rührlink findet deine Rührlink per Bluetooth, um sie einzurichten.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Die Kamera liest den QR-Code auf dem Etikett der Brücke. Es werden keine Bilder gespeichert.</string>
+	<string>Die Kamera liest den QR-Code auf dem Etikett deines Rührlinks und macht auf Wunsch Fotos für deine Rezepte. Die Fotos bleiben bei dir zu Hause.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Rührlink greift nicht auf deine Fotos zu.</string>
+	<string>Du kannst ein Foto aus deiner Mediathek für ein Rezept wählen. Es bleibt bei dir zu Hause.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Rührlink spricht nur mit deiner Rührlink im Heim-WLAN.</string>
 	<key>NSBonjourServices</key>

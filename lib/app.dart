@@ -17,6 +17,9 @@ import 'features/mehr/update_page.dart';
 import 'features/mehr/mehr_page.dart';
 import 'features/mehr/pair_request_watcher.dart';
 import 'features/mehr/verbindung_page.dart';
+import 'features/rezepte/kochmodus_page.dart';
+import 'features/rezepte/recipe_editor_page.dart';
+import 'features/rezepte/recipe_page.dart';
 import 'features/rezepte/rezepte_page.dart';
 import 'l10n/l10n.dart';
 import 'ui/layout.dart';
@@ -79,12 +82,16 @@ const _tabs = [
   (path: '/mehr', icon: Icons.more_horiz_rounded),
 ];
 
+/// Navigator über den Tabs – für Vollbildseiten ohne Navigationsleiste (Kochmodus, Editor).
+final _rootNavigator = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   // Router nur neu auswerten (nicht neu bauen), wenn sich der Einrichtungsstatus ändert.
   final refresh = ValueNotifier(0);
   ref.listen(setupDoneProvider, (_, _) => refresh.value++);
 
   final router = GoRouter(
+    navigatorKey: _rootNavigator,
     initialLocation: _tabs.first.path,
     refreshListenable: refresh,
     redirect: (context, state) {
@@ -117,6 +124,36 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/rezepte',
                 builder: (context, state) => const RezeptePage(),
+                routes: [
+                  GoRoute(
+                    path: 'neu',
+                    parentNavigatorKey: _rootNavigator,
+                    builder: (context, state) => const RecipeEditorPage(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) =>
+                        RecipePage(id: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'bearbeiten',
+                        parentNavigatorKey: _rootNavigator,
+                        builder: (context, state) =>
+                            RecipeEditorPage(id: state.pathParameters['id']),
+                      ),
+                      GoRoute(
+                        path: 'kochen',
+                        parentNavigatorKey: _rootNavigator,
+                        builder: (context, state) => KochmodusPage(
+                          id: state.pathParameters['id']!,
+                          servings: int.tryParse(
+                            state.uri.queryParameters['portionen'] ?? '',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

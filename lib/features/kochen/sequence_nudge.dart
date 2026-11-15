@@ -10,6 +10,7 @@ import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
+import '../rezepte/recipe_library.dart' show safetyHintsProvider;
 import 'programs.dart';
 
 /// Wie deutlich die App meldet, dass die Maschine auf dich wartet (Fehlerliste F14).
@@ -226,6 +227,15 @@ class NudgeSettingsPage extends ConsumerWidget {
                 subtitle: Text(l10n.nudgeBigHintDetail),
                 value: settings.bigHint,
                 onChanged: notifier.setBigHint,
+              ),
+            ),
+            const SizedBox(height: Tokens.m),
+            Card(
+              child: SwitchListTile(
+                title: Text(l10n.safetyHintsTitle),
+                subtitle: Text(l10n.safetyHintsDetail),
+                value: ref.watch(safetyHintsProvider),
+                onChanged: ref.read(safetyHintsProvider.notifier).set,
               ),
             ),
             const SizedBox(height: Tokens.l),
