@@ -13,6 +13,7 @@ import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/smooth_countdown.dart';
 import '../../ui/widgets/speed_slider.dart';
+import '../assistenten/assistenten_section.dart';
 import '../maschine/live_status_band.dart';
 import 'programs.dart';
 
@@ -47,6 +48,7 @@ class KochenPage extends ConsumerWidget {
                 const _StatusLine(),
                 const SizedBox(height: Tokens.l),
                 const _SequencePanel(),
+                const AssistentenSection(),
                 const _ProgramSection(),
               ],
             ),
@@ -157,9 +159,10 @@ class _Greeting extends StatelessWidget {
 }
 
 /// Bild zu einem Programm: passend zum Namen, sonst Schüssel bzw. Reagenzglas für Tests.
-String programIllustration(String id, String name) => id.startsWith('test')
-    ? Illustrations.test
-    : Illustrations.forName(name) ?? Illustrations.bowl;
+/// (Inline-Programme wie die der Assistenten haben auf der Brücke keine id.)
+String programIllustration(String id, String name) =>
+    Illustrations.forName(name) ??
+    (id.startsWith('test') ? Illustrations.test : Illustrations.bowl);
 
 // ---------------------------------------------------------------------------
 // Laufendes Programm
