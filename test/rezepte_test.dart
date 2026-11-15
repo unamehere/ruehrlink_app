@@ -293,6 +293,20 @@ void main() {
       expect(tester.takeException(), isNull);
       // Nach dem Speichern: Rezeptseite
       expect(find.text('Mein Brot'), findsWidgets);
+      // zurück zur Liste und wieder öffnen (Fehler 15.11.: ließ sich nicht wieder öffnen)
+
+      await tester.tap(find.byType(BackButton));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(
+        find.text('Mein Brot'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Mein Brot'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.byTooltip('Bearbeiten'), findsOneWidget);
       await close(tester);
     });
   });
