@@ -1,4 +1,4 @@
 /// App-Version, wird angezeigt unter „Mehr“. Bei jedem Build zusammen mit
-/// `version:` in pubspec.yaml hochzählen. `MAJOR.MINOR` immer wie die Firmware,
-/// der Patch zählt für die App allein (siehe ruehrlink_esp/docs/updates.md).
-const appVersion = '0.3.5';
+/// `version:` in pubspec.yaml hochzählen (ein Test prüft, dass beide gleich sind).
+/// App und Firmware haben eigene Versionsnummern (siehe ruehrlink_esp/docs/updates.md).
+const appVersion = '0.3.7';
