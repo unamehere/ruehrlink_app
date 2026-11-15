@@ -20,6 +20,7 @@ import '../kochen/programs.dart';
 import 'photo_picker.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
+import 'rezepte_hilfe.dart';
 
 /// Einfacher Rezept-Editor: Titel, Portionen, Tags, Foto, Zutaten, Schritte
 /// (Text, optional Wiegen oder Maschine – Programm oder Einzelwerte).
@@ -468,6 +469,7 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
           title: Text(
             widget.id == null ? l10n.editorNewTitle : l10n.editorEditTitle,
           ),
+          actions: const [RezepteHilfeButton()],
         ),
         body: AdaptivePage(
           primary: basics,

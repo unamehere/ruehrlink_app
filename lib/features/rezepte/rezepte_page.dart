@@ -9,6 +9,7 @@ import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
+import 'rezepte_hilfe.dart';
 
 /// Rezepte-Tab: Suche, Tags, Raster mit Fotos. Antippen → Rezeptseite.
 class RezeptePage extends ConsumerStatefulWidget {
@@ -51,7 +52,10 @@ class _RezeptePageState extends ConsumerState<RezeptePage> {
     final shown = _filter(lib.sorted);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.tabRezepte)),
+      appBar: AppBar(
+        title: Text(l10n.tabRezepte),
+        actions: const [RezepteHilfeButton()],
+      ),
       floatingActionButton: lib.recipes.isEmpty
           ? null
           : FloatingActionButton.extended(
