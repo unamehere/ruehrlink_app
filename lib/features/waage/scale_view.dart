@@ -16,7 +16,20 @@ import 'scale.dart';
 ///
 /// Einsetzbar im Kochmodus (Schritt mit `weigh`), im Waage-Fenster des Koch-Tabs usw.
 class ScaleView extends ConsumerStatefulWidget {
-  const ScaleView({super.key, this.target, this.ingredient, this.size = 240});
+  const ScaleView({
+    super.key,
+    this.target,
+    this.ingredient,
+    this.size = 240,
+    this.autoTare = false,
+    this.onReached,
+  });
+
+  /// Beim ersten Messwert einmal Tara setzen (Kochmodus: jede Zutat für sich wiegen).
+  final bool autoTare;
+
+  /// Wird einmal aufgerufen, wenn das Gewicht in den Zielbereich kommt.
+  final VoidCallback? onReached;
 
   /// Zielmenge in Gramm (`null` = einfach wiegen).
   final double? target;
@@ -34,6 +47,8 @@ class ScaleView extends ConsumerStatefulWidget {
 class _ScaleViewState extends ConsumerState<ScaleView> {
   late final Timer _tick;
   bool _taring = false;
+  bool _autoTared = false;
+  bool _reached = false;
   ScaleZone? _lastZone;
 
   @override
@@ -77,9 +92,27 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
     final net = live ? reading.net : null;
     final target = widget.target;
 
-    final zone = net != null && target != null ? scaleZone(net, target) : null;
+    if (widget.autoTare && live && !_autoTared) {
+      _autoTared = true;
+      // nach dem Bauen, nicht währenddessen (setState in _tare)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_tare());
+      });
+    }
+    // Erst nach der Auto-Tara bewerten, sonst zählt der Schüsselinhalt mit.
+    final settled = !widget.autoTare || (_autoTared && !_taring);
+    final zone = net != null && target != null && settled
+        ? scaleZone(net, target)
+        : null;
     if (zone == ScaleZone.onTarget && _lastZone != ScaleZone.onTarget) {
       unawaited(HapticFeedback.mediumImpact());
+      if (!_reached) {
+        _reached = true;
+        final cb = widget.onReached;
+        if (cb != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => cb());
+        }
+      }
     }
     _lastZone = zone;
 
@@ -93,7 +126,7 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
     final String hint;
     if (!connected) {
       hint = l10n.scaleNotConnected;
-    } else if (net == null) {
+    } else if (net == null || (target != null && zone == null)) {
       hint = l10n.scaleWaiting;
     } else if (target == null) {
       hint = '';

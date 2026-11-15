@@ -361,7 +361,7 @@
   "cookSend": "An die Maschine senden",
   "cookWeighTarget": "{amount} abwiegen",
   "@cookWeighTarget": {"placeholders": {"amount": {"type": "String"}}},
-  "cookWeighPlaceholder": "Platzhalter: Hier kommt die Waage hin.",
+  "cookWeighPlaceholder": "Bitte abmessen – die Waage zeigt nur Gramm.",
   "cookHotHint": "Wird heiß: Spritzschutz aufsetzen, Schüssel nur an den Griffen anfassen.",
   "cookProgramMissing": "Das Programm „{id}“ ist nicht auf deinem Rührlink.",
   "@cookProgramMissing": {"placeholders": {"id": {"type": "String"}}},
