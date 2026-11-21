@@ -1,6 +1,36 @@
 import 'json.dart';
 import 'machine_settings.dart';
 
+/// API-Hauptversionen, die diese App spricht (`api` in `GET /info`, siehe ruehrlink_esp/docs/api.md).
+const appApis = {1};
+
+/// Fähigkeiten einer Firmware 0.3.x – sie meldet `api: 1`, aber noch keine `features`.
+const legacyFeatures = {
+  'machine',
+  'machine.onboard',
+  'scale',
+  'scale.tare',
+  'sequence',
+  'programs',
+  'recipes',
+  'media',
+  'time',
+  'pair',
+  'reset',
+  'ota',
+};
+
+/// Passen Rührlink und App zusammen?
+enum BridgeCompat {
+  ok,
+
+  /// Der Rührlink spricht nur eine ältere API → Rührlink aktualisieren.
+  bridgeTooOld,
+
+  /// Der Rührlink spricht nur eine neuere API → App aktualisieren.
+  appTooOld,
+}
+
 /// Antwort von `GET /api/v1/info`: die Brücke und das daran gekoppelte Gerät.
 class BridgeInfo {
   const BridgeInfo({
@@ -8,6 +38,8 @@ class BridgeInfo {
     required this.name,
     required this.fw,
     required this.api,
+    this.apiSupported = const [1],
+    this.features = legacyFeatures,
     this.storage,
     this.appliance,
   });
@@ -20,31 +52,64 @@ class BridgeInfo {
 
   /// Version der App-API (aktuell 1).
   final int api;
+
+  /// Alle API-Hauptversionen, die der Rührlink gerade spricht (ältere Firmware: nur [api]).
+  final List<int> apiSupported;
+
+  /// Was die Firmware kann (`scale.tare`, `sequence` …). Ältere Firmware: [legacyFeatures].
+  final Set<String> features;
+
+  bool has(String feature) => features.contains(feature);
+
+  BridgeCompat get compat {
+    if (apiSupported.any(appApis.contains)) return BridgeCompat.ok;
+    final newest = apiSupported.fold(api, (a, b) => a > b ? a : b);
+    return newest < appApis.reduce((a, b) => a < b ? a : b)
+        ? BridgeCompat.bridgeTooOld
+        : BridgeCompat.appTooOld;
+  }
+
   final StorageInfo? storage;
   final ApplianceInfo? appliance;
 
   /// Fähigkeiten des gekoppelten und verbundenen Geräts – sonst `null`.
+  /// Spricht der Rührlink eine API, die diese App nicht kennt, ebenfalls `null`:
+  /// dann zeigt die App nur den Status und steuert nichts.
   ApplianceCaps? get readyCaps =>
-      appliance != null && appliance!.connected ? appliance!.caps : null;
+      compat == BridgeCompat.ok && appliance != null && appliance!.connected
+      ? appliance!.caps
+      : null;
 
-  factory BridgeInfo.fromJson(Json json) => BridgeInfo(
-    id: readString(json['id']),
-    name: readString(json['name']),
-    fw: readString(json['fw']),
-    api: readInt(json['api'], 1),
-    storage: json['storage'] is Map
-        ? StorageInfo.fromJson(readMap(json['storage']))
-        : null,
-    appliance: json['appliance'] is Map
-        ? ApplianceInfo.fromJson(readMap(json['appliance']))
-        : null,
-  );
+  factory BridgeInfo.fromJson(Json json) {
+    final api = readInt(json['api'], 1);
+    final supported = json['apiSupported'] is List
+        ? (json['apiSupported'] as List).whereType<num>().map((e) => e.toInt())
+        : const <int>[];
+    return BridgeInfo(
+      id: readString(json['id']),
+      name: readString(json['name']),
+      fw: readString(json['fw']),
+      api: api,
+      apiSupported: List.unmodifiable(supported.isEmpty ? [api] : supported),
+      features: json['features'] is List
+          ? Set.unmodifiable((json['features'] as List).whereType<String>())
+          : legacyFeatures,
+      storage: json['storage'] is Map
+          ? StorageInfo.fromJson(readMap(json['storage']))
+          : null,
+      appliance: json['appliance'] is Map
+          ? ApplianceInfo.fromJson(readMap(json['appliance']))
+          : null,
+    );
+  }
 
   Json toJson() => {
     'id': id,
     'name': name,
     'fw': fw,
     'api': api,
+    'apiSupported': apiSupported,
+    'features': features.toList(),
     if (storage != null) 'storage': storage!.toJson(),
     if (appliance != null) 'appliance': appliance!.toJson(),
   };
