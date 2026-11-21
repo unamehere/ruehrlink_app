@@ -286,12 +286,20 @@ String formatAmount(double v) {
   return NumberFormat('0.#', 'de').format(rounded);
 }
 
-/// Zutat als Zeile: „750 g Mehl“, „Prise Salz“.
+/// Zutat als Zeile: „750 g Mehl“, „Prise Salz“ (Prise auch ohne Menge, „g“ ohne Menge nicht).
 String ingredientText(Ingredient i, double factor) {
   final amount = formatAmount(i.amount * factor);
+  final measure = i.grams != null || i.isVolume || i.unit.trim() == 'g';
   return [
     if (amount.isNotEmpty) amount,
-    if (amount.isNotEmpty && i.unit.isNotEmpty) i.unit,
+    if (i.unit.isNotEmpty && (amount.isNotEmpty || !measure)) i.unit,
     i.name,
   ].join(' ');
+}
+
+/// Kurztext fürs Abwiegen: „500 g Mehl“, bei Flüssigkeiten „500 ml Milch (≈ 515 g)“.
+String weighText(Ingredient i) {
+  final g = i.grams;
+  final base = ingredientText(i, 1);
+  return g != null && i.isVolume ? '$base (≈ ${formatAmount(g)} g)' : base;
 }

@@ -39,14 +39,16 @@ class _IngredientRow {
     : amount = TextEditingController(
         text: i == null || i.amount == 0 ? '' : formatAmount(i.amount),
       ),
-      unit = TextEditingController(text: i?.unit ?? 'g'),
+      unit = i?.unit.trim() ?? 'g',
       name = TextEditingController(text: i?.name ?? '');
 
-  final TextEditingController amount, unit, name;
+  final TextEditingController amount, name;
+
+  /// Aus [recipeUnits]; ältere Rezepte können eine eigene Einheit haben (bleibt wählbar).
+  String unit;
 
   void dispose() {
     amount.dispose();
-    unit.dispose();
     name.dispose();
   }
 }
@@ -85,7 +87,7 @@ class _StepRow {
       if (r.name.text.trim().isNotEmpty)
         Ingredient(
           amount: _parseNumber(r.amount.text) ?? 0,
-          unit: r.unit.text.trim(),
+          unit: r.unit,
           name: r.name.text.trim(),
         ),
   ];
@@ -542,11 +544,23 @@ class _IngredientEditor extends StatelessWidget {
           ),
           const SizedBox(width: Tokens.s),
           SizedBox(
-            width: 80,
-            child: TextField(
-              controller: row.unit,
-              onChanged: (_) => onChanged?.call(),
+            width: 104,
+            child: DropdownButtonFormField<String>(
+              initialValue: row.unit,
+              isExpanded: true,
               decoration: InputDecoration(labelText: l10n.editorUnit),
+              items: [
+                for (final u in {...recipeUnits, row.unit})
+                  DropdownMenuItem(
+                    value: u,
+                    child: Text(u.isEmpty ? l10n.editorUnitNone : u),
+                  ),
+              ],
+              onChanged: (u) {
+                if (u == null) return;
+                row.unit = u;
+                onChanged?.call();
+              },
             ),
           ),
           const SizedBox(width: Tokens.s),

@@ -7,7 +7,7 @@ import 'recipe_library.dart';
 
 /// Waage für eine Zutat im Kochmodus.
 ///
-///  - [ingredient]: schon mit den Portionen skaliert; nur Gramm/Kilogramm (`ingredient.grams`).
+///  - [ingredient]: schon mit den Portionen skaliert; g/kg oder ml/l (`ingredient.grams`).
 ///  - [onReached]: einmal, sobald die Zielmenge erreicht ist.
 ///  - Pro Zutat eine neue Instanz (Key): Beim ersten Messwert setzt die Waage einmal Tara, damit
 ///    jede Zutat für sich gewogen wird.
@@ -20,7 +20,7 @@ class WeighStepSlot extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ScaleView(
     target: ingredient.grams,
-    ingredient: context.l10n.cookWeighTarget(ingredientText(ingredient, 1)),
+    ingredient: context.l10n.cookWeighTarget(weighText(ingredient)),
     size: 220,
     autoTare: true,
     onReached: onReached,

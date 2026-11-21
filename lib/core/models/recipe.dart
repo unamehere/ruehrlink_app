@@ -118,13 +118,22 @@ class Ingredient {
   final String name;
 
   /// Lässt sich mit der Waage abwiegen? Dann die Menge in Gramm, sonst `null`.
+  /// Flüssigkeiten in ml/l werden über die Dichte umgerechnet ([liquidDensity]).
   double? get grams => amount <= 0
       ? null
       : switch (unit.trim().toLowerCase()) {
           'g' => amount,
           'kg' => amount * 1000,
+          'ml' => amount * liquidDensity(name),
+          'l' => amount * 1000 * liquidDensity(name),
           _ => null,
         };
+
+  /// Mengenangabe in ml/l (die Waage zeigt dann „≈ … g“)?
+  bool get isVolume => switch (unit.trim().toLowerCase()) {
+    'ml' || 'l' => true,
+    _ => false,
+  };
 
   Ingredient scaled(double factor) =>
       Ingredient(amount: amount * factor, unit: unit, name: name);
@@ -141,6 +150,24 @@ class Ingredient {
     'unit': unit,
     'name': name,
   };
+}
+
+/// Einheiten zur Auswahl im Editor (in dieser Reihenfolge). `''` = ohne Einheit („2 Eier“).
+/// Abwiegen lassen sich g, kg, ml und l.
+const recipeUnits = ['g', 'kg', 'ml', 'l', 'EL', 'TL', 'Prise', 'Msp.', 'Pck.', 'Stück', ''];
+
+/// Dichte in g/ml für das Abwiegen von Flüssigkeiten; grob genug für die Toleranz der Waage
+/// (3 %). Unbekannt → wie Wasser.
+double liquidDensity(String name) {
+  final n = name.toLowerCase();
+  // „Öl“, „Rapsöl“, „Olivenöl extra“ – aber nicht „Kölsch“
+  if (n.split(RegExp(r'[\s,()/-]+')).any((w) => w.endsWith('öl') || w.endsWith('oel'))) {
+    return 0.92;
+  }
+  if (n.contains('honig')) return 1.4;
+  if (n.contains('sirup')) return 1.33;
+  if (n.contains('milch') || n.contains('buttermilch')) return 1.03;
+  return 1.0;
 }
 
 /// Gleiche Zutaten (Name und Einheit, Groß-/Kleinschreibung egal) zusammenzählen; Reihenfolge

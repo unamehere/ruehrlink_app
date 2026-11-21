@@ -7,6 +7,15 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.3.10 – 21.11.2026
+
+### Geändert
+- Rezept-Editor: Die Einheit wählst du aus einer Liste (g, kg, ml, l, EL, TL, Prise, Msp., Pck., Stück, ohne)
+  statt sie einzutippen.
+- Kochmodus: Flüssigkeiten in ml oder l lassen sich jetzt auch abwiegen, z. B. „500 ml Milch (≈ 515 g)“.
+  Vorher wurde bei ml-Zutaten keine Waage angezeigt.
+- „Prise Salz“ und ähnliche Angaben ohne Menge zeigen die Einheit jetzt mit an.
+
 ## 0.3.9 – 15.11.2026
 
 ### Behoben

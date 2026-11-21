@@ -337,6 +337,7 @@
   "editorAddIngredient": "Zutat hinzufügen",
   "editorAmount": "Menge",
   "editorUnit": "Einheit",
+  "editorUnitNone": "ohne",
   "editorIngredientName": "Zutat",
   "editorRemove": "Entfernen",
   "editorSteps": "Schritte",
