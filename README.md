@@ -13,8 +13,10 @@ der Ordner `android/` bzw. `ios/` im Projekt enthält nur die plattformspezifisc
 - **Lokal:** keine Cloud, kein Konto, keine Tracker. Daten liegen auf dem Handy und auf der Brücke.
 - **Einfach:** große Schrift, eine Aufgabe pro Bildschirm, alles mit einer Hand bedienbar.
 - **Kein Zugriff nach außen:** Die App spricht nur mit der Brücke im Heim-WLAN.
-- **Firmware an Bord:** Jedes App-Release enthält die passende Brücken-Firmware (gleiche Versionsnummer)
-  und spielt sie per OTA auf – siehe [`ruehrlink_esp/docs/updates.md`](../ruehrlink_esp/docs/updates.md).
+- **Updates getrennt:** App und Rührlink-Firmware haben eigene Versionen. Neue Firmware lädt man als
+  Datei `ruehrlink-<version>.rlfw` von den GitHub-Releases von `ruehrlink_esp` und wählt sie in der App
+  (Mehr → Rührlink-Firmware); die App prüft sie lokal und spielt sie per OTA auf. Jede App bringt außerdem
+  die beim Release neueste Firmware mit. Die App selbst fragt nirgends nach Updates.
 - **Robust:** die App ist nur Fernbedienung und Anzeige – Programme laufen auf der Brücke weiter,
   auch wenn das Handy schläft.
 
