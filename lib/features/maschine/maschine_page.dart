@@ -14,6 +14,7 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/widgets/value_dial.dart';
 import '../assistenten/temperatur_schnellwahl.dart';
+import '../mehr/compat_hints.dart';
 import '../waage/scale_sheet.dart';
 import 'live_status_band.dart';
 import 'machine_controller.dart';
@@ -47,7 +48,9 @@ class MaschinePage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.machineTitle),
         actions: [
-          if (ref.watch(bridgeInfoProvider).value?.readyCaps?.hasScale ?? false)
+          if ((ref.watch(bridgeInfoProvider).value?.readyCaps?.hasScale ??
+                  false) &&
+              (ref.watch(bridgeInfoProvider).value?.has('scale') ?? false))
             IconButton(
               tooltip: l10n.scaleOpen,
               icon: const Icon(Icons.scale_rounded),
@@ -98,6 +101,8 @@ class _Controls extends ConsumerWidget {
       if (info.isLoading && !info.hasValue) {
         return const Center(child: CircularProgressIndicator());
       }
+      final compat = info.value?.compat ?? BridgeCompat.ok;
+      if (compat != BridgeCompat.ok) return CompatHint(compat: compat);
       final unreachable = info.hasError;
       return _Notice(
         title: unreachable ? l10n.bridgeUnreachable : l10n.machineNotConnected,

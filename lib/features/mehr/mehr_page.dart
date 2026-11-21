@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
+import '../../core/models/models.dart';
 import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
@@ -38,7 +39,9 @@ class MehrPage extends ConsumerWidget {
               child: ListTile(
                 leading: Badge(
                   isLabelVisible:
-                      ref.watch(firmwareCheckProvider) != FirmwareCheck.current,
+                      ref.watch(bundledUpdateProvider) != null ||
+                      ref.watch(bridgeInfoProvider).value?.compat ==
+                          BridgeCompat.bridgeTooOld,
                   child: const Icon(Icons.system_update_rounded, size: 32),
                 ),
                 title: Text(l10n.updateTitle),

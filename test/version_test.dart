@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ruehrlink/core/update/firmware.dart';
 import 'package:ruehrlink/version.dart';
 
 void main() {
@@ -13,12 +13,21 @@ void main() {
     expect(appVersion, pubspec);
   });
 
-  test('eingebaute Firmware: Manifest und Datei passen zusammen', () {
-    final manifest = jsonDecode(
-      File('assets/firmware/manifest.json').readAsStringSync(),
-    ) as Map<String, dynamic>;
-    final bin = File('assets/firmware/${manifest['file']}');
-    expect(bin.existsSync(), isTrue);
-    expect(bin.lengthSync(), manifest['size']);
+  test('eingebaute Firmware: genau eine gültige Update-Datei', () {
+    final files = Directory('assets/firmware')
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.rlfw'))
+        .toList();
+    if (files.isEmpty) {
+      markTestSkipped('keine eingebaute Firmware (Entwickler-Build)');
+      return;
+    }
+    expect(files, hasLength(1));
+    final pkg = FirmwarePackage.verify(files.single.readAsBytesSync());
+    expect(
+      files.single.path,
+      endsWith('ruehrlink-${pkg.manifest.version}.rlfw'),
+    );
   });
 }
