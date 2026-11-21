@@ -7,6 +7,20 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.4.0 – 21.11.2026
+
+### Neu
+- Rührlink-Update per Datei: „Update-Datei wählen“ spielt eine heruntergeladene Rührlink-Firmware (`.rlfw`)
+  auf. Die App prüft sie vorher selbst und zeigt Version und Änderungen.
+- Link „Neueste Version auf GitHub“ (öffnet den Browser). Die App selbst verbindet sich weiterhin nie mit
+  dem Internet.
+
+### Geändert
+- Die App hat eine eigene Versionsnummer, unabhängig von der Firmware des Rührlink.
+- Eine ältere Firmware wird nur nach Rückfrage installiert, während eines Programms gar nicht.
+- Passen App und Rührlink nicht zusammen, zeigt die App weiter den Status und sagt, was aktualisiert werden
+  muss. Fehlt dem Rührlink eine Funktion, kommt einmal ein dezenter Hinweis.
+
 ## 0.3.9 – 15.11.2026
 
 ### Behoben
