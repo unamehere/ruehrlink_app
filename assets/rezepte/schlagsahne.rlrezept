@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "id": "grundrezept-schlagsahne",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Schlagsahne",
+  "servings": 4,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Süß",
+    "Schnell"
+  ],
+  "ingredients": [
+    {
+      "amount": 400,
+      "unit": "ml",
+      "name": "Sahne (mind. 30 % Fett), kalt"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "name": "Vanillezucker"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "name": "Sahnesteif"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Kalte Sahne in die Schüssel geben.",
+      "ingredients": [
+        {
+          "amount": 400,
+          "unit": "ml",
+          "name": "Sahne (mind. 30 % Fett), kalt"
+        }
+      ],
+      "tool": "schneebesen"
+    },
+    {
+      "text": "Anschlagen.",
+      "machine": {
+        "temperature": 0,
+        "time": 20,
+        "speed": 8
+      }
+    },
+    {
+      "text": "Vanillezucker und nach Wunsch Sahnesteif dazugeben.",
+      "ingredients": [
+        {
+          "amount": 1,
+          "unit": "Pck.",
+          "name": "Vanillezucker"
+        },
+        {
+          "amount": 1,
+          "unit": "Pck.",
+          "name": "Sahnesteif"
+        }
+      ]
+    },
+    {
+      "text": "Steif schlagen. Ist sie noch zu weich, ein paar Sekunden nachschlagen.",
+      "machine": {
+        "temperature": 0,
+        "time": 90,
+        "speed": 12
+      }
+    }
+  ]
+}

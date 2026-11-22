@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "id": "grundrezept-weizenbrot",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Weizenbrot",
+  "servings": 1,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Brot",
+    "Teig"
+  ],
+  "ingredients": [
+    {
+      "amount": 325,
+      "unit": "g",
+      "name": "Wasser, lauwarm"
+    },
+    {
+      "amount": 7,
+      "unit": "g",
+      "name": "Trockenhefe"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "name": "Weizenmehl 550"
+    },
+    {
+      "amount": 10,
+      "unit": "g",
+      "name": "Salz"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Wasser, Hefe und Mehl in die Schüssel wiegen.",
+      "ingredients": [
+        {
+          "amount": 325,
+          "unit": "g",
+          "name": "Wasser, lauwarm"
+        },
+        {
+          "amount": 7,
+          "unit": "g",
+          "name": "Trockenhefe"
+        },
+        {
+          "amount": 500,
+          "unit": "g",
+          "name": "Weizenmehl 550"
+        }
+      ],
+      "tool": "knethaken"
+    },
+    {
+      "text": "Salz dazugeben.",
+      "ingredients": [
+        {
+          "amount": 10,
+          "unit": "g",
+          "name": "Salz"
+        }
+      ]
+    },
+    {
+      "text": "Langsam unterrühren.",
+      "machine": {
+        "temperature": 0,
+        "time": 60,
+        "speed": 5
+      }
+    },
+    {
+      "text": "Zu einem glatten Teig kneten.",
+      "machine": {
+        "temperature": 0,
+        "time": 420,
+        "speed": 6
+      }
+    },
+    {
+      "text": "Abgedeckt etwa 1 Stunde gehen lassen. Zu einem Laib formen und weitere 45 Minuten gehen lassen. Einschneiden und bei 230 °C (Ober-/Unterhitze) 35–40 Minuten backen, zu Beginn eine Schale Wasser mit in den Ofen stellen."
+    }
+  ]
+}

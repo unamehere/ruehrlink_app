@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "id": "grundrezept-strudelteig",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Strudelteig",
+  "servings": 8,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Teig"
+  ],
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "name": "Weizenmehl 405"
+    },
+    {
+      "amount": 125,
+      "unit": "ml",
+      "name": "Milch, lauwarm"
+    },
+    {
+      "amount": 30,
+      "unit": "ml",
+      "name": "Sonnenblumenöl"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "name": "Salz"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Mehl, Milch, Öl und Salz in die Schüssel geben.",
+      "ingredients": [
+        {
+          "amount": 250,
+          "unit": "g",
+          "name": "Weizenmehl 405"
+        },
+        {
+          "amount": 125,
+          "unit": "ml",
+          "name": "Milch, lauwarm"
+        },
+        {
+          "amount": 30,
+          "unit": "ml",
+          "name": "Sonnenblumenöl"
+        },
+        {
+          "amount": 1,
+          "unit": "Prise",
+          "name": "Salz"
+        }
+      ],
+      "tool": "knethaken"
+    },
+    {
+      "text": "Langsam unterrühren.",
+      "machine": {
+        "temperature": 0,
+        "time": 60,
+        "speed": 5
+      }
+    },
+    {
+      "text": "Kneten, bis der Teig glatt ist und sich von der Schüssel löst.",
+      "machine": {
+        "temperature": 0,
+        "time": 480,
+        "speed": 6
+      }
+    },
+    {
+      "text": "Zur Kugel formen, dünn mit Öl bestreichen und abgedeckt mindestens 30 Minuten ruhen lassen. Auf einem bemehlten Tuch hauchdünn ausziehen."
+    }
+  ]
+}

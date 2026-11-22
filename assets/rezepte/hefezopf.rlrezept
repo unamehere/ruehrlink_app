@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "id": "grundrezept-hefezopf",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Hefezopf",
+  "servings": 12,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Teig",
+    "Süß",
+    "Backen"
+  ],
+  "ingredients": [
+    {
+      "amount": 200,
+      "unit": "ml",
+      "name": "Milch, lauwarm"
+    },
+    {
+      "amount": 21,
+      "unit": "g",
+      "name": "Frische Hefe"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "name": "Zucker"
+    },
+    {
+      "amount": 500,
+      "unit": "g",
+      "name": "Weizenmehl 405"
+    },
+    {
+      "amount": 80,
+      "unit": "g",
+      "name": "Butter, weich"
+    },
+    {
+      "amount": 1,
+      "unit": "",
+      "name": "Ei"
+    },
+    {
+      "amount": 5,
+      "unit": "g",
+      "name": "Salz"
+    },
+    {
+      "amount": 1,
+      "unit": "",
+      "name": "Eigelb zum Bestreichen"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Milch, Hefe und Zucker in die Schüssel geben.",
+      "ingredients": [
+        {
+          "amount": 200,
+          "unit": "ml",
+          "name": "Milch, lauwarm"
+        },
+        {
+          "amount": 21,
+          "unit": "g",
+          "name": "Frische Hefe"
+        },
+        {
+          "amount": 80,
+          "unit": "g",
+          "name": "Zucker"
+        }
+      ],
+      "tool": "knethaken"
+    },
+    {
+      "text": "Mehl, Butter, Ei und Salz dazugeben.",
+      "ingredients": [
+        {
+          "amount": 500,
+          "unit": "g",
+          "name": "Weizenmehl 405"
+        },
+        {
+          "amount": 80,
+          "unit": "g",
+          "name": "Butter, weich"
+        },
+        {
+          "amount": 1,
+          "unit": "",
+          "name": "Ei"
+        },
+        {
+          "amount": 5,
+          "unit": "g",
+          "name": "Salz"
+        }
+      ]
+    },
+    {
+      "text": "Langsam unterrühren.",
+      "machine": {
+        "temperature": 0,
+        "time": 60,
+        "speed": 5
+      }
+    },
+    {
+      "text": "Zu einem glatten, weichen Teig kneten.",
+      "machine": {
+        "temperature": 0,
+        "time": 360,
+        "speed": 6
+      }
+    },
+    {
+      "text": "Abgedeckt etwa 1 Stunde gehen lassen, bis er sichtbar größer ist. In drei Stränge teilen, zu einem Zopf flechten und auf dem Blech weitere 30 Minuten gehen lassen."
+    },
+    {
+      "text": "Mit verquirltem Eigelb bestreichen und bei 180 °C (Ober-/Unterhitze) 30–35 Minuten backen.",
+      "ingredients": [
+        {
+          "amount": 1,
+          "unit": "",
+          "name": "Eigelb zum Bestreichen"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "id": "grundrezept-vanillepudding",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Vanillepudding",
+  "servings": 4,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Süß",
+    "Dessert"
+  ],
+  "ingredients": [
+    {
+      "amount": 500,
+      "unit": "ml",
+      "name": "Milch"
+    },
+    {
+      "amount": 40,
+      "unit": "g",
+      "name": "Zucker"
+    },
+    {
+      "amount": 30,
+      "unit": "g",
+      "name": "Speisestärke"
+    },
+    {
+      "amount": 2,
+      "unit": "",
+      "name": "Eigelb"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "name": "Salz"
+    },
+    {
+      "amount": 1,
+      "unit": "",
+      "name": "Vanilleschote"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Milch, Zucker, Stärke, Eigelb, Salz und das Mark der Vanilleschote in die Schüssel geben.",
+      "ingredients": [
+        {
+          "amount": 500,
+          "unit": "ml",
+          "name": "Milch"
+        },
+        {
+          "amount": 40,
+          "unit": "g",
+          "name": "Zucker"
+        },
+        {
+          "amount": 30,
+          "unit": "g",
+          "name": "Speisestärke"
+        },
+        {
+          "amount": 2,
+          "unit": "",
+          "name": "Eigelb"
+        },
+        {
+          "amount": 1,
+          "unit": "Prise",
+          "name": "Salz"
+        },
+        {
+          "amount": 1,
+          "unit": "",
+          "name": "Vanilleschote"
+        }
+      ],
+      "tool": "kochRuehrelement"
+    },
+    {
+      "text": "Glatt rühren.",
+      "machine": {
+        "temperature": 0,
+        "time": 30,
+        "speed": 7
+      }
+    },
+    {
+      "text": "Unter Rühren aufkochen, bis der Pudding andickt.",
+      "machine": {
+        "temperature": 95,
+        "time": 540,
+        "speed": 5
+      }
+    },
+    {
+      "text": "In Schälchen füllen, direkt auf der Oberfläche mit Frischhaltefolie abdecken und abkühlen lassen."
+    }
+  ]
+}

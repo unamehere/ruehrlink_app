@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "id": "grundrezept-marmorkuchen",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Marmorkuchen",
+  "servings": 12,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Kuchen",
+    "Rührteig",
+    "Backen"
+  ],
+  "ingredients": [
+    {
+      "amount": 250,
+      "unit": "g",
+      "name": "Butter, weich"
+    },
+    {
+      "amount": 250,
+      "unit": "g",
+      "name": "Zucker"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "name": "Vanillezucker"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "name": "Salz"
+    },
+    {
+      "amount": 4,
+      "unit": "",
+      "name": "Eier"
+    },
+    {
+      "amount": 375,
+      "unit": "g",
+      "name": "Weizenmehl 405"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "name": "Backpulver"
+    },
+    {
+      "amount": 155,
+      "unit": "ml",
+      "name": "Milch"
+    },
+    {
+      "amount": 20,
+      "unit": "g",
+      "name": "Kakaopulver"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Butter, Zucker, Vanillezucker und Salz in die Schüssel wiegen.",
+      "ingredients": [
+        {
+          "amount": 250,
+          "unit": "g",
+          "name": "Butter, weich"
+        },
+        {
+          "amount": 250,
+          "unit": "g",
+          "name": "Zucker"
+        },
+        {
+          "amount": 1,
+          "unit": "Pck.",
+          "name": "Vanillezucker"
+        },
+        {
+          "amount": 1,
+          "unit": "Prise",
+          "name": "Salz"
+        }
+      ],
+      "tool": "flexi"
+    },
+    {
+      "text": "Cremig rühren.",
+      "machine": {
+        "temperature": 0,
+        "time": 180,
+        "speed": 9
+      }
+    },
+    {
+      "text": "Eier nacheinander durch die Einfüllöffnung dazugeben und jeweils gut unterrühren.",
+      "ingredients": [
+        {
+          "amount": 4,
+          "unit": "",
+          "name": "Eier"
+        }
+      ],
+      "machine": {
+        "temperature": 0,
+        "time": 120,
+        "speed": 9
+      }
+    },
+    {
+      "text": "Mehl, Backpulver und Milch dazugeben und nur so lange rühren, bis alles verbunden ist.",
+      "ingredients": [
+        {
+          "amount": 375,
+          "unit": "g",
+          "name": "Weizenmehl 405"
+        },
+        {
+          "amount": 1,
+          "unit": "Pck.",
+          "name": "Backpulver"
+        },
+        {
+          "amount": 125,
+          "unit": "ml",
+          "name": "Milch"
+        }
+      ],
+      "machine": {
+        "temperature": 0,
+        "time": 45,
+        "speed": 6
+      }
+    },
+    {
+      "text": "Eine Gugelhupfform (ca. 24 cm) fetten und mehlen, zwei Drittel des Teigs einfüllen."
+    },
+    {
+      "text": "Kakao und Milch zum restlichen Teig geben und kurz unterrühren.",
+      "ingredients": [
+        {
+          "amount": 20,
+          "unit": "g",
+          "name": "Kakaopulver"
+        },
+        {
+          "amount": 30,
+          "unit": "ml",
+          "name": "Milch"
+        }
+      ],
+      "machine": {
+        "temperature": 0,
+        "time": 30,
+        "speed": 6
+      }
+    },
+    {
+      "text": "Den dunklen Teig auf den hellen geben und mit einer Gabel spiralförmig durchziehen. Bei 175 °C (Ober-/Unterhitze) 50–60 Minuten backen (Stäbchenprobe)."
+    }
+  ]
+}

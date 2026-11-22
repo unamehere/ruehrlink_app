@@ -37,6 +37,7 @@ dependencies:
   crypto: ^3.0.6
   file_selector: ^1.0.3
   url_launcher: ^6.3.1
+  # System-Teilen-Menü für Rezept-Dateien (.rlrezept) und „Problem melden“ (kein eigener Netzwerkzugriff)
   share_plus: ^13.3.1
 
 dev_dependencies:
@@ -53,6 +54,8 @@ flutter:
     - assets/brand/
     # Bildanleitung „Maschine koppeln“ (eigene Fotos, verkleinert auf 1000 px)
     - assets/anleitung/maschine-koppeln/
+    # Grundrezepte als Rezept-Dateien (.rlrezept) für „Grundrezepte hinzufügen“ – Entwürfe, an der Maschine prüfen
+    - assets/rezepte/
     # Eingebaute Firmware des Rührlink als Update-Datei .rlfw, von ruehrlink_esp/tools/firmware_sign.py pack
     # erzeugt (nicht im Repo)
     - assets/firmware/

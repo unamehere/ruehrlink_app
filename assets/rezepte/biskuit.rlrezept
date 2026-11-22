@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "id": "grundrezept-biskuit",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Biskuitboden",
+  "servings": 12,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Kuchen",
+    "Backen"
+  ],
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "",
+      "name": "Eier"
+    },
+    {
+      "amount": 125,
+      "unit": "g",
+      "name": "Zucker"
+    },
+    {
+      "amount": 1,
+      "unit": "Pck.",
+      "name": "Vanillezucker"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "name": "Salz"
+    },
+    {
+      "amount": 100,
+      "unit": "g",
+      "name": "Weizenmehl 405"
+    },
+    {
+      "amount": 25,
+      "unit": "g",
+      "name": "Speisestärke"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "name": "Backpulver"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Eier, Zucker, Vanillezucker und Salz in die Schüssel geben.",
+      "ingredients": [
+        {
+          "amount": 4,
+          "unit": "",
+          "name": "Eier"
+        },
+        {
+          "amount": 125,
+          "unit": "g",
+          "name": "Zucker"
+        },
+        {
+          "amount": 1,
+          "unit": "Pck.",
+          "name": "Vanillezucker"
+        },
+        {
+          "amount": 1,
+          "unit": "Prise",
+          "name": "Salz"
+        }
+      ],
+      "tool": "schneebesen"
+    },
+    {
+      "text": "Hell und dickcremig aufschlagen.",
+      "machine": {
+        "temperature": 0,
+        "time": 360,
+        "speed": 12
+      }
+    },
+    {
+      "text": "Mehl, Stärke und Backpulver mischen, darübersieben und mit einem Teigschaber von Hand vorsichtig unterheben.",
+      "ingredients": [
+        {
+          "amount": 100,
+          "unit": "g",
+          "name": "Weizenmehl 405"
+        },
+        {
+          "amount": 25,
+          "unit": "g",
+          "name": "Speisestärke"
+        },
+        {
+          "amount": 1,
+          "unit": "TL",
+          "name": "Backpulver"
+        }
+      ]
+    },
+    {
+      "text": "In eine am Boden mit Backpapier ausgelegte Springform (26 cm) füllen und bei 175 °C (Ober-/Unterhitze) 25–30 Minuten backen. Erst nach dem Auskühlen aus der Form lösen."
+    }
+  ]
+}

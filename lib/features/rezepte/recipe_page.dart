@@ -14,6 +14,7 @@ import '../../ui/widgets/big_button.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
+import 'rezept_teilen.dart';
 
 /// Rezeptseite: Foto, Portionen −/+, Zutaten (skaliert), Schritte, „Jetzt kochen“.
 /// Breit (Tablet quer): Zutaten links, Schritte rechts.
@@ -34,14 +35,7 @@ class _RecipePageState extends ConsumerState<RecipePage> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final recipe = ref.watch(recipeProvider(widget.id));
-    if (recipe == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: Center(
-          child: Text(l10n.recipeNotFound, style: theme.textTheme.bodyLarge),
-        ),
-      );
-    }
+    if (recipe == null) return _RecipeMissing(id: widget.id);
     final base = recipe.servings < 1 ? 1 : recipe.servings;
     final servings = _servings ?? base;
     final factor = servings / base;
@@ -201,6 +195,13 @@ class _RecipePageState extends ConsumerState<RecipePage> {
     return Scaffold(
       appBar: AppBar(
         actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: l10n.recipeFileShare,
+              icon: const Icon(Icons.share_rounded),
+              onPressed: () => _share(context, recipe),
+            ),
+          ),
           IconButton(
             tooltip: l10n.recipeEdit,
             icon: const Icon(Icons.edit_rounded),
@@ -227,6 +228,23 @@ class _RecipePageState extends ConsumerState<RecipePage> {
               ),
       ),
     );
+  }
+
+  Future<void> _share(BuildContext button, Recipe recipe) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final box = button.findRenderObject() as RenderBox?;
+    try {
+      await teileRezept(
+        ref,
+        recipe,
+        origin: box == null ? null : box.localToGlobal(Offset.zero) & box.size,
+      );
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.recipeFileShareFailed)),
+      );
+    }
   }
 
   Future<void> _delete(Recipe recipe) async {
@@ -312,6 +330,62 @@ class _ServingsStepper extends StatelessWidget {
           icon: const Icon(Icons.add_rounded),
         ),
       ],
+    );
+  }
+}
+
+/// Rezept (noch) nicht in der Kopie (F20): erst den laufenden Abgleich abwarten, dann einmal direkt
+/// bei der Brücke nachfragen – „gibt es nicht mehr“ erst, wenn auch die es nicht kennt.
+class _RecipeMissing extends ConsumerStatefulWidget {
+  const _RecipeMissing({required this.id});
+
+  final String id;
+
+  @override
+  ConsumerState<_RecipeMissing> createState() => _RecipeMissingState();
+}
+
+class _RecipeMissingState extends ConsumerState<_RecipeMissing> {
+  /// null = noch nicht gefragt, sonst läuft bzw. fertig.
+  Future<void>? _asked;
+  bool _unreachable = false;
+
+  Future<void> _ask() async {
+    try {
+      await ref.read(recipeLibraryProvider.notifier).fetch(widget.id);
+    } on BridgeException {
+      if (mounted) setState(() => _unreachable = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final busy = ref.watch(
+      recipeLibraryProvider.select((s) => s.loading || s.syncing),
+    );
+    if (!busy) _asked ??= _ask();
+    return Scaffold(
+      appBar: AppBar(),
+      body: FutureBuilder<void>(
+        future: _asked,
+        builder: (context, snap) {
+          if (busy || snap.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(Tokens.l),
+              child: Text(
+                _unreachable ? l10n.bridgeUnreachable : l10n.recipeNotFound,
+                style: theme.textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
