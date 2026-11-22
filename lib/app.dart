@@ -18,6 +18,7 @@ import 'features/maschine/maschine_page.dart';
 import 'features/mehr/update_page.dart';
 import 'features/mehr/mehr_page.dart';
 import 'features/mehr/pair_request_watcher.dart';
+import 'features/mehr/problem_melden_page.dart';
 import 'features/mehr/verbindung_page.dart';
 import 'features/rezepte/kochmodus_page.dart';
 import 'features/rezepte/recipe_editor_page.dart';
@@ -197,6 +198,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'hinweise',
                     builder: (context, state) => const NudgeSettingsPage(),
+                  ),
+                  GoRoute(
+                    path: 'problem',
+                    builder: (context, state) => const ProblemMeldenPage(),
                   ),
                 ],
               ),
