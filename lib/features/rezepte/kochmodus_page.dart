@@ -260,7 +260,8 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                       ),
                       label: Text(l10n.cookWeighOpenStep(nummer, n)),
                       visualDensity: VisualDensity.compact,
-                      onPressed: () => _go(p),
+                      // springen statt blättern: Schritte dazwischen gelten nicht als besucht
+                      onPressed: () => _pages.jumpToPage(p),
                     ),
                 ],
               ),
