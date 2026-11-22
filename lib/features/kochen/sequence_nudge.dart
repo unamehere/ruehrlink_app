@@ -131,24 +131,55 @@ class _SequenceNudgeWatcherState extends ConsumerState<SequenceNudgeWatcher> {
   }
 }
 
-/// Großer Hinweis. Schließt sich selbst, sobald die Maschine wieder läuft.
-class _NudgeDialog extends ConsumerWidget {
+/// Hat sich der Ablauf seit dem Hinweis [initial] weiterbewegt (anderer Zustand oder Schritt)? Dann ist der
+/// Hinweis überholt und schließt sich – auch wenn der Wechsel schon vor dem Öffnen kam (F26).
+bool nudgeVeraltet(SequenceState initial, SequenceState? jetzt) =>
+    jetzt != null &&
+    (jetzt.state != initial.state || jetzt.step != initial.step);
+
+/// Großer Hinweis. Schließt sich selbst, sobald der Ablauf weitergeht (z. B. die Maschine läuft).
+class _NudgeDialog extends ConsumerStatefulWidget {
   const _NudgeDialog({required this.initial});
 
   final SequenceState initial;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NudgeDialog> createState() => _NudgeDialogState();
+}
+
+class _NudgeDialogState extends ConsumerState<_NudgeDialog> {
+  bool _zu = false;
+
+  void _schliessen() {
+    if (_zu || !mounted) return;
+    // Nur sich selbst schließen, nie die Seite darunter
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    _zu = true;
+    Navigator.of(context).pop();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Der Wechsel kann schon zwischen Auslösen und Öffnen gekommen sein – ref.listen sähe ihn nie.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (nudgeVeraltet(widget.initial, ref.read(sequenceProvider).value)) {
+        _schliessen();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = widget.initial;
     final l10n = context.l10n;
     final theme = Theme.of(context);
     ref.listen<SequenceState?>(sequenceProvider.select((s) => s.value), (
       _,
       next,
     ) {
-      if (initial.state == SequenceRunState.waitingStart &&
-          next?.state == SequenceRunState.running) {
-        Navigator.of(context).maybePop();
-      }
+      if (nudgeVeraltet(initial, next)) _schliessen();
     });
     final (IconData icon, String title) = switch (initial.state) {
       SequenceRunState.waitingStart => (
