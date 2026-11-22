@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
+import '../../core/event_log.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import 'nachstellen.dart';
@@ -15,8 +16,20 @@ final sequenceProvider = StreamProvider<SequenceState>((ref) async* {
   } on BridgeException {
     yield SequenceState.idle;
   }
+  SequenceState? last;
   await for (final e in api.events()) {
-    if (e is SequenceEvent) yield e.state;
+    if (e is SequenceEvent) {
+      final s = e.state;
+      if (last == null || last.state != s.state || last.step != s.step) {
+        appEvents.add(
+          'ablauf',
+          '${s.state.name} Schritt ${s.step}/${s.of}'
+              '${s.reason != null ? ' (${s.reason})' : ''}',
+        );
+      }
+      last = s;
+      yield s;
+    }
   }
 });
 
@@ -100,6 +113,10 @@ class SequenceController {
     AppLocalizations l10n, {
     required int bezugS,
   }) async {
+    appEvents.add(
+      'ablauf',
+      'Start „${program.name}“ (${program.steps.length} Schritte)',
+    );
     try {
       await ref.read(bridgeApiProvider).startSequence(program);
       if (program.steps.isNotEmpty) {
@@ -109,6 +126,7 @@ class SequenceController {
       }
       return null;
     } on BridgeException catch (e) {
+      appEvents.add('ablauf', 'Start abgelehnt: ${e.code ?? e.kind.name}');
       return switch ((e.kind, e.code, e.statusCode)) {
         (BridgeErrorKind.unreachable, _, _) => l10n.bridgeUnreachable,
         (_, 'not_ready', _) => l10n.startNotReady,
@@ -124,6 +142,7 @@ class SequenceController {
 
   /// Abbrechen; `false`, wenn die Brücke nicht erreichbar war.
   Future<bool> abort() async {
+    appEvents.add('ablauf', 'Abbrechen');
     try {
       await ref.read(bridgeApiProvider).abortSequence();
       return true;

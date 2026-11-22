@@ -476,6 +476,18 @@ class FakeBridgeApi implements BridgeApi {
   }
 
   @override
+  Future<Json> diag() async {
+    await _wait();
+    return {
+      'fw': '0.1.0',
+      'uptimeS': 42,
+      'resetReason': 'poweron',
+      'appliance': {'connected': _status.connected, 'active': _status.active},
+      'log': 'I (42) demo: Demo-Modus, kein echtes Log\n',
+    };
+  }
+
+  @override
   Future<void> reset() async {
     await _wait();
     _paired = false;

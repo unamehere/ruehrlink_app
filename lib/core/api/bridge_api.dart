@@ -83,6 +83,10 @@ abstract class BridgeApi {
   /// Zeitzone wird weggelassen (ohne Zusatzpaket nicht als IANA-Name verfügbar).
   Future<void> setTime(DateTime now);
 
+  /// `GET /api/v1/diag` – Zustand des Rührlink und seine letzten Log-Ausgaben (Fähigkeit `diag`,
+  /// für „Problem melden“). Zugangsdaten maskiert schon der Rührlink.
+  Future<Json> diag();
+
   /// `POST /api/v1/reset` – Werksreset: Heim-WLAN, App-Kopplungen und
   /// Maschinen-Kopplung werden gelöscht, die Brücke startet neu.
   Future<void> reset();
