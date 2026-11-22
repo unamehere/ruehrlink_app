@@ -659,6 +659,7 @@
   "recipeIngredientsAuto": "Aus den Schritten zusammengezählt",
   "cookIngredients": "Dazu kommt",
   "cookWeighNext": "Nächste Zutat",
+  "cookWeighPrev": "Vorige Zutat",
   "cookWeighAllDone": "Alles abgewogen",
   "cookWeighProgress": "Zutat {number} von {of}",
   "@cookWeighProgress": {"placeholders": {"number": {"type": "int"}, "of": {"type": "int"}}},

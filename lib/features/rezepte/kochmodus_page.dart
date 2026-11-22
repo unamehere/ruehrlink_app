@@ -367,9 +367,8 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                             : hierNaechste != null
                             // Im Schritt sind noch Zutaten offen: erst die nächste Zutat.
                             ? BigButton(
-                                label: l10n.cookWeighNextNamed(
-                                  ingredientText(hier[hierNaechste], 1),
-                                ),
+                                // Ohne Namen: der steht schon über der Waage und in der Liste.
+                                label: l10n.cookWeighNext,
                                 icon: _fertig(_page).contains(hierAktuell)
                                     ? Icons.check_circle_rounded
                                     : Icons.arrow_forward_rounded,
@@ -760,12 +759,34 @@ class _WeighSequence extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (n > 1)
+          // ‹ Zutat 2 von 4 › – vor und zurück, auch zu schon gewogenen Zutaten.
           Padding(
             padding: const EdgeInsets.only(bottom: Tokens.s),
-            child: Text(
-              l10n.cookWeighProgress(current + 1, n),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: l10n.cookWeighPrev,
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  onPressed: current > 0 ? () => onSelect(current - 1) : null,
+                ),
+                Flexible(
+                  child: Text(
+                    l10n.cookWeighProgress(current + 1, n),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: l10n.cookWeighNext,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  onPressed: current < n - 1
+                      ? () => onSelect(current + 1)
+                      : null,
+                ),
+              ],
             ),
           ),
         WeighStepSlot(

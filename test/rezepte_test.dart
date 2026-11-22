@@ -366,9 +366,16 @@ void main() {
 
         // Hauptknopf führt erst zur nächsten Zutat, nicht zum nächsten Schritt (F23)
         expect(find.text('Weiter'), findsNothing);
-        await tester.tap(find.text('Nächste Zutat: 625 g Milch'));
+        await tester.tap(find.text('Nächste Zutat'));
         await settle(tester);
         expect(find.text('625 g Milch abwiegen'), findsOneWidget);
+        expect(find.text('Zutat 2 von 2'), findsOneWidget);
+        // zurück zur schon gewogenen ersten Zutat und wieder vor
+        await tester.tap(find.byTooltip('Vorige Zutat'));
+        await settle(tester);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+        await tester.tap(find.byTooltip('Nächste Zutat'));
+        await settle(tester);
         expect(find.text('Zutat 2 von 2'), findsOneWidget);
         expect(find.text('Schritt 1 von 4'), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -419,7 +426,7 @@ void main() {
         expect(find.text('Zutat 1 von 2'), findsOneWidget);
 
         // Mehl mit dem Hauptknopf abhaken, dann wegwischen: 1 Zutat offen
-        await tester.tap(find.text('Nächste Zutat: 500 g Milch'));
+        await tester.tap(find.text('Nächste Zutat'));
         await settle(tester);
         expect(find.text('Zutat 2 von 2'), findsOneWidget);
         expect(find.byIcon(Icons.check_circle_rounded), findsWidgets);

@@ -18,6 +18,8 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 ### Geändert
 - Kochmodus: Der Hauptknopf führt durch alle Wiegezutaten eines Schritts („Nächste Zutat: …“, „Zutat 2 von 4“,
   Liste mit Haken), erst danach zum nächsten Schritt (F23).
+- Kochmodus: Der Knopf heißt nur „Nächste Zutat“; mit ‹ › neben „Zutat 2 von 4“ geht es auch zurück zu schon
+  gewogenen Zutaten.
 - Kochmodus: Wischen zwischen Schritten bleibt frei; offene Zutaten in verlassenen Schritten werden oben dezent
   angezeigt.
 - Neue Einstellung (Mehr → Hinweise beim Kochen): „Automatisch zur nächsten Zutat“. Liegt das Gewicht gut 2 s
