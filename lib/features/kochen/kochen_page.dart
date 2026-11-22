@@ -5,6 +5,7 @@ import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
+import '../../ui/hilfe_knopf.dart';
 import '../../ui/illustrations.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
@@ -12,6 +13,7 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/smooth_countdown.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../assistenten/assistenten_section.dart';
+import '../hilfe/hilfe_themen.dart';
 import '../maschine/live_status_band.dart';
 import '../mehr/compat_hints.dart';
 import '../waage/scale_sheet.dart';
@@ -413,7 +415,11 @@ class _ProgramSection extends ConsumerWidget {
         ref.watch(bridgeProgramsProvider).value ?? const <Program>[];
 
     final children = <Widget>[
-      Text(l10n.programsTitle, style: theme.textTheme.headlineSmall),
+      UeberschriftMitHilfe(
+        l10n.programsTitle,
+        hilfeProgramme,
+        style: theme.textTheme.headlineSmall,
+      ),
       const SizedBox(height: Tokens.s),
     ];
     if (caps == null) {

@@ -12,6 +12,8 @@ import '../../core/api/http_bridge_api.dart';
 import '../../core/discovery/bridge_discovery.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
+import '../../ui/hilfe_knopf.dart';
+import '../hilfe/hilfe_themen.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
@@ -103,7 +105,10 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
 
     if (_pairing != null) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.connectionPairTitle)),
+        appBar: AppBar(
+          title: Text(l10n.connectionPairTitle),
+          actions: const [HilfeKnopf(hilfeKopplungBestaetigen)],
+        ),
         body: AdaptivePage(
           primary: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -136,7 +141,10 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.connectionTitle)),
+      appBar: AppBar(
+        title: Text(l10n.connectionTitle),
+        actions: const [HilfeKnopf(hilfeVerbindung)],
+      ),
       body: AdaptivePage(
         primary: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

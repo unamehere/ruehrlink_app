@@ -10,6 +10,7 @@ import '../../l10n/l10n.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import 'maschine_koppeln_anleitung.dart';
 import 'setup_controller.dart';
 import 'setup_step_layout.dart';
 
@@ -122,7 +123,7 @@ class _MachineStepState extends ConsumerState<MachineStep> {
       _Phase.offline => l10n.setupMachineOffline,
     };
     return SetupStepLayout(
-      visual: const _ImagePlaceholder(),
+      visual: const MaschineKoppelnVorschau(),
       title: l10n.setupMachineTitle,
       text: l10n.setupMachineText,
       content: Column(
@@ -155,40 +156,6 @@ class _MachineStepState extends ConsumerState<MachineStep> {
             child: Text(l10n.setupLater),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Platzhalter, bis die Bildanleitung (eigene Fotos, kein Herstellermaterial) da ist.
-class _ImagePlaceholder extends StatelessWidget {
-  const _ImagePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(Tokens.radius),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.image_outlined,
-              size: 64,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: Tokens.s),
-            Text(
-              context.l10n.setupMachineImage,
-              style: theme.textTheme.bodyLarge,
-            ),
-          ],
-        ),
       ),
     );
   }

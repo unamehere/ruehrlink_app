@@ -60,6 +60,9 @@ void main() {
 
     // Maschine koppeln (Demo-Gerät ist sofort verbunden).
     expect(find.text('Maschine koppeln'), findsOneWidget);
+    // Bildanleitung und Hilfe sind da, aber nur auf Tipp.
+    expect(find.text("So geht's an der Maschine"), findsOneWidget);
+    expect(find.byTooltip('Hilfe'), findsOneWidget);
     await tapAndWait(find.text('Ich habe auf Verbinden gedrückt'), 3000);
 
     expect(find.text('Fertig!'), findsOneWidget);

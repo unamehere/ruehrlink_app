@@ -6,6 +6,7 @@ import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
+import '../../ui/hilfe_knopf.dart';
 import '../../ui/input.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
@@ -14,6 +15,7 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/widgets/value_dial.dart';
 import '../assistenten/temperatur_schnellwahl.dart';
+import '../hilfe/hilfe_themen.dart';
 import '../mehr/compat_hints.dart';
 import '../waage/scale_sheet.dart';
 import 'live_status_band.dart';
@@ -56,6 +58,7 @@ class MaschinePage extends ConsumerWidget {
               icon: const Icon(Icons.scale_rounded),
               onPressed: () => showScaleSheet(context),
             ),
+          const HilfeKnopf(hilfeMaschine),
         ],
       ),
       body: AdaptivePage(
@@ -323,7 +326,11 @@ class _Notice extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: theme.textTheme.titleLarge),
+            UeberschriftMitHilfe(
+              title,
+              hilfeVerbindung,
+              style: theme.textTheme.titleLarge,
+            ),
             const SizedBox(height: Tokens.s),
             Text(text, style: theme.textTheme.bodyLarge),
             const SizedBox(height: Tokens.l),

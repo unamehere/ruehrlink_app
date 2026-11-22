@@ -8,6 +8,7 @@ import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
+import '../../ui/hilfe_knopf.dart';
 import '../../ui/illustrations.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
@@ -16,6 +17,7 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/werkzeug.dart';
 import '../assistenten/sicherheit.dart';
+import '../hilfe/hilfe_themen.dart';
 import '../kochen/nachstellen.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
@@ -161,6 +163,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
           onPressed: _close,
         ),
         title: Text(recipe.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        actions: const [HilfeKnopf(hilfeKochmodus)],
       ),
       body: Column(
         children: [

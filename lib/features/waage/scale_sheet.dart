@@ -7,6 +7,8 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../core/storage/app_storage.dart';
 import '../../l10n/l10n.dart';
+import '../../ui/hilfe_knopf.dart';
+import '../hilfe/hilfe_themen.dart';
 import '../../ui/theme.dart';
 import 'scale_view.dart';
 
@@ -61,8 +63,9 @@ class _ScaleSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            UeberschriftMitHilfe(
               context.l10n.scaleTitle,
+              hilfeWaage,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: Tokens.l),
