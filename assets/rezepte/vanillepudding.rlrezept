@@ -81,19 +81,18 @@
       "tool": "kochRuehrelement"
     },
     {
-      "text": "Glatt rühren.",
+      "text": "Glatt rühren, dann unter Rühren aufkochen, bis der Pudding andickt.",
       "machine": {
         "temperature": 0,
         "time": 30,
-        "speed": 7
-      }
-    },
-    {
-      "text": "Unter Rühren aufkochen, bis der Pudding andickt.",
-      "machine": {
-        "temperature": 95,
-        "time": 540,
-        "speed": 5
+        "speed": 7,
+        "then": [
+          {
+            "temperature": 95,
+            "time": 540,
+            "speed": 5
+          }
+        ]
       }
     },
     {

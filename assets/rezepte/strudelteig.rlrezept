@@ -60,19 +60,18 @@
       "tool": "knethaken"
     },
     {
-      "text": "Langsam unterrühren.",
+      "text": "Langsam unterrühren, dann kneten, bis der Teig glatt ist und sich von der Schüssel löst.",
       "machine": {
         "temperature": 0,
         "time": 60,
-        "speed": 5
-      }
-    },
-    {
-      "text": "Kneten, bis der Teig glatt ist und sich von der Schüssel löst.",
-      "machine": {
-        "temperature": 0,
-        "time": 480,
-        "speed": 6
+        "speed": 5,
+        "then": [
+          {
+            "temperature": 0,
+            "time": 480,
+            "speed": 6
+          }
+        ]
       }
     },
     {

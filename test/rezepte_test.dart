@@ -12,6 +12,7 @@ import 'package:ruehrlink/core/api/fake_bridge_api.dart';
 import 'package:ruehrlink/core/models/models.dart';
 import 'package:ruehrlink/core/storage/app_storage.dart';
 import 'package:ruehrlink/core/storage/recipe_store.dart';
+import 'package:ruehrlink/features/kochen/programs.dart';
 import 'package:ruehrlink/features/rezepte/recipe_library.dart';
 import 'package:ruehrlink/features/rezepte/rezept_datei.dart';
 import 'package:ruehrlink/features/rezepte/rezept_teilen.dart';
@@ -360,6 +361,16 @@ void main() {
         await settle(tester);
         expect(tester.takeException(), isNull);
         expect(find.text('315 g Weizenmehl abwiegen'), findsOneWidget);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // Hauptknopf führt erst zur nächsten Zutat, nicht zum nächsten Schritt (F23)
+        expect(find.text('Weiter'), findsNothing);
+        await tester.tap(find.text('Nächste Zutat: 625 g Milch'));
+        await settle(tester);
+        expect(find.text('625 g Milch abwiegen'), findsOneWidget);
+        expect(find.text('Zutat 2 von 2'), findsOneWidget);
+        expect(find.text('Schritt 1 von 4'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
         // bis zum Maschinenschritt (Schritt 3)
@@ -372,6 +383,156 @@ void main() {
         await close(tester);
       });
     }
+
+    testWidgets(
+      'Kochmodus: Wegwischen mit offenen Zutaten wird dezent angemerkt',
+      (tester) async {
+        await open(tester, const Size(390, 844));
+        await tester.scrollUntilVisible(
+          find.text('Pfannkuchen'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -80));
+        await tester.pump();
+        await tester.tap(find.text('Pfannkuchen'));
+        await settle(tester);
+        await tester.tap(find.text('Jetzt kochen'));
+        await settle(tester);
+        await tester.tap(find.text('Weiter'));
+        await settle(tester);
+        await tester.tap(find.text('Erledigt, weiter'));
+        await settle(tester);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+
+        // Wischen bleibt frei – kein Dialog, nur ein Hinweis oben
+        Future<void> wischen(double dx) async {
+          await tester.fling(find.byType(PageView), Offset(dx, 0), 1500);
+          await settle(tester);
+        }
+
+        await wischen(-300);
+        expect(find.text('Schritt 2 von 4'), findsOneWidget);
+        expect(find.text('Schritt 1: 2 Zutaten offen'), findsOneWidget);
+        await wischen(300);
+        expect(find.text('Schritt 1: 2 Zutaten offen'), findsNothing);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+
+        // Mehl mit dem Hauptknopf abhaken, dann wegwischen: 1 Zutat offen
+        await tester.tap(find.text('Nächste Zutat: 500 g Milch'));
+        await settle(tester);
+        expect(find.text('Zutat 2 von 2'), findsOneWidget);
+        expect(find.byIcon(Icons.check_circle_rounded), findsWidgets);
+        // Liste: zurück zum Mehl antippen und wieder weg – weiter geht's bei der ersten offenen
+        final mehl = find.widgetWithText(InkWell, '250 g Weizenmehl');
+        await tester.ensureVisible(mehl);
+        await tester.pump();
+        await tester.tap(mehl);
+        await settle(tester);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+        await wischen(-300);
+        expect(find.text('Schritt 1: 1 Zutat offen'), findsOneWidget);
+        await tester.tap(find.text('Schritt 1: 1 Zutat offen'));
+        await settle(tester);
+        expect(find.text('Zutat 2 von 2'), findsOneWidget);
+        expect(find.text('500 g Milch abwiegen'), findsOneWidget);
+
+        // letzte Zutat: Hauptknopf heißt wieder „Weiter“ und blättert
+        await tester.tap(find.text('Weiter'));
+        await settle(tester);
+        expect(find.text('Schritt 2 von 4'), findsOneWidget);
+        expect(find.textContaining('Zutaten offen'), findsNothing);
+        expect(find.textContaining('Zutat offen'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await close(tester);
+      },
+    );
+
+    testWidgets('Maschinenschritt mit Phasen: Kochmodus und Editor', (
+      tester,
+    ) async {
+      await open(tester, const Size(390, 844));
+      const id = '11111111-2222-4333-8444-555555555555';
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(Scaffold).first),
+      );
+      unawaited(
+        container
+            .read(recipeLibraryProvider.notifier)
+            .save(
+              Recipe(
+                id: id,
+                rev: 0,
+                updated: DateTime.utc(2026, 11, 22),
+                title: 'Strudelteig',
+                servings: 1,
+                steps: const [
+                  RecipeStep(
+                    text: 'Unterrühren, dann kneten',
+                    machine: StepMachine.settings(
+                      MachineSettings(temperature: 0, time: 60, speed: 5),
+                      then: [
+                        MachineSettings(temperature: 0, time: 300, speed: 6),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+      );
+      await settle(tester);
+      await settle(tester);
+
+      // Kochmodus: Phasenliste, Gesamtzeit, ein Programm mit zwei Schritten
+      container.read(routerProvider).go('/rezepte/$id/kochen');
+      await settle(tester);
+      await tester.tap(find.text('Weiter'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('2 Phasen · 6:00 gesamt'), findsOneWidget);
+      expect(find.text('1:00 Stufe min → 5:00 Stufe 1'), findsOneWidget);
+      await tester.ensureVisible(find.text('An die Maschine senden'));
+      await tester.pump();
+      await tester.tap(find.text('An die Maschine senden'));
+      await settle(tester);
+      final seq = container.read(sequenceProvider).value!;
+      expect(seq.of, 2);
+      expect(seq.step, 1);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byTooltip('Kochmodus beenden'));
+      await settle(tester);
+      unawaited(container.read(sequenceControllerProvider).abort());
+      await settle(tester);
+
+      // Editor: Phase 2 sichtbar, „Phase anhängen“ übernimmt die letzten Werte
+      container.read(routerProvider).go('/rezepte/$id/bearbeiten');
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Phase 2 – direkt im Anschluss'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Phase anhängen'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Phase anhängen'));
+      await tester.pump();
+      expect(find.text('Phase 3 – direkt im Anschluss'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Speichern'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Speichern'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      final gespeichert = container.read(recipeLibraryProvider).recipes[id]!;
+      expect(gespeichert.steps.single.machine!.phasen, const [
+        MachineSettings(temperature: 0, time: 60, speed: 5),
+        MachineSettings(temperature: 0, time: 300, speed: 6),
+        MachineSettings(temperature: 0, time: 300, speed: 6),
+      ]);
+      await close(tester);
+    });
 
     testWidgets('Rezept von der echten Box (15.11., altes Format) öffnen', (
       tester,

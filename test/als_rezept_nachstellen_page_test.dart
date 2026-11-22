@@ -142,8 +142,8 @@ void main() {
       await _sekunden(tester, 2);
       expect(find.text('Sahne für Kuchen'), findsWidgets);
       expect(find.text('Jetzt kochen'), findsOneWidget);
-      expect(find.text('Anschlagen'), findsOneWidget);
-      expect(find.text('Schlagen'), findsOneWidget);
+      // Anschlagen → Schlagen läuft durch: ein Schritt mit zwei Phasen
+      expect(find.text('Anschlagen, dann Schlagen'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _ende(tester, api);
     },

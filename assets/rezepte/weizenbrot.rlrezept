@@ -66,19 +66,18 @@
       ]
     },
     {
-      "text": "Langsam unterrühren.",
+      "text": "Langsam unterrühren, dann zu einem glatten Teig kneten.",
       "machine": {
         "temperature": 0,
         "time": 60,
-        "speed": 5
-      }
-    },
-    {
-      "text": "Zu einem glatten Teig kneten.",
-      "machine": {
-        "temperature": 0,
-        "time": 420,
-        "speed": 6
+        "speed": 5,
+        "then": [
+          {
+            "temperature": 0,
+            "time": 420,
+            "speed": 6
+          }
+        ]
       }
     },
     {

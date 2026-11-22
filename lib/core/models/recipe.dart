@@ -298,21 +298,60 @@ class RecipeStep {
 }
 
 /// Maschinenschritt im Rezept: entweder ein Programm ([programId])
-/// oder direkte Einzelwerte ([settings]).
+/// oder direkte Einzelwerte ([settings]), optional mit weiteren Phasen direkt im Anschluss
+/// ([then], z. B. 1 min Stufe min → 5 min Stufe 1). Der Kochmodus schickt alle Phasen als ein
+/// Programm, gestartet wird einmal am Gerät.
+///
+/// JSON: die Werte der ersten Phase wie bisher direkt im `machine`-Objekt, weitere Phasen als
+/// `then: [{temperature, time, speed}, …]`. Ältere Apps kennen `then` nicht und führen nur die
+/// erste Phase aus.
 class StepMachine {
-  const StepMachine.program(String this.programId) : settings = null;
-  const StepMachine.settings(MachineSettings this.settings) : programId = null;
+  const StepMachine.program(String this.programId)
+    : settings = null,
+      then = const [];
+  const StepMachine.settings(
+    MachineSettings this.settings, {
+    this.then = const [],
+  }) : programId = null;
+
+  /// Aus einer Liste von Phasen (mindestens eine).
+  factory StepMachine.phasen(List<MachineSettings> phasen) =>
+      StepMachine.settings(
+        phasen.first,
+        then: List.unmodifiable(phasen.skip(1)),
+      );
 
   final String? programId;
   final MachineSettings? settings;
 
+  /// Weitere Phasen nach [settings] (nur bei Einzelwerten).
+  final List<MachineSettings> then;
+
+  /// Alle Phasen in Reihenfolge; leer bei einem Programm.
+  List<MachineSettings> get phasen => [?settings, ...then];
+
+  /// Gesamtdauer aller Phasen in Sekunden (0 bei einem Programm).
+  int get gesamtS => phasen.fold(0, (sum, p) => sum + p.time);
+
   factory StepMachine.fromJson(Json json) => json['programId'] is String
       ? StepMachine.program(json['programId'] as String)
-      : StepMachine.settings(MachineSettings.fromJson(json));
+      : StepMachine.settings(
+          MachineSettings.fromJson(json),
+          then: List.unmodifiable(
+            readList(json['then'], MachineSettings.fromJson),
+          ),
+        );
 
-  Json toJson() =>
-      programId != null ? {'programId': programId} : settings!.toJson();
+  Json toJson() => programId != null
+      ? {'programId': programId}
+      : {
+          ...settings!.toJson(),
+          if (then.isNotEmpty) 'then': [for (final p in then) p.toJson()],
+        };
 }
+
+/// Höchstens so viele Phasen pro Maschinenschritt (Editor; die Brücke nimmt 20 Programmschritte).
+const maschinenPhasenMax = 6;
 
 /// Ergebnis von `PUT`/`DELETE /api/v1/recipes/{id}` mit `If-Match`.
 sealed class RecipeWriteResult {

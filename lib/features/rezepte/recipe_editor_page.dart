@@ -54,6 +54,32 @@ class _IngredientRow {
   }
 }
 
+/// Eine Phase eines Maschinenschritts (Temperatur, Zeit, Stufe).
+class _PhaseRow {
+  _PhaseRow([MachineSettings? m])
+    : temperature = TextEditingController(text: '${m?.temperature ?? 0}'),
+      time = TextEditingController(
+        text: m == null ? '' : formatDuration(m.time),
+      ),
+      speed = m?.speed;
+
+  final TextEditingController temperature, time;
+  int? speed;
+
+  /// `null`, wenn Zeit oder Stufe fehlt.
+  MachineSettings? get built {
+    final t = parseDurationText(time.text);
+    final temp = int.tryParse(temperature.text.trim()) ?? 0;
+    if (t == null || t <= 0 || speed == null || temp < 0) return null;
+    return MachineSettings(temperature: temp, time: t, speed: speed!);
+  }
+
+  void dispose() {
+    temperature.dispose();
+    time.dispose();
+  }
+}
+
 class _StepRow {
   _StepRow([RecipeStep? s])
     : text = TextEditingController(text: s?.text ?? ''),
@@ -63,17 +89,17 @@ class _StepRow {
       hasMachine = s?.machine != null,
       useProgram = s?.machine?.programId != null,
       programId = s?.machine?.programId,
-      temperature = TextEditingController(
-        text: '${s?.machine?.settings?.temperature ?? 0}',
-      ),
-      time = TextEditingController(
-        text: s?.machine?.settings == null
-            ? ''
-            : formatDuration(s!.machine!.settings!.time),
-      ),
-      speed = s?.machine?.settings?.speed;
+      phases = [
+        for (final m in s?.machine?.phasen ?? const <MachineSettings>[])
+          _PhaseRow(m),
+      ] {
+    if (phases.isEmpty) phases.add(_PhaseRow());
+  }
 
-  final TextEditingController text, temperature, time;
+  final TextEditingController text;
+
+  /// Phasen der Einzelwerte, mindestens eine (die zweite und weitere laufen direkt im Anschluss).
+  final List<_PhaseRow> phases;
   final String?
   photo; // Schrittfotos bleiben erhalten, werden hier (noch) nicht bearbeitet
   final List<_IngredientRow> ingredients;
@@ -81,7 +107,6 @@ class _StepRow {
   bool hasMachine;
   bool useProgram;
   String? programId;
-  int? speed;
 
   List<Ingredient> get builtIngredients => [
     for (final r in ingredients)
@@ -94,8 +119,9 @@ class _StepRow {
   ];
 
   void dispose() {
-    for (final c in [text, temperature, time]) {
-      c.dispose();
+    text.dispose();
+    for (final p in phases) {
+      p.dispose();
     }
     for (final r in ingredients) {
       r.dispose();
@@ -164,14 +190,12 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
           if (s.programId == null) return null;
           machine = StepMachine.program(s.programId!);
         } else {
-          final time = parseDurationText(s.time.text);
-          final temp = int.tryParse(s.temperature.text.trim()) ?? 0;
-          if (time == null || time <= 0 || s.speed == null || temp < 0) {
-            return null;
-          }
-          machine = StepMachine.settings(
-            MachineSettings(temperature: temp, time: time, speed: s.speed!),
-          );
+          final phasen = [for (final p in s.phases) p.built];
+          if (phasen.any((p) => p == null)) return null;
+          // Die Brücke startet kein Programm, das mit „Motor aus ohne Wärme“ beginnt.
+          final erste = phasen.first!;
+          if (erste.speed == 0 && erste.temperature == 0) return null;
+          machine = StepMachine.phasen([for (final p in phasen) p!]);
         }
       }
       if (text.isEmpty && ingredients.isEmpty && machine == null) continue;
@@ -752,13 +776,95 @@ class _StepEditor extends StatelessWidget {
             },
           )
       else ...[
+        for (final (i, phase) in row.phases.indexed) ...[
+          if (i > 0) ...[
+            const SizedBox(height: Tokens.m),
+            Row(
+              children: [
+                const Icon(Icons.subdirectory_arrow_right_rounded),
+                const SizedBox(width: Tokens.s),
+                Expanded(
+                  child: Text(
+                    l10n.editorPhaseNumber(i + 1),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                IconButton(
+                  tooltip: l10n.editorPhaseRemove,
+                  onPressed: () {
+                    row.phases.removeAt(i).dispose();
+                    onChanged();
+                  },
+                  icon: const Icon(Icons.remove_circle_outline_rounded),
+                ),
+              ],
+            ),
+          ],
+          _PhaseEditor(
+            key: ObjectKey(phase),
+            phase: phase,
+            caps: caps,
+            onChanged: onChanged,
+          ),
+        ],
+        if (_ersteOhneMotor(row.phases.first)) ...[
+          const SizedBox(height: Tokens.s),
+          Text(
+            l10n.editorPhaseFirstOff,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+        ],
+        if (row.phases.length < maschinenPhasenMax)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () {
+                // Neue Phase übernimmt die Werte der letzten – meist ändert sich nur Stufe/Zeit.
+                row.phases.add(_PhaseRow(row.phases.last.built));
+                onChanged();
+              },
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.editorPhaseAdd),
+            ),
+          ),
+      ],
+    ];
+  }
+}
+
+/// Erste Phase „Motor aus ohne Wärme“? Nimmt die Brücke nicht an (`first_step`).
+bool _ersteOhneMotor(_PhaseRow p) =>
+    p.speed == 0 && (int.tryParse(p.temperature.text.trim()) ?? 0) == 0;
+
+/// Regler einer Phase: Temperatur, Zeit, Stufe (wie bisher für den ganzen Schritt).
+class _PhaseEditor extends StatelessWidget {
+  const _PhaseEditor({
+    super.key,
+    required this.phase,
+    required this.caps,
+    required this.onChanged,
+  });
+
+  final _PhaseRow phase;
+  final ApplianceCaps? caps;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Row(
           children: [
             Expanded(
               child: TextField(
-                controller: row.temperature,
+                controller: phase.temperature,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (_) => onChanged(),
                 decoration: InputDecoration(
                   labelText: l10n.dialTemperature,
                   helperText: l10n.editorTempHint,
@@ -768,7 +874,7 @@ class _StepEditor extends StatelessWidget {
             const SizedBox(width: Tokens.s),
             Expanded(
               child: TextField(
-                controller: row.time,
+                controller: phase.time,
                 keyboardType: TextInputType.number,
                 inputFormatters: [DurationDigitsFormatter()],
                 decoration: InputDecoration(
@@ -782,9 +888,9 @@ class _StepEditor extends StatelessWidget {
         const SizedBox(height: Tokens.s),
         if (caps != null)
           DropdownButtonFormField<int>(
-            initialValue: caps!.speedOption(row.speed ?? -1) == null
+            initialValue: caps!.speedOption(phase.speed ?? -1) == null
                 ? null
-                : row.speed,
+                : phase.speed,
             isExpanded: true,
             decoration: InputDecoration(labelText: l10n.dialSpeed),
             items: [
@@ -795,19 +901,22 @@ class _StepEditor extends StatelessWidget {
                 ),
             ],
             onChanged: (v) {
-              row.speed = v;
+              phase.speed = v;
               onChanged();
             },
           )
         else
           TextFormField(
-            initialValue: row.speed?.toString() ?? '',
+            initialValue: phase.speed?.toString() ?? '',
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(labelText: l10n.dialSpeed),
-            onChanged: (v) => row.speed = int.tryParse(v),
+            onChanged: (v) {
+              phase.speed = int.tryParse(v);
+              onChanged();
+            },
           ),
       ],
-    ];
+    );
   }
 }

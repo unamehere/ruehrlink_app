@@ -30,7 +30,11 @@ import 'weigh_step_slot.dart';
 /// Sequencer der Brücke (`POST /sequence/start`, gestartet wird am Gerät); ist der Schritt
 /// fertig, bleibt er stehen und bietet „Noch nicht fertig?“ an ([NachstellenLeiste]); „Weiter“
 /// blättert wie immer. Lässt sich ein Schritt nicht nachstellen, blättert er von selbst weiter.
-/// Wiegeschritte zeigen [WeighStepSlot].
+/// Wiegeschritte zeigen [WeighStepSlot], eine Zutat nach der anderen: Solange im Schritt noch
+/// Zutaten offen sind, führt der Hauptknopf zur nächsten Zutat („Nächste Zutat: 125 ml Milch“),
+/// erst danach zum nächsten Schritt. Wischen bleibt frei (der Koch hat die Kontrolle); wer von
+/// einem Schritt mit offenen Zutaten wegwischt, sieht oben dezent „Schritt 2: 2 Zutaten offen“,
+/// zurück geht es mit der ersten offenen Zutat weiter.
 class KochmodusPage extends ConsumerStatefulWidget {
   const KochmodusPage({super.key, required this.id, this.servings});
 
@@ -53,7 +57,40 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
   /// Seite, deren Maschinenschritt gerade fertig geworden ist (Nachstellen anbieten).
   int? _doneOn;
   bool _sending = false;
-  final _weighReached = <int>{};
+
+  /// Je Seite: abgehakte Zutaten (Zielmenge erreicht oder mit dem Hauptknopf weiter).
+  final _erledigt = <int, Set<int>>{};
+
+  /// Je Seite: gerade gezeigte Zutat – nur solange man auf der Seite bleibt; zurückgewischt geht
+  /// es mit der ersten offenen weiter.
+  final _zutat = <int, int>{};
+
+  /// Schon angezeigte Seiten (offene Zutaten werden nur dort angemerkt).
+  final _besucht = <int>{0};
+
+  Set<int> _fertig(int p) => _erledigt[p] ?? const {};
+
+  int _offen(int p, int n) => n - _fertig(p).where((i) => i < n).length;
+
+  /// Gezeigte Zutat auf Seite [p] mit [n] Wiegezutaten.
+  int _aktuelleZutat(int p, int n) {
+    if (_zutat[p] case final i? when i < n) return i;
+    for (var i = 0; i < n; i++) {
+      if (!_fertig(p).contains(i)) return i;
+    }
+    return n - 1;
+  }
+
+  /// Nächste offene Zutat nach [cur] (ringsum), `null` = keine mehr.
+  int? _naechsteOffene(int p, int n, int cur) {
+    for (var k = 1; k < n; k++) {
+      final i = (cur + k) % n;
+      if (!_fertig(p).contains(i)) return i;
+    }
+    return null;
+  }
+
+  void _abhaken(int p, int i) => (_erledigt[p] ??= <int>{}).add(i);
 
   @override
   void initState() {
@@ -137,6 +174,22 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
     ];
     final total = pages.length;
     final last = total - 1;
+    List<Ingredient> wiegen(int p) => switch (pages[p].schritt) {
+      final i? => zuWiegen(recipe.steps[i], factor),
+      null => const [],
+    };
+    // Verlassene Schritte mit offenen Zutaten (dezent oben angemerkt, antippen = hin).
+    final offeneSchritte = [
+      for (final p in _besucht)
+        if (p != _page && p < total && pages[p].schritt != null)
+          if (_offen(p, wiegen(p).length) case final n when n > 0)
+            (p, pages[p].schritt! + 1, n),
+    ]..sort((a, b) => a.$1.compareTo(b.$1));
+    final hier = wiegen(_page);
+    final hierAktuell = hier.isEmpty ? 0 : _aktuelleZutat(_page, hier.length);
+    final hierNaechste = hier.isEmpty
+        ? null
+        : _naechsteOffene(_page, hier.length, hierAktuell);
 
     // Maschinenschritt fertig → „Noch nicht fertig?“ anbieten, sonst automatisch weiter.
     ref.listen(sequenceProvider, (prev, next) {
@@ -186,6 +239,33 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
               ),
             ),
           ),
+          if (offeneSchritte.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Tokens.m,
+                Tokens.s,
+                Tokens.m,
+                0,
+              ),
+              child: Wrap(
+                spacing: Tokens.s,
+                runSpacing: Tokens.s,
+                children: [
+                  for (final (p, nummer, n) in offeneSchritte)
+                    ActionChip(
+                      avatar: const Icon(
+                        Icons.circle,
+                        size: 10,
+                        color: Tokens.glow,
+                      ),
+                      label: Text(l10n.cookWeighOpenStep(nummer, n)),
+                      visualDensity: VisualDensity.compact,
+                      // springen statt blättern: Schritte dazwischen gelten nicht als besucht
+                      onPressed: () => _pages.jumpToPage(p),
+                    ),
+                ],
+              ),
+            ),
           Expanded(
             child: PageView.builder(
               controller: _pages,
@@ -197,7 +277,11 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   'Seite ${p + 1}/$total: ${s.art.name}'
                       '${s.schritt != null ? ' ${s.schritt! + 1}' : ''}',
                 );
-                setState(() => _page = p);
+                setState(() {
+                  _zutat.remove(_page);
+                  _besucht.add(p);
+                  _page = p;
+                });
               },
               itemBuilder: (context, p) {
                 final seite = pages[p];
@@ -209,6 +293,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   return _WechselPage(neu: seite.neu!, alt: seite.alt);
                 }
                 final step = recipe.steps[seite.schritt!];
+                final n = wiegen(p).length;
                 return _StepPage(
                   key: ValueKey(p),
                   recipe: recipe,
@@ -224,7 +309,10 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                     _startedOn = p;
                     _doneOn = null;
                   }),
-                  onWeighReached: () => setState(() => _weighReached.add(p)),
+                  weighIndex: n == 0 ? 0 : _aktuelleZutat(p, n),
+                  weighDone: _fertig(p),
+                  onWeighReached: (i) => setState(() => _abhaken(p, i)),
+                  onWeighSelect: (i) => setState(() => _zutat[p] = i),
                 );
               },
             ),
@@ -264,16 +352,39 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                                 icon: Icons.check_rounded,
                                 onPressed: _close,
                               )
+                            : hierNaechste != null
+                            // Im Schritt sind noch Zutaten offen: erst die nächste Zutat.
+                            ? BigButton(
+                                label: l10n.cookWeighNextNamed(
+                                  ingredientText(hier[hierNaechste], 1),
+                                ),
+                                icon: _fertig(_page).contains(hierAktuell)
+                                    ? Icons.check_circle_rounded
+                                    : Icons.arrow_forward_rounded,
+                                onPressed: () => setState(() {
+                                  _abhaken(_page, hierAktuell);
+                                  _zutat[_page] = hierNaechste;
+                                }),
+                              )
                             : BigButton(
                                 label: pages[_page].art == _Art.wechsel
                                     ? l10n.toolSwapDone
                                     : l10n.cookNext,
                                 icon:
-                                    _weighReached.contains(_page) ||
+                                    (hier.isNotEmpty &&
+                                            _offen(_page, hier.length) == 0) ||
                                         _doneOn == _page
                                     ? Icons.check_circle_rounded
                                     : Icons.arrow_forward_rounded,
-                                onPressed: () => _go(_page + 1),
+                                onPressed: () {
+                                  // Letzte Zutat mit dem Hauptknopf = erledigt.
+                                  if (hier.isNotEmpty) {
+                                    setState(
+                                      () => _abhaken(_page, hierAktuell),
+                                    );
+                                  }
+                                  _go(_page + 1);
+                                },
                               ),
                       ),
                     ],
@@ -476,7 +587,10 @@ class _StepPage extends StatelessWidget {
     required this.sending,
     required this.onStart,
     required this.onNachgestellt,
+    required this.weighIndex,
+    required this.weighDone,
     required this.onWeighReached,
+    required this.onWeighSelect,
   });
 
   final Recipe recipe;
@@ -491,17 +605,19 @@ class _StepPage extends StatelessWidget {
   final bool sending;
   final VoidCallback onStart;
   final VoidCallback onNachgestellt;
-  final VoidCallback onWeighReached;
+
+  /// Gezeigte Wiegezutat und abgehakte (Indizes in [zuWiegen]).
+  final int weighIndex;
+  final Set<int> weighDone;
+  final ValueChanged<int> onWeighReached;
+  final ValueChanged<int> onWeighSelect;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final ingredients = [for (final i in step.ingredients) i.scaled(factor)];
-    final toWeigh = [
-      for (final i in ingredients)
-        if (i.grams != null) i,
-    ];
+    final toWeigh = zuWiegen(step, factor);
     final machine = step.machine != null
         ? _MachinePanel(
             step: step,
@@ -518,7 +634,10 @@ class _StepPage extends StatelessWidget {
             children: [
               _WeighSequence(
                 ingredients: toWeigh,
-                onAllReached: onWeighReached,
+                current: weighIndex,
+                done: weighDone,
+                onReached: onWeighReached,
+                onSelect: onWeighSelect,
               ),
               if (machine != null) ...[
                 const SizedBox(height: Tokens.l),
@@ -589,40 +708,37 @@ class _StepPage extends StatelessWidget {
   }
 }
 
-/// Waage für alle Gramm-Zutaten eines Schritts, eine nach der anderen. Jede Zutat bekommt eine
-/// eigene Waage-Ansicht (Key = Index) und damit ihre eigene Tara.
-class _WeighSequence extends StatefulWidget {
-  const _WeighSequence({required this.ingredients, required this.onAllReached});
+/// Wiegezutaten eines Schritts (g/kg/ml/l), mit den Portionen skaliert.
+List<Ingredient> zuWiegen(RecipeStep step, double factor) => [
+  for (final i in step.ingredients)
+    if (i.scaled(factor) case final z when z.grams != null) z,
+];
+
+/// Waage für alle Wiegezutaten eines Schritts, eine nach der anderen: „Zutat 2 von 4“, die Waage
+/// für die gezeigte Zutat (Key = Index → eigene Tara) und eine kleine Liste mit Haken. Weiter
+/// geht es über den Hauptknopf der Seite; Antippen in der Liste springt zu einer Zutat.
+class _WeighSequence extends StatelessWidget {
+  const _WeighSequence({
+    required this.ingredients,
+    required this.current,
+    required this.done,
+    required this.onReached,
+    required this.onSelect,
+  });
 
   final List<Ingredient> ingredients;
-  final VoidCallback onAllReached;
-
-  @override
-  State<_WeighSequence> createState() => _WeighSequenceState();
-}
-
-class _WeighSequenceState extends State<_WeighSequence> {
-  int _i = 0;
-  bool _reached = false;
-
-  void _next() {
-    if (_i + 1 >= widget.ingredients.length) return;
-    setState(() {
-      _i++;
-      _reached = false;
-    });
-  }
-
-  void _onReached() {
-    setState(() => _reached = true);
-    if (_i + 1 >= widget.ingredients.length) widget.onAllReached();
-  }
+  final int current;
+  final Set<int> done;
+  final ValueChanged<int> onReached;
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final n = widget.ingredients.length;
-    final last = _i + 1 >= n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final n = ingredients.length;
+    final alle = List.generate(n, done.contains).every((d) => d);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -630,31 +746,62 @@ class _WeighSequenceState extends State<_WeighSequence> {
           Padding(
             padding: const EdgeInsets.only(bottom: Tokens.s),
             child: Text(
-              '${_i + 1} / $n',
+              l10n.cookWeighProgress(current + 1, n),
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
+              style: theme.textTheme.titleMedium,
             ),
           ),
         WeighStepSlot(
-          key: ValueKey(_i),
-          ingredient: widget.ingredients[_i],
-          onReached: _onReached,
+          key: ValueKey(current),
+          ingredient: ingredients[current],
+          onReached: () => onReached(current),
         ),
-        if (!last) ...[
-          const SizedBox(height: Tokens.m),
-          BigButton(
-            label: l10n.cookWeighNext,
-            icon: Icons.arrow_forward_rounded,
-            kind: _reached ? BigButtonKind.primary : BigButtonKind.secondary,
-            onPressed: _next,
-          ),
-        ] else if (_reached && n > 1) ...[
-          const SizedBox(height: Tokens.m),
-          Text(
-            l10n.cookWeighAllDone,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+        if (n > 1) ...[
+          const SizedBox(height: Tokens.s),
+          for (final (i, z) in ingredients.indexed)
+            InkWell(
+              borderRadius: BorderRadius.circular(Tokens.radius),
+              onTap: i == current ? null : () => onSelect(i),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 6,
+                  horizontal: Tokens.s,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      done.contains(i)
+                          ? Icons.check_circle_rounded
+                          : i == current
+                          ? Icons.arrow_right_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 22,
+                      color: done.contains(i)
+                          ? const Color(0xFF2E7D32)
+                          : scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: Tokens.s),
+                    Expanded(
+                      child: Text(
+                        weighText(z),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: i == current ? FontWeight.w600 : null,
+                          color: i == current ? null : scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (alle) ...[
+            const SizedBox(height: Tokens.s),
+            Text(
+              l10n.cookWeighAllDone,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium,
+            ),
+          ],
         ],
       ],
     );
@@ -705,16 +852,30 @@ class _MachinePanel extends ConsumerWidget {
     final seq = ref.watch(sequenceProvider).value;
     final m = step.machine!;
     final v = m.settings;
-    final hot =
-        v != null &&
-        v.temperature > 0 &&
-        v.temperature >= (caps?.hotTemp ?? 60);
+    final phasen = m.phasen;
+    // Hinweis „wird heiß“, sobald eine Phase heiß wird.
+    final hot = phasen.any(
+      (p) => p.temperature > 0 && p.temperature >= (caps?.hotTemp ?? 60),
+    );
     final showHot =
         hot &&
         ref.watch(sicherheitsHinweiseProvider) != SicherheitsHinweise.aus;
 
     final values = v == null
         ? _programInfo(context, ref, m.programId!)
+        : phasen.length > 1
+        ? _PhasenListe(
+            phasen: phasen,
+            caps: caps,
+            // Läuft gerade dieser Schritt? Dann die aktuelle Phase hervorheben.
+            aktiv:
+                seq != null &&
+                    seq.active &&
+                    seq.of == phasen.length &&
+                    seq.label == fitUtf8(step.text, 31)
+                ? seq.step - 1
+                : null,
+          )
         : Row(
             children: [
               Expanded(
@@ -845,6 +1006,100 @@ class _MachinePanel extends ConsumerWidget {
   }
 }
 
+/// Maschinenschritt mit mehreren Phasen: Gesamtzeit, Ablauf in einer Zeile
+/// („1:00 Stufe min → 5:00 Stufe 1“) und je Phase eine Zeile, die laufende hervorgehoben.
+class _PhasenListe extends StatelessWidget {
+  const _PhasenListe({required this.phasen, required this.caps, this.aktiv});
+
+  final List<MachineSettings> phasen;
+  final ApplianceCaps? caps;
+
+  /// Index der laufenden Phase, `null` = läuft nicht.
+  final int? aktiv;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final gesamt = phasen.fold(0, (sum, p) => sum + p.time);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.cookPhasesTitle(phasen.length, formatDuration(gesamt)),
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: Tokens.s),
+        Text(
+          phasenKurz(context, caps, phasen),
+          style: theme.textTheme.titleLarge,
+        ),
+        const SizedBox(height: Tokens.s),
+        for (final (i, p) in phasen.indexed)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Tokens.s,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: i == aktiv ? Tokens.glow.withValues(alpha: 0.25) : null,
+              borderRadius: BorderRadius.circular(Tokens.s),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 28,
+                  child: Text(
+                    '${i + 1}.',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    [
+                      formatDuration(p.time),
+                      speedText(context, caps, p.speed),
+                      if (p.temperature > 0)
+                        l10n.temperatureValue(p.temperature),
+                    ].join(' · '),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: i == aktiv ? FontWeight.w700 : null,
+                    ),
+                  ),
+                ),
+                if (i == aktiv)
+                  const Icon(Icons.play_arrow_rounded, color: Tokens.accent),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Phasen in einer Zeile: „1:00 Stufe min → 5:00 Stufe 1“ (Temperatur nur, wenn an).
+String phasenKurz(
+  BuildContext context,
+  ApplianceCaps? caps,
+  List<MachineSettings> phasen,
+) {
+  final l10n = context.l10n;
+  return [
+    for (final p in phasen)
+      [
+        formatDuration(p.time),
+        l10n.cookPhaseSpeed(caps?.speedLabel(p.speed) ?? '${p.speed}'),
+        if (p.temperature > 0) l10n.temperatureValue(p.temperature),
+      ].join(' '),
+  ].join(' → ');
+}
+
 class _BigValue extends StatelessWidget {
   const _BigValue({required this.label, required this.value, this.detail});
 
@@ -922,15 +1177,14 @@ class _SeqStatus extends StatelessWidget {
   }
 }
 
-/// Programm, das der Kochmodus für einen Rezeptschritt mit Einzelwerten schickt: ein Schritt,
-/// Name = Rezepttitel, Beschriftung = Schritttext (gekürzt auf die Puffer der Brücke).
+/// Programm, das der Kochmodus für einen Rezeptschritt mit Einzelwerten schickt: je Phase ein
+/// Programmschritt (ein Knopfdruck am Gerät für alle), Name = Rezepttitel, Beschriftung =
+/// Schritttext (gekürzt auf die Puffer der Brücke).
 Program einzelschrittProgramm(Recipe recipe, RecipeStep step) => Program(
   id: '',
   name: fitUtf8(recipe.title, 39),
   steps: [
-    ProgramStep(
-      settings: step.machine!.settings!,
-      label: fitUtf8(step.text, 31),
-    ),
+    for (final p in step.machine!.phasen)
+      ProgramStep(settings: p, label: fitUtf8(step.text, 31)),
   ],
 );

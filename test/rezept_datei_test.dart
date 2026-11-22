@@ -58,6 +58,14 @@ Recipe _recipe({
       text: 'Programm',
       machine: StepMachine.program('dinkelteig'),
     ),
+    // Maschinenschritt mit zwei Phasen (1 min Stufe min → 5 min Stufe 1)
+    const RecipeStep(
+      text: 'Unterrühren, dann kneten',
+      machine: StepMachine.settings(
+        MachineSettings(temperature: 0, time: 60, speed: 1),
+        then: [MachineSettings(temperature: 0, time: 300, speed: 2)],
+      ),
+    ),
   ],
 );
 
@@ -108,6 +116,17 @@ void main() {
 
       final d = RezeptDatei.lesen(bytes);
       expect(d.recipe.toJson(), r.toJson());
+      // Phasen kommen mit (Feld `then` im `machine`-Objekt)
+      expect(((json['steps'] as List).last as Map)['machine'], {
+        'temperature': 0,
+        'time': 60,
+        'speed': 1,
+        'then': [
+          {'temperature': 0, 'time': 300, 'speed': 2},
+        ],
+      });
+      expect(d.recipe.steps.last.machine!.phasen.length, 2);
+      expect(d.recipe.steps.last.machine!.gesamtS, 360);
       expect(d.photos[shaA], photo);
       expect(d.photos[shaB], stepPhoto);
       expect(d.hinweise.keine, isTrue);
@@ -175,7 +194,7 @@ void main() {
         final d = RezeptDatei.lesen(_bytes(json));
         expect(d.hinweise.neueresFormat, isTrue);
         expect(d.hinweise.unbekannteWerkzeuge, [1]);
-        expect(d.recipe.steps.length, 3);
+        expect(d.recipe.steps.length, 4);
         expect(d.recipe.steps[0].tool, isNull);
         expect(d.recipe.steps[0].ingredients.length, 2);
       },
@@ -309,7 +328,7 @@ void main() {
       expect(r.id, 'neu-1');
       expect(r.rev, 0);
       expect(r.title, 'Pizzateig (2)');
-      expect(r.steps.length, 3);
+      expect(r.steps.length, 4);
     });
   });
 
@@ -409,26 +428,55 @@ void main() {
           Werkzeug? tool;
           for (final s in r.steps) {
             tool = s.tool ?? tool;
-            final m = s.machine?.settings;
-            if (s.machine != null) expect(m, isNotNull, reason: name);
-            if (m == null) continue;
-            expect(caps.speedOption(m.speed), isNotNull, reason: name);
-            expect(m.time, inInclusiveRange(1, caps.timeMaxS), reason: name);
-            expect(
-              m.temperature == 0 ||
-                  (m.temperature >= caps.tempMin &&
-                      m.temperature <= caps.tempMax),
-              isTrue,
-              reason: name,
-            );
-            if (m.temperature > 0) {
-              // Hitze nur mit dem Kochrührelement, und heiß nicht zu schnell
-              expect(tool, Werkzeug.kochRuehrelement, reason: name);
-              expect(caps.tooFastWhenHot(m.speed), isFalse, reason: name);
+            if (s.machine != null) {
+              expect(s.machine!.settings, isNotNull, reason: name);
+              // Phasen: höchstens 6, erste nicht „Motor aus ohne Wärme“ (`first_step`)
+              final erste = s.machine!.phasen.first;
+              expect(erste.speed != 0 || erste.temperature != 0, isTrue);
+              expect(
+                s.machine!.phasen.length,
+                lessThanOrEqualTo(maschinenPhasenMax),
+              );
+              expect(
+                s.machine!.gesamtS,
+                lessThanOrEqualTo(caps.timeMaxS),
+                reason: name,
+              );
+            }
+            for (final m in s.machine?.phasen ?? const <MachineSettings>[]) {
+              expect(caps.speedOption(m.speed), isNotNull, reason: name);
+              expect(m.time, inInclusiveRange(1, caps.timeMaxS), reason: name);
+              expect(
+                m.temperature == 0 ||
+                    (m.temperature >= caps.tempMin &&
+                        m.temperature <= caps.tempMax),
+                isTrue,
+                reason: name,
+              );
+              if (m.temperature > 0) {
+                // Hitze nur mit dem Kochrührelement, und heiß nicht zu schnell
+                expect(tool, Werkzeug.kochRuehrelement, reason: name);
+                expect(caps.tooFastWhenHot(m.speed), isFalse, reason: name);
+              }
             }
           }
           dateien.add(d);
         }
+        // Unterrühren → Kneten läuft mit einem Start durch (Rückmeldung Strudelteig 22.11.)
+        final strudel = dateien.firstWhere(
+          (d) => d.recipe.title == 'Strudelteig',
+        );
+        expect(
+          strudel.recipe.steps
+              .where((s) => s.machine != null)
+              .single
+              .machine!
+              .phasen,
+          const [
+            MachineSettings(temperature: 0, time: 60, speed: 5),
+            MachineSettings(temperature: 0, time: 480, speed: 6),
+          ],
+        );
         final titles = [for (final d in dateien) d.recipe.title];
         expect(titles.toSet().length, titles.length);
 

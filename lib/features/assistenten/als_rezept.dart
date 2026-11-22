@@ -11,10 +11,11 @@ import 'katalog.dart';
 /// 1. „Zutaten in die Schüssel geben“ mit allen Zutaten (Gramm-Zutaten wiegt der Kochmodus
 ///    nacheinander ab) und dem Werkzeug des Assistenten, dazu die Tipps (ohne Sicherheitshinweise –
 ///    die zeigt der Kochmodus selbst, abschaltbar).
-/// 2. Je Programmschritt ein Rezeptschritt mit denselben Maschinenwerten (Stufe aus `caps`).
-///    Ruhephasen ohne Motor und ohne Hitze werden zum Textschritt: Die Brücke startet kein Programm,
-///    das mit einem solchen Schritt beginnt (`first_step`), und der Kochmodus schickt jeden Schritt
-///    einzeln.
+/// 2. Die Programmschritte mit denselben Maschinenwerten (Stufe aus `caps`); direkt
+///    aufeinanderfolgende werden Phasen eines Rezeptschritts (ein Start am Gerät wie im
+///    Assistenten). Ruhephasen ohne Motor und ohne Hitze werden zum Textschritt: Die Brücke startet
+///    kein Programm, das mit einem solchen Schritt beginnt (`first_step`), und der Kochmodus
+///    schickt jeden Rezeptschritt einzeln.
 ///
 /// `null`, wenn der Plan nicht zu [caps] passt (wie [programmAusPlan]).
 Recipe? rezeptAusPlan(
@@ -41,22 +42,37 @@ Recipe? rezeptAusPlan(
       ingredients: [for (final z in plan.zutaten) zutatAlsIngredient(l10n, z)],
     ),
   ];
+  // Maschinenschritte, die direkt aufeinander folgen, werden Phasen eines Schritts – so läuft
+  // es wie im Assistenten mit einem Start durch (z. B. Unterrühren → Kneten).
+  var block = <ProgramStep>[];
+  void blockAbschliessen() {
+    if (block.isEmpty) return;
+    schritte.add(
+      RecipeStep(
+        // Gleiche Beschriftung wie im Programm des Assistenten, Phasen mit „, dann“.
+        text: [
+          for (final (n, p) in block.indexed)
+            n == 0 ? p.label : l10n.asSaveStepThen(p.label),
+        ].join(', '),
+        machine: StepMachine.phasen([for (final p in block) p.settings]),
+      ),
+    );
+    block = [];
+  }
+
   for (final (i, s) in plan.schritte.indexed) {
     final label = schrittLabel(l10n, s.art);
     if (s.ruhe && s.temperatur == 0) {
+      blockAbschliessen();
       schritte.add(
         RecipeStep(text: l10n.asSaveStepRest(label, (s.zeitS / 60).ceil())),
       );
       continue;
     }
-    schritte.add(
-      RecipeStep(
-        // Gleiche Beschriftung wie im Programm des Assistenten.
-        text: programm.steps[i].label,
-        machine: StepMachine.settings(programm.steps[i].settings),
-      ),
-    );
+    if (block.length >= maschinenPhasenMax) blockAbschliessen();
+    block.add(programm.steps[i]);
   }
+  blockAbschliessen();
 
   return Recipe(
     id: id,
