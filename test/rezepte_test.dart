@@ -360,6 +360,16 @@ void main() {
         await settle(tester);
         expect(tester.takeException(), isNull);
         expect(find.text('315 g Weizenmehl abwiegen'), findsOneWidget);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // Hauptknopf führt erst zur nächsten Zutat, nicht zum nächsten Schritt (F23)
+        expect(find.text('Weiter'), findsNothing);
+        await tester.tap(find.text('Nächste Zutat: 625 g Milch'));
+        await settle(tester);
+        expect(find.text('625 g Milch abwiegen'), findsOneWidget);
+        expect(find.text('Zutat 2 von 2'), findsOneWidget);
+        expect(find.text('Schritt 1 von 4'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
         // bis zum Maschinenschritt (Schritt 3)
@@ -372,6 +382,70 @@ void main() {
         await close(tester);
       });
     }
+
+    testWidgets(
+      'Kochmodus: Wegwischen mit offenen Zutaten wird dezent angemerkt',
+      (tester) async {
+        await open(tester, const Size(390, 844));
+        await tester.scrollUntilVisible(
+          find.text('Pfannkuchen'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -80));
+        await tester.pump();
+        await tester.tap(find.text('Pfannkuchen'));
+        await settle(tester);
+        await tester.tap(find.text('Jetzt kochen'));
+        await settle(tester);
+        await tester.tap(find.text('Weiter'));
+        await settle(tester);
+        await tester.tap(find.text('Erledigt, weiter'));
+        await settle(tester);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+
+        // Wischen bleibt frei – kein Dialog, nur ein Hinweis oben
+        Future<void> wischen(double dx) async {
+          await tester.fling(find.byType(PageView), Offset(dx, 0), 1500);
+          await settle(tester);
+        }
+
+        await wischen(-300);
+        expect(find.text('Schritt 2 von 4'), findsOneWidget);
+        expect(find.text('Schritt 1: 2 Zutaten offen'), findsOneWidget);
+        await wischen(300);
+        expect(find.text('Schritt 1: 2 Zutaten offen'), findsNothing);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+
+        // Mehl mit dem Hauptknopf abhaken, dann wegwischen: 1 Zutat offen
+        await tester.tap(find.text('Nächste Zutat: 500 g Milch'));
+        await settle(tester);
+        expect(find.text('Zutat 2 von 2'), findsOneWidget);
+        expect(find.byIcon(Icons.check_circle_rounded), findsWidgets);
+        // Liste: zurück zum Mehl antippen und wieder weg – weiter geht's bei der ersten offenen
+        final mehl = find.widgetWithText(InkWell, '250 g Weizenmehl');
+        await tester.ensureVisible(mehl);
+        await tester.pump();
+        await tester.tap(mehl);
+        await settle(tester);
+        expect(find.text('Zutat 1 von 2'), findsOneWidget);
+        await wischen(-300);
+        expect(find.text('Schritt 1: 1 Zutat offen'), findsOneWidget);
+        await tester.tap(find.text('Schritt 1: 1 Zutat offen'));
+        await settle(tester);
+        expect(find.text('Zutat 2 von 2'), findsOneWidget);
+        expect(find.text('500 g Milch abwiegen'), findsOneWidget);
+
+        // letzte Zutat: Hauptknopf heißt wieder „Weiter“ und blättert
+        await tester.tap(find.text('Weiter'));
+        await settle(tester);
+        expect(find.text('Schritt 2 von 4'), findsOneWidget);
+        expect(find.textContaining('Zutaten offen'), findsNothing);
+        expect(find.textContaining('Zutat offen'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await close(tester);
+      },
+    );
 
     testWidgets('Rezept von der echten Box (15.11., altes Format) öffnen', (
       tester,
