@@ -7,6 +7,27 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.5.1 – 22.11.2026
+
+### Neu
+- Rezepte: Maschinenschritte können mehrere Phasen haben (z. B. 1 min Stufe min → 5 min Stufe 1), die mit einem
+  Start an der Maschine durchlaufen; im Editor über „Phase anhängen“ (F24).
+- Assistent als Rezept und Grundrezepte (Pizza, Brot, Hefezopf, Strudel, Pudding): Unterrühren und Kneten laufen
+  als ein Schritt.
+
+### Geändert
+- Kochmodus: Der Hauptknopf führt durch alle Wiegezutaten eines Schritts („Nächste Zutat: …“, „Zutat 2 von 4“,
+  Liste mit Haken), erst danach zum nächsten Schritt (F23).
+- Kochmodus: Wischen zwischen Schritten bleibt frei; offene Zutaten in verlassenen Schritten werden oben dezent
+  angezeigt.
+- Die App holt den Programmstand nach dem Wiederverbinden und während eines Programms alle 5 s neu.
+- Wird ein Start abgelehnt, nennt die App nur, was fehlt, z. B. „Kopf der Maschine schließen.“ (F25).
+
+### Behoben
+- Programm-Karte blieb bei „Knopf an der Maschine drücken“ stehen, obwohl die Maschine lief; Uhr und Nachstellen
+  fehlten (F26). Der große Hinweis schließt sich, sobald es weitergeht.
+- Rezept-Datei aus WhatsApp öffnen führte zu „no routes found“ (F22).
+
 ## 0.5.0 – 22.11.2026
 
 ### Neu
