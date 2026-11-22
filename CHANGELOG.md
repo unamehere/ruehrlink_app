@@ -27,6 +27,7 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 - Mehr → Verbindung zeigt den Speicher des Rührlink (SD-Karte oder intern, Belegung, Hinweis wenn fast voll).
 
 ### Geändert
+- Die Testprogramme (Zwei Stufen, Ruhephase, Rampe) sind aus dem Kochen-Tab entfernt.
 - Kochmodus: Nach einem fertigen Maschinenschritt bleibt die Seite stehen, damit man nachstellen kann; „Weiter“
   geht wie gewohnt weiter.
 - Der Hinweis zum Koppeln nennt die Beschriftungen wie auf dem Display (Zahnrad → WiFi → Connect …).

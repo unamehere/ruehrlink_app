@@ -450,14 +450,6 @@ class _ProgramSection extends ConsumerWidget {
         ..add(const SizedBox(height: Tokens.m))
         ..add(_ProgramGrid(programs: fromBridge, caps: caps));
     }
-    final tests = testPrograms(caps, l10n);
-    if (tests.isNotEmpty) {
-      children
-        ..add(const SizedBox(height: Tokens.l))
-        ..add(Text(l10n.programsTestTitle, style: theme.textTheme.titleMedium))
-        ..add(const SizedBox(height: Tokens.s))
-        ..add(_ProgramGrid(programs: tests, caps: caps));
-    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: children,

@@ -42,47 +42,6 @@ final bridgeProgramsProvider = FutureProvider<List<Program>>((ref) async {
   }
 });
 
-/// Testprogramme für die Inbetriebnahme an der Maschine (Testplan 3b). Die Stufen
-/// kommen aus `caps` – nichts Gerätespezifisches fest im Code.
-List<Program> testPrograms(ApplianceCaps caps, AppLocalizations l10n) {
-  final c = caps.speedsIn(SpeedGroup.continuous);
-  final off = caps.speedsIn(SpeedGroup.off);
-  if (c.length < 6) return const [];
-  ProgramStep run(SpeedOption o, int s) => ProgramStep(
-    settings: MachineSettings(temperature: 0, time: s, speed: o.v),
-    label: l10n.testStepSpeed(o.label),
-  );
-  return [
-    Program(
-      id: 'test-zwei-stufen',
-      name: l10n.testTwoSpeeds,
-      steps: [run(c[1], 20), run(c[3], 20)],
-    ),
-    if (off.isNotEmpty)
-      Program(
-        id: 'test-ruhephase',
-        name: l10n.testWithRest,
-        steps: [
-          run(c[1], 15),
-          ProgramStep(
-            settings: MachineSettings(
-              temperature: 0,
-              time: 15,
-              speed: off.first.v,
-            ),
-            label: l10n.testStepRest,
-          ),
-          run(c[1], 15),
-        ],
-      ),
-    Program(
-      id: 'test-rampe',
-      name: l10n.testRamp,
-      steps: [run(c[1], 15), run(c[5], 15)],
-    ),
-  ];
-}
-
 /// Ergebnis eines Startversuchs: `null` = gestartet, sonst Fehlermeldung.
 typedef StartResult = String?;
 
