@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/bridge_api.dart';
@@ -7,31 +9,148 @@ import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import 'nachstellen.dart';
 
-/// Stand des Programms auf der Brücke: erst `GET /sequence`, dann jede `seq`-Nachricht.
+/// Stand des Programms auf der Brücke: `GET /sequence`, dann jede `seq`-Nachricht.
 /// Ältere Firmware ohne Programme oder keine Brücke → [SequenceState.idle].
-final sequenceProvider = StreamProvider<SequenceState>((ref) async* {
+///
+/// Abgesichert gegen verpasste Nachrichten (F26: Anzeige blieb bei „Knopf drücken“, obwohl die
+/// Maschine lief):
+/// - Live-Kanal wird zuerst abonniert, dann erst abgefragt – keine Lücke dazwischen.
+/// - Nach jedem Wiederverbinden des Live-Kanals wird der Stand neu geholt.
+/// - Meldet die Box „Knopf drücken“, während die Maschine laut Status schon läuft, fragt die App nach
+///   und zeigt „läuft“ mit der Restzeit der Maschine ([sequenceMitMaschine]).
+final sequenceProvider = StreamProvider<SequenceState>((ref) {
   final api = ref.watch(bridgeApiProvider);
-  try {
-    yield await api.sequence();
-  } on BridgeException {
-    yield SequenceState.idle;
+  final out = StreamController<SequenceState>();
+  SequenceState? box; // Stand laut Box
+  SequenceState? shown; // zuletzt an die App gegeben
+  ApplianceStatus? maschine;
+  var abfrage =
+      0; // nur die neueste Abfrage zählt; eine seq-Nachricht ist immer neuer
+  DateTime? nachgefragt;
+
+  void zeigen() {
+    final b = box;
+    if (b == null || out.isClosed) return;
+    final s = sequenceMitMaschine(b, maschine, vorher: shown);
+    final alt = shown;
+    if (alt != null && _gleich(alt, s)) return;
+    if (alt == null || alt.state != s.state || alt.step != s.step) {
+      appEvents.add(
+        'ablauf',
+        '${s.state.name} Schritt ${s.step}/${s.of}'
+            '${s.reason != null ? ' (${s.reason})' : ''}'
+            '${s.state != b.state ? ' – Maschine läuft, Box meldet ${b.state.name}' : ''}',
+      );
+    }
+    shown = s;
+    out.add(s);
   }
-  SequenceState? last;
-  await for (final e in api.events()) {
-    if (e is SequenceEvent) {
-      final s = e.state;
-      if (last == null || last.state != s.state || last.step != s.step) {
+
+  Future<void> holen(String anlass) async {
+    final n = ++abfrage;
+    try {
+      final s = await api.sequence();
+      if (n != abfrage) return;
+      if (anlass.isNotEmpty && box != null && box!.state != s.state) {
         appEvents.add(
           'ablauf',
-          '${s.state.name} Schritt ${s.step}/${s.of}'
-              '${s.reason != null ? ' (${s.reason})' : ''}',
+          '$anlass: Box meldet ${s.state.name} statt ${box!.state.name}',
         );
       }
-      last = s;
-      yield s;
+      box = s;
+    } on BridgeException {
+      if (n != abfrage || box != null) return;
+      box = SequenceState.idle;
     }
+    zeigen();
   }
+
+  final sub = api.events().listen((e) {
+    switch (e) {
+      case SequenceEvent(:final state):
+        abfrage++; // laufende Abfrage ist älter als diese Nachricht
+        box = state;
+        zeigen();
+      case StatusEvent(:final status):
+        maschine = status;
+        // Box wartet noch, Maschine läuft schon: Stand nachfragen (höchstens alle 3 s)
+        final now = DateTime.now();
+        if (box?.state == SequenceRunState.waitingStart &&
+            maschineLaeuft(status) &&
+            (nachgefragt == null ||
+                now.difference(nachgefragt!) > const Duration(seconds: 3))) {
+          nachgefragt = now;
+          unawaited(holen('Maschine läuft'));
+        }
+        zeigen();
+      case ConnectionEvent(online: true):
+        unawaited(holen('Neu verbunden'));
+      default:
+    }
+  });
+  unawaited(holen(''));
+  // Solange ein Programm läuft, regelmäßig abgleichen: gehen Nachrichten der Box verloren (z. B. knapper
+  // Speicher, während nach dem Kopf-Hochklappen die Waage läuft), bleibt die Anzeige sonst stehen (F26).
+  final abgleich = Timer.periodic(sequenceAbgleich, (_) {
+    if (box?.active ?? false) unawaited(holen('Abgleich'));
+  });
+  ref.onDispose(() {
+    abgleich.cancel();
+    unawaited(sub.cancel());
+    unawaited(out.close());
+  });
+  return out.stream;
 });
+
+/// Wie oft die App während eines Programms `GET /sequence` abfragt.
+const sequenceAbgleich = Duration(seconds: 5);
+
+bool _gleich(SequenceState a, SequenceState b) =>
+    a.state == b.state &&
+    a.step == b.step &&
+    a.of == b.of &&
+    a.reason == b.reason &&
+    a.stepRemainingS == b.stepRemainingS &&
+    a.name == b.name &&
+    a.label == b.label &&
+    a.programId == b.programId;
+
+/// Dreht die Maschine laut Status gerade ein Programm (Motor an, Restzeit läuft)?
+bool maschineLaeuft(ApplianceStatus s) =>
+    s.connected &&
+    s.running &&
+    !s.keepWarm &&
+    s.remainingS > 0 &&
+    s.readyToStart;
+
+/// Was die App anzeigt: der Stand der Box – außer die Box meldet „Knopf drücken“, während die Maschine
+/// schon läuft (F26). Dann „läuft“ mit der Restzeit der Maschine. Einmal so erkannt, bleibt es dabei,
+/// solange die Maschine aktiv ist (Rührintervalle schalten den Motor an und aus, F11).
+SequenceState sequenceMitMaschine(
+  SequenceState box,
+  ApplianceStatus? maschine, {
+  SequenceState? vorher,
+}) {
+  final m = maschine;
+  if (box.state != SequenceRunState.waitingStart || m == null) return box;
+  final schonAbgeleitet =
+      vorher != null &&
+      vorher.state == SequenceRunState.running &&
+      vorher.step == box.step &&
+      vorher.name == box.name;
+  final laeuft =
+      maschineLaeuft(m) ||
+      (schonAbgeleitet &&
+          m.connected &&
+          (m.active || m.running) &&
+          m.remainingS > 0);
+  if (!laeuft) return box;
+  return box.copyWith(
+    state: SequenceRunState.running,
+    clearReason: true,
+    stepRemainingS: m.remainingS,
+  );
+}
 
 /// Auf der Brücke gespeicherte Programme (`GET /programs`), leer bei älterer Firmware.
 final bridgeProgramsProvider = FutureProvider<List<Program>>((ref) async {
