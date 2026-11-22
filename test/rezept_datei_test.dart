@@ -428,26 +428,55 @@ void main() {
           Werkzeug? tool;
           for (final s in r.steps) {
             tool = s.tool ?? tool;
-            final m = s.machine?.settings;
-            if (s.machine != null) expect(m, isNotNull, reason: name);
-            if (m == null) continue;
-            expect(caps.speedOption(m.speed), isNotNull, reason: name);
-            expect(m.time, inInclusiveRange(1, caps.timeMaxS), reason: name);
-            expect(
-              m.temperature == 0 ||
-                  (m.temperature >= caps.tempMin &&
-                      m.temperature <= caps.tempMax),
-              isTrue,
-              reason: name,
-            );
-            if (m.temperature > 0) {
-              // Hitze nur mit dem Kochrührelement, und heiß nicht zu schnell
-              expect(tool, Werkzeug.kochRuehrelement, reason: name);
-              expect(caps.tooFastWhenHot(m.speed), isFalse, reason: name);
+            if (s.machine != null) {
+              expect(s.machine!.settings, isNotNull, reason: name);
+              // Phasen: höchstens 6, erste nicht „Motor aus ohne Wärme“ (`first_step`)
+              final erste = s.machine!.phasen.first;
+              expect(erste.speed != 0 || erste.temperature != 0, isTrue);
+              expect(
+                s.machine!.phasen.length,
+                lessThanOrEqualTo(maschinenPhasenMax),
+              );
+              expect(
+                s.machine!.gesamtS,
+                lessThanOrEqualTo(caps.timeMaxS),
+                reason: name,
+              );
+            }
+            for (final m in s.machine?.phasen ?? const <MachineSettings>[]) {
+              expect(caps.speedOption(m.speed), isNotNull, reason: name);
+              expect(m.time, inInclusiveRange(1, caps.timeMaxS), reason: name);
+              expect(
+                m.temperature == 0 ||
+                    (m.temperature >= caps.tempMin &&
+                        m.temperature <= caps.tempMax),
+                isTrue,
+                reason: name,
+              );
+              if (m.temperature > 0) {
+                // Hitze nur mit dem Kochrührelement, und heiß nicht zu schnell
+                expect(tool, Werkzeug.kochRuehrelement, reason: name);
+                expect(caps.tooFastWhenHot(m.speed), isFalse, reason: name);
+              }
             }
           }
           dateien.add(d);
         }
+        // Unterrühren → Kneten läuft mit einem Start durch (Rückmeldung Strudelteig 22.11.)
+        final strudel = dateien.firstWhere(
+          (d) => d.recipe.title == 'Strudelteig',
+        );
+        expect(
+          strudel.recipe.steps
+              .where((s) => s.machine != null)
+              .single
+              .machine!
+              .phasen,
+          const [
+            MachineSettings(temperature: 0, time: 60, speed: 5),
+            MachineSettings(temperature: 0, time: 480, speed: 6),
+          ],
+        );
         final titles = [for (final d in dateien) d.recipe.title];
         expect(titles.toSet().length, titles.length);
 
