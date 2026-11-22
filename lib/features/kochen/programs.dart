@@ -42,6 +42,15 @@ final bridgeProgramsProvider = FutureProvider<List<Program>>((ref) async {
   }
 });
 
+/// Was vor dem Start fehlt – nur das nennen, was wirklich fehlt (Schüssel, Kopf oder beides).
+/// Ohne bekannten Status der kombinierte Hinweis.
+String bowlLidHint(ApplianceStatus? status, AppLocalizations l10n) =>
+    switch ((status?.bowlFitted, status?.lidClosed)) {
+      (true, false) => l10n.checkLid,
+      (false, true) => l10n.checkBowl,
+      _ => l10n.startNotReady,
+    };
+
 /// Ergebnis eines Startversuchs: `null` = gestartet, sonst Fehlermeldung.
 typedef StartResult = String?;
 
@@ -88,7 +97,10 @@ class SequenceController {
       appEvents.add('ablauf', 'Start abgelehnt: ${e.code ?? e.kind.name}');
       return switch ((e.kind, e.code, e.statusCode)) {
         (BridgeErrorKind.unreachable, _, _) => l10n.bridgeUnreachable,
-        (_, 'not_ready', _) => l10n.startNotReady,
+        (_, 'not_ready', _) => bowlLidHint(
+          ref.read(applianceStatusProvider).value,
+          l10n,
+        ),
         (_, 'busy', _) => l10n.programBusy,
         (_, 'not_connected', _) => l10n.machineNotConnected,
         (_, 'hot_speed', _) => l10n.startHotSpeed,

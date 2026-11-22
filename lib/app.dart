@@ -109,6 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: _tabs.first.path,
     refreshListenable: refresh,
     redirect: (context, state) {
+      // Datei-Adressen aus „Öffnen mit“ (content://, file://) sind keine Seiten der App; die Datei selbst
+      // kommt über den Kanal in MainActivity (RezeptEmpfangWatcher).
+      final scheme = state.uri.scheme;
+      if (scheme == 'content' || scheme == 'file') return _tabs.first.path;
       final done = ref.read(setupDoneProvider);
       final inSetup = state.matchedLocation == '/einrichtung';
       if (!done && !inSetup) return '/einrichtung';

@@ -36,6 +36,9 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Rezept-Dateien (VIEW/SEND) holt MainActivity selbst ab. Ohne diese Zeile reicht Flutter die
+                 content://-Adresse zusätzlich als Route an den Router weiter → „no routes found“. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
