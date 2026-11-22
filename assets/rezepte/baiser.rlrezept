@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "id": "grundrezept-baiser",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Baiser",
+  "servings": 20,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Süß",
+    "Backen"
+  ],
+  "ingredients": [
+    {
+      "amount": 4,
+      "unit": "",
+      "name": "Eiweiß"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "name": "Salz"
+    },
+    {
+      "amount": 1,
+      "unit": "TL",
+      "name": "Zitronensaft"
+    },
+    {
+      "amount": 200,
+      "unit": "g",
+      "name": "Feiner Zucker"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Eiweiß, Salz und Zitronensaft in die saubere, fettfreie Schüssel geben.",
+      "ingredients": [
+        {
+          "amount": 4,
+          "unit": "",
+          "name": "Eiweiß"
+        },
+        {
+          "amount": 1,
+          "unit": "Prise",
+          "name": "Salz"
+        },
+        {
+          "amount": 1,
+          "unit": "TL",
+          "name": "Zitronensaft"
+        }
+      ],
+      "tool": "schneebesen"
+    },
+    {
+      "text": "Anschlagen, bis das Eiweiß schaumig ist.",
+      "machine": {
+        "temperature": 0,
+        "time": 60,
+        "speed": 8
+      }
+    },
+    {
+      "text": "Zucker dazugeben.",
+      "ingredients": [
+        {
+          "amount": 200,
+          "unit": "g",
+          "name": "Feiner Zucker"
+        }
+      ]
+    },
+    {
+      "text": "Steif schlagen, bis die Masse fest ist und glänzt.",
+      "machine": {
+        "temperature": 0,
+        "time": 240,
+        "speed": 12
+      }
+    },
+    {
+      "text": "Mit Spritzbeutel oder zwei Löffeln Tupfen auf ein Blech mit Backpapier setzen. Bei 100 °C (Umluft 80 °C) 1½–2 Stunden trocknen lassen und im ausgeschalteten Ofen auskühlen."
+    }
+  ]
+}

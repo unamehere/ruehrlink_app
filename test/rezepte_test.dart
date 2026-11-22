@@ -13,6 +13,8 @@ import 'package:ruehrlink/core/models/models.dart';
 import 'package:ruehrlink/core/storage/app_storage.dart';
 import 'package:ruehrlink/core/storage/recipe_store.dart';
 import 'package:ruehrlink/features/rezepte/recipe_library.dart';
+import 'package:ruehrlink/features/rezepte/rezept_datei.dart';
+import 'package:ruehrlink/features/rezepte/rezept_teilen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Recipe _recipe(String id, {int rev = 0, String title = 'Test'}) => Recipe(
@@ -419,6 +421,85 @@ void main() {
       await tester.tap(find.text('Jetzt kochen'));
       await settle(tester);
       expect(tester.takeException(), isNull);
+      await close(tester);
+    });
+
+    testWidgets('Rezept-Datei: Vorschau, übernehmen, Namenskollision', (
+      tester,
+    ) async {
+      await open(tester, const Size(390, 844));
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(Scaffold).first),
+      );
+      final pfannkuchen = container
+          .read(recipeLibraryProvider)
+          .recipes
+          .values
+          .firstWhere((r) => r.title == 'Pfannkuchen');
+      container
+          .read(rezeptEingangProvider.notifier)
+          .set(
+            RezeptEingang(
+              name: 'Pfannkuchen.rlrezept',
+              bytes: RezeptDatei.schreiben(pfannkuchen, const {}),
+            ),
+          );
+      container.read(routerProvider).go(rezeptUebernehmenPfad);
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Rezept übernehmen'), findsOneWidget);
+      expect(find.textContaining('„Pfannkuchen (2)“'), findsOneWidget);
+      await tester.tap(find.text('In meine Rezepte übernehmen'));
+      await settle(tester);
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Pfannkuchen (2)'), findsWidgets);
+      expect(find.byTooltip('Teilen'), findsOneWidget);
+      final lib = container.read(recipeLibraryProvider);
+      expect(
+        lib.recipes.values
+            .where((r) => r.title.startsWith('Pfannkuchen'))
+            .length,
+        2,
+      );
+
+      // kaputte Datei → Meldung statt Absturz
+      container
+          .read(rezeptEingangProvider.notifier)
+          .set(
+            RezeptEingang(
+              name: 'x.rlrezept',
+              bytes: Uint8List.fromList([1, 2]),
+            ),
+          );
+      container.read(routerProvider).go(rezeptUebernehmenPfad);
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(
+          'Diese Datei ist kein Rührlink-Rezept oder sie ist beschädigt.',
+        ),
+        findsOneWidget,
+      );
+      await close(tester);
+    });
+
+    testWidgets('Menü: Grundrezepte hinzufügen (ohne Duplikate)', (
+      tester,
+    ) async {
+      await open(tester, const Size(390, 844));
+      await tester.tap(find.byWidgetPredicate((w) => w is PopupMenuButton));
+      await settle(tester);
+      expect(find.text('Rezept-Datei öffnen'), findsOneWidget);
+      await tester.tap(find.text('Grundrezepte hinzufügen'));
+      for (var i = 0; i < 60; i++) {
+        await tester.pump(const Duration(milliseconds: 500));
+        if (find.textContaining('hinzugefügt').evaluate().isNotEmpty) break;
+      }
+      expect(tester.takeException(), isNull);
+      // „Baiser“ gibt es in der Demo schon
+      expect(find.text('9 Grundrezepte hinzugefügt.'), findsOneWidget);
+      await settle(tester); // Abgleich danach
       await close(tester);
     });
 

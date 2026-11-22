@@ -9,7 +9,10 @@ import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
+import 'rezept_teilen.dart';
 import 'rezepte_hilfe.dart';
+
+enum _Menu { datei, grundrezepte }
 
 /// Rezepte-Tab: Suche, Tags, Raster mit Fotos. Antippen → Rezeptseite.
 class RezeptePage extends ConsumerStatefulWidget {
@@ -54,7 +57,31 @@ class _RezeptePageState extends ConsumerState<RezeptePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.tabRezepte),
-        actions: const [RezepteHilfeButton()],
+        actions: [
+          const RezepteHilfeButton(),
+          PopupMenuButton<_Menu>(
+            onSelected: (m) => switch (m) {
+              _Menu.datei => oeffneRezeptDatei(context, ref),
+              _Menu.grundrezepte => grundrezepteHinzufuegen(context, ref),
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: _Menu.datei,
+                child: ListTile(
+                  leading: const Icon(Icons.file_open_outlined),
+                  title: Text(l10n.recipeFileOpen),
+                ),
+              ),
+              PopupMenuItem(
+                value: _Menu.grundrezepte,
+                child: ListTile(
+                  leading: const Icon(Icons.library_add_outlined),
+                  title: Text(l10n.recipeBasicsAdd),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       floatingActionButton: lib.recipes.isEmpty
           ? null
@@ -261,8 +288,24 @@ class _RecipeTile extends StatelessWidget {
   }
 }
 
-class _Empty extends StatelessWidget {
+class _Empty extends ConsumerStatefulWidget {
   const _Empty();
+
+  @override
+  ConsumerState<_Empty> createState() => _EmptyState();
+}
+
+class _EmptyState extends ConsumerState<_Empty> {
+  bool _adding = false;
+
+  Future<void> _grundrezepte() async {
+    setState(() => _adding = true);
+    try {
+      await grundrezepteHinzufuegen(context, ref);
+    } finally {
+      if (mounted) setState(() => _adding = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -294,6 +337,20 @@ class _Empty extends StatelessWidget {
                 label: l10n.recipesNew,
                 icon: Icons.add_rounded,
                 onPressed: () => context.go('/rezepte/neu'),
+              ),
+              const SizedBox(height: Tokens.s),
+              BigButton(
+                label: l10n.recipeBasicsAdd,
+                icon: Icons.library_add_outlined,
+                kind: BigButtonKind.secondary,
+                busy: _adding,
+                onPressed: _grundrezepte,
+              ),
+              const SizedBox(height: Tokens.s),
+              TextButton.icon(
+                onPressed: () => oeffneRezeptDatei(context, ref),
+                icon: const Icon(Icons.file_open_outlined),
+                label: Text(l10n.recipeFileOpen),
               ),
             ],
           ),

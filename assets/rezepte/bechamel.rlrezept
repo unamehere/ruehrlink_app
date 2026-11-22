@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "id": "grundrezept-bechamel",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Béchamelsoße",
+  "servings": 4,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Soße"
+  ],
+  "ingredients": [
+    {
+      "amount": 50,
+      "unit": "g",
+      "name": "Butter"
+    },
+    {
+      "amount": 50,
+      "unit": "g",
+      "name": "Weizenmehl 405"
+    },
+    {
+      "amount": 500,
+      "unit": "ml",
+      "name": "Milch, kalt"
+    },
+    {
+      "amount": 0.5,
+      "unit": "TL",
+      "name": "Salz"
+    },
+    {
+      "amount": 0,
+      "unit": "",
+      "name": "Pfeffer"
+    },
+    {
+      "amount": 1,
+      "unit": "Prise",
+      "name": "Muskatnuss, gerieben"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Butter in die Schüssel geben.",
+      "ingredients": [
+        {
+          "amount": 50,
+          "unit": "g",
+          "name": "Butter"
+        }
+      ],
+      "tool": "kochRuehrelement"
+    },
+    {
+      "text": "Schmelzen.",
+      "machine": {
+        "temperature": 100,
+        "time": 120,
+        "speed": 4
+      }
+    },
+    {
+      "text": "Mehl dazugeben und kurz anschwitzen.",
+      "ingredients": [
+        {
+          "amount": 50,
+          "unit": "g",
+          "name": "Weizenmehl 405"
+        }
+      ],
+      "machine": {
+        "temperature": 120,
+        "time": 120,
+        "speed": 1
+      }
+    },
+    {
+      "text": "Kalte Milch dazugießen und unter Rühren aufkochen, bis die Soße andickt.",
+      "ingredients": [
+        {
+          "amount": 500,
+          "unit": "ml",
+          "name": "Milch, kalt"
+        }
+      ],
+      "machine": {
+        "temperature": 95,
+        "time": 600,
+        "speed": 5
+      }
+    },
+    {
+      "text": "Mit Salz, Pfeffer und Muskat abschmecken.",
+      "ingredients": [
+        {
+          "amount": 0.5,
+          "unit": "TL",
+          "name": "Salz"
+        },
+        {
+          "amount": 0,
+          "unit": "",
+          "name": "Pfeffer"
+        },
+        {
+          "amount": 1,
+          "unit": "Prise",
+          "name": "Muskatnuss, gerieben"
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../core/storage/recipe_store.dart';
+import 'rezept_datei.dart';
 
 /// Abgleich-Stand eines Rezepts (F21). Gespeichert wird nur direkt auf der Brücke – eine Kopie
 /// ist also entweder auf dem Stand des Rührlinks, wird gerade abgeglichen oder ist nur zum Lesen da.
@@ -230,6 +231,45 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
       unawaited(sync());
     }
     return result;
+  }
+
+  /// Rezept aus einer Datei übernehmen: immer als **neues** Rezept (neue ID, nie überschreiben),
+  /// gleicher Titel schon da → „Titel (2)“. Erst die Fotos hochladen, dann speichern.
+  /// Nicht erreichbar oder abgelehnt → [BridgeException]; dann ist nichts gespeichert.
+  Future<Recipe> uebernehmen(RezeptDatei datei) async {
+    await sync(); // aktuelle Titel kennen
+    for (final bytes in datei.photos.values) {
+      await uploadPhoto(bytes);
+    }
+    for (var versuch = 0; ; versuch++) {
+      final r = alsNeuesRezept(
+        datei.recipe,
+        id: newRecipeId(),
+        vorhandeneTitel: state.recipes.values.map((r) => r.title),
+      );
+      final result = await save(r);
+      if (result is RecipeWritten) return state.recipes[r.id] ?? r;
+      // Konflikt bei rev 0 = die (zufällige) ID gibt es schon – mit neuer ID noch einmal.
+      if (versuch >= 2) {
+        throw const BridgeException(BridgeErrorKind.rejected, 412, 'rev');
+      }
+    }
+  }
+
+  /// Grundrezepte anlegen, deren Titel es noch nicht gibt. Liefert, wie viele dazukamen.
+  Future<int> grundrezepteHinzufuegen(List<RezeptDatei> dateien) async {
+    await sync();
+    if (state.offline) {
+      throw const BridgeException(BridgeErrorKind.unreachable);
+    }
+    var n = 0;
+    for (final d in dateien) {
+      final titel = state.recipes.values.map((r) => r.title);
+      if (titelVorhanden(d.recipe.title, titel)) continue;
+      await uebernehmen(d);
+      n++;
+    }
+    return n;
   }
 
   /// Löschen mit `If-Match`; [RecipeConflict], wenn es inzwischen geändert wurde.

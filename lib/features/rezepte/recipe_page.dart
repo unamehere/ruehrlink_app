@@ -14,6 +14,7 @@ import '../../ui/widgets/big_button.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
+import 'rezept_teilen.dart';
 
 /// Rezeptseite: Foto, Portionen −/+, Zutaten (skaliert), Schritte, „Jetzt kochen“.
 /// Breit (Tablet quer): Zutaten links, Schritte rechts.
@@ -194,6 +195,13 @@ class _RecipePageState extends ConsumerState<RecipePage> {
     return Scaffold(
       appBar: AppBar(
         actions: [
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: l10n.recipeFileShare,
+              icon: const Icon(Icons.share_rounded),
+              onPressed: () => _share(context, recipe),
+            ),
+          ),
           IconButton(
             tooltip: l10n.recipeEdit,
             icon: const Icon(Icons.edit_rounded),
@@ -220,6 +228,23 @@ class _RecipePageState extends ConsumerState<RecipePage> {
               ),
       ),
     );
+  }
+
+  Future<void> _share(BuildContext button, Recipe recipe) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final box = button.findRenderObject() as RenderBox?;
+    try {
+      await teileRezept(
+        ref,
+        recipe,
+        origin: box == null ? null : box.localToGlobal(Offset.zero) & box.size,
+      );
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.recipeFileShareFailed)),
+      );
+    }
   }
 
   Future<void> _delete(Recipe recipe) async {

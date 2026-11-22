@@ -22,6 +22,8 @@ import 'features/mehr/verbindung_page.dart';
 import 'features/rezepte/kochmodus_page.dart';
 import 'features/rezepte/recipe_editor_page.dart';
 import 'features/rezepte/recipe_page.dart';
+import 'features/rezepte/rezept_teilen.dart';
+import 'features/rezepte/rezept_vorschau_page.dart';
 import 'features/rezepte/rezepte_page.dart';
 import 'l10n/l10n.dart';
 import 'ui/layout.dart';
@@ -119,9 +121,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => PairRequestWatcher(
           child: SequenceNudgeWatcher(
-            child: ScalePopupWatcher(
-              shell: shell,
-              child: AppShell(shell: shell),
+            child: RezeptEmpfangWatcher(
+              child: ScalePopupWatcher(
+                shell: shell,
+                child: AppShell(shell: shell),
+              ),
             ),
           ),
         ),
@@ -144,6 +148,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'neu',
                     parentNavigatorKey: _rootNavigator,
                     builder: (context, state) => const RecipeEditorPage(),
+                  ),
+                  GoRoute(
+                    path: 'uebernehmen',
+                    parentNavigatorKey: _rootNavigator,
+                    builder: (context, state) => const RezeptVorschauPage(),
                   ),
                   GoRoute(
                     path: ':id',

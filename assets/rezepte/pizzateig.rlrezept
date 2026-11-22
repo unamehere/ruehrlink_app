@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "id": "grundrezept-pizzateig",
+  "rev": 0,
+  "updated": "2026-11-22T00:00:00.000Z",
+  "title": "Pizzateig",
+  "servings": 4,
+  "photo": null,
+  "tags": [
+    "Grundrezept",
+    "Teig",
+    "Pizza"
+  ],
+  "ingredients": [
+    {
+      "amount": 390,
+      "unit": "g",
+      "name": "Wasser, lauwarm"
+    },
+    {
+      "amount": 4,
+      "unit": "g",
+      "name": "Trockenhefe"
+    },
+    {
+      "amount": 600,
+      "unit": "g",
+      "name": "Weizenmehl 550"
+    },
+    {
+      "amount": 15,
+      "unit": "g",
+      "name": "Salz"
+    },
+    {
+      "amount": 12,
+      "unit": "g",
+      "name": "Olivenöl"
+    }
+  ],
+  "steps": [
+    {
+      "text": "Wasser, Hefe und Mehl in die Schüssel wiegen.",
+      "ingredients": [
+        {
+          "amount": 390,
+          "unit": "g",
+          "name": "Wasser, lauwarm"
+        },
+        {
+          "amount": 4,
+          "unit": "g",
+          "name": "Trockenhefe"
+        },
+        {
+          "amount": 600,
+          "unit": "g",
+          "name": "Weizenmehl 550"
+        }
+      ],
+      "tool": "knethaken"
+    },
+    {
+      "text": "Salz und Olivenöl dazugeben.",
+      "ingredients": [
+        {
+          "amount": 15,
+          "unit": "g",
+          "name": "Salz"
+        },
+        {
+          "amount": 12,
+          "unit": "g",
+          "name": "Olivenöl"
+        }
+      ]
+    },
+    {
+      "text": "Langsam unterrühren.",
+      "machine": {
+        "temperature": 0,
+        "time": 60,
+        "speed": 5
+      }
+    },
+    {
+      "text": "Zu einem glatten, elastischen Teig kneten.",
+      "machine": {
+        "temperature": 0,
+        "time": 420,
+        "speed": 6
+      }
+    },
+    {
+      "text": "Abgedeckt 1–2 Stunden gehen lassen. In 4 Stücke teilen, rund formen und weitere 30 Minuten ruhen lassen. Dünn ausziehen, belegen und im sehr heißen Ofen (250 °C oder mehr) 8–10 Minuten backen."
+    }
+  ]
+}
