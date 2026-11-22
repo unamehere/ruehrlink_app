@@ -15,6 +15,7 @@ import '../assistenten/assistenten_section.dart';
 import '../maschine/live_status_band.dart';
 import '../mehr/compat_hints.dart';
 import '../waage/scale_sheet.dart';
+import 'nachstellen.dart';
 import 'programs.dart';
 import 'schnellprogramme.dart';
 
@@ -303,6 +304,16 @@ class _SequencePanelState extends ConsumerState<_SequencePanel> {
                 done: seq.state == SequenceRunState.done,
               ),
               const SizedBox(height: Tokens.l),
+              if (nachstellAngebot(
+                    seq,
+                    ref.watch(letzterLaufProvider),
+                    ref.watch(bridgeInfoProvider).value?.readyCaps,
+                  ) !=
+                  null)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: Tokens.l),
+                  child: NachstellenLeiste(),
+                ),
               if (finished)
                 BigButton(
                   label: l10n.seqDismiss,

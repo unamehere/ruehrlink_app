@@ -16,6 +16,7 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/werkzeug.dart';
 import '../assistenten/sicherheit.dart';
+import '../kochen/nachstellen.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
 import 'weigh_step_slot.dart';
@@ -24,7 +25,9 @@ import 'weigh_step_slot.dart';
 ///
 /// Seiten: Bereitstellen (Zutaten) → Schritte → Fertig. Maschinenschritte startet er über den
 /// Sequencer der Brücke (`POST /sequence/start`, gestartet wird am Gerät); ist der Schritt
-/// fertig, blättert er von selbst weiter. Wiegeschritte zeigen [WeighStepSlot].
+/// fertig, bleibt er stehen und bietet „Noch nicht fertig?“ an ([NachstellenLeiste]); „Weiter“
+/// blättert wie immer. Lässt sich ein Schritt nicht nachstellen, blättert er von selbst weiter.
+/// Wiegeschritte zeigen [WeighStepSlot].
 class KochmodusPage extends ConsumerStatefulWidget {
   const KochmodusPage({super.key, required this.id, this.servings});
 
@@ -43,6 +46,9 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
 
   /// Seite, auf der ein Maschinenschritt gestartet wurde (für „automatisch weiter“).
   int? _startedOn;
+
+  /// Seite, deren Maschinenschritt gerade fertig geworden ist (Nachstellen anbieten).
+  int? _doneOn;
   bool _sending = false;
   final _weighReached = <int>{};
 
@@ -76,13 +82,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
         return;
       }
     } else {
-      program = Program(
-        id: '',
-        name: fitUtf8(recipe.title, 39),
-        steps: [
-          ProgramStep(settings: m.settings!, label: fitUtf8(step.text, 31)),
-        ],
-      );
+      program = einzelschrittProgramm(recipe, step);
     }
     setState(() => _sending = true);
     final error = await ref
@@ -91,7 +91,10 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
     if (!mounted) return;
     setState(() {
       _sending = false;
-      if (error == null) _startedOn = _page;
+      if (error == null) {
+        _startedOn = _page;
+        _doneOn = null;
+      }
     });
     if (error != null) messenger.showSnackBar(SnackBar(content: Text(error)));
   }
@@ -125,12 +128,23 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
     final total = pages.length;
     final last = total - 1;
 
-    // Maschinenschritt fertig → automatisch weiter.
+    // Maschinenschritt fertig → „Noch nicht fertig?“ anbieten, sonst automatisch weiter.
     ref.listen(sequenceProvider, (prev, next) {
       final was = prev?.value, now = next.value;
       if (_startedOn == null || _startedOn != _page || now == null) return;
       if (was?.active == true && now.state == SequenceRunState.done) {
-        _startedOn = null;
+        final nachstellbar =
+            nachstellAngebot(
+              now,
+              ref.read(letzterLaufProvider),
+              ref.read(bridgeInfoProvider).value?.readyCaps,
+            ) !=
+            null;
+        setState(() {
+          _doneOn = _startedOn;
+          _startedOn = null;
+        });
+        if (nachstellbar) return;
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(l10n.cookStepDone)));
         Timer(const Duration(milliseconds: 1200), () {
@@ -184,9 +198,13 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   of: recipe.steps.length,
                   factor: factor,
                   toolChange: null,
-                  startedHere: _startedOn == p,
+                  doneHere: _doneOn == p,
                   sending: _sending,
                   onStart: () => _start(recipe, step),
+                  onNachgestellt: () => setState(() {
+                    _startedOn = p;
+                    _doneOn = null;
+                  }),
                   onWeighReached: () => setState(() => _weighReached.add(p)),
                 );
               },
@@ -231,7 +249,9 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                                 label: pages[_page].art == _Art.wechsel
                                     ? l10n.toolSwapDone
                                     : l10n.cookNext,
-                                icon: _weighReached.contains(_page)
+                                icon:
+                                    _weighReached.contains(_page) ||
+                                        _doneOn == _page
                                     ? Icons.check_circle_rounded
                                     : Icons.arrow_forward_rounded,
                                 onPressed: () => _go(_page + 1),
@@ -433,9 +453,10 @@ class _StepPage extends StatelessWidget {
     required this.of,
     required this.factor,
     required this.toolChange,
-    required this.startedHere,
+    required this.doneHere,
     required this.sending,
     required this.onStart,
+    required this.onNachgestellt,
     required this.onWeighReached,
   });
 
@@ -447,9 +468,10 @@ class _StepPage extends StatelessWidget {
 
   /// Werkzeug, das jetzt neu eingesetzt werden muss (`null` = kein Wechsel).
   final Werkzeug? toolChange;
-  final bool startedHere;
+  final bool doneHere;
   final bool sending;
   final VoidCallback onStart;
+  final VoidCallback onNachgestellt;
   final VoidCallback onWeighReached;
 
   @override
@@ -464,9 +486,10 @@ class _StepPage extends StatelessWidget {
     final machine = step.machine != null
         ? _MachinePanel(
             step: step,
-            startedHere: startedHere,
+            doneHere: doneHere,
             sending: sending,
             onStart: onStart,
+            onNachgestellt: onNachgestellt,
           )
         : null;
     final Widget? side = toWeigh.isEmpty
@@ -639,15 +662,19 @@ class _StepPhoto extends ConsumerWidget {
 class _MachinePanel extends ConsumerWidget {
   const _MachinePanel({
     required this.step,
-    required this.startedHere,
+    required this.doneHere,
     required this.sending,
     required this.onStart,
+    required this.onNachgestellt,
   });
 
   final RecipeStep step;
-  final bool startedHere;
+
+  /// Der hier gestartete Schritt ist gerade fertig geworden.
+  final bool doneHere;
   final bool sending;
   final VoidCallback onStart;
+  final VoidCallback onNachgestellt;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -733,9 +760,12 @@ class _MachinePanel extends ConsumerWidget {
         ),
       ]);
     } else {
-      if (startedHere && seq?.state == SequenceRunState.done) {
+      final done = doneHere && seq?.state == SequenceRunState.done;
+      if (done) {
         children.addAll([
           HintCard(icon: Icons.check_circle_rounded, text: l10n.seqDone),
+          const SizedBox(height: Tokens.m),
+          NachstellenLeiste(onGestartet: onNachgestellt),
           const SizedBox(height: Tokens.m),
         ]);
       }
@@ -752,6 +782,8 @@ class _MachinePanel extends ConsumerWidget {
         BigButton(
           label: l10n.cookSend,
           icon: Icons.play_arrow_rounded,
+          // Nach dem Schritt ist „Weiter“ bzw. Nachstellen dran, nicht der ganze Schritt noch einmal.
+          kind: done ? BigButtonKind.secondary : BigButtonKind.primary,
           busy: sending,
           onPressed: caps == null ? null : onStart,
         ),
@@ -870,3 +902,16 @@ class _SeqStatus extends StatelessWidget {
     );
   }
 }
+
+/// Programm, das der Kochmodus für einen Rezeptschritt mit Einzelwerten schickt: ein Schritt,
+/// Name = Rezepttitel, Beschriftung = Schritttext (gekürzt auf die Puffer der Brücke).
+Program einzelschrittProgramm(Recipe recipe, RecipeStep step) => Program(
+  id: '',
+  name: fitUtf8(recipe.title, 39),
+  steps: [
+    ProgramStep(
+      settings: step.machine!.settings!,
+      label: fitUtf8(step.text, 31),
+    ),
+  ],
+);
