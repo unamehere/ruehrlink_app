@@ -91,6 +91,7 @@ class FakeBridgeApi implements BridgeApi {
       name: 'Rührlink (Demo)',
       fw: '0.1.0',
       api: 1,
+      features: const {...legacyFeatures, 'machine.repair'},
       storage: const StorageInfo(
         backend: 'sd',
         totalKB: 30000000,
@@ -421,6 +422,18 @@ class FakeBridgeApi implements BridgeApi {
         _emit(const OnboardEvent(OnboardState.done));
       }
     });
+  }
+
+  /// Demo: Kopplung vergessen – die Maschine ist getrennt, bis sie neu gekoppelt wird.
+  @override
+  Future<void> repairMachine() async {
+    await _wait();
+    if (_status.active || _status.running || _seq.active) {
+      throw const BridgeException(BridgeErrorKind.rejected, 409, 'busy');
+    }
+    _onboard?.cancel();
+    _paired = false;
+    _update(ApplianceStatus.disconnected);
   }
 
   Timer? _pairTimer;

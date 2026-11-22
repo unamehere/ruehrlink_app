@@ -15,6 +15,7 @@ import 'features/kochen/sequence_nudge.dart';
 import 'features/waage/scale.dart';
 import 'features/waage/scale_sheet.dart';
 import 'features/maschine/maschine_page.dart';
+import 'features/mehr/maschine_koppeln_page.dart';
 import 'features/mehr/update_page.dart';
 import 'features/mehr/mehr_page.dart';
 import 'features/mehr/pair_request_watcher.dart';
@@ -197,6 +198,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'hinweise',
                     builder: (context, state) => const NudgeSettingsPage(),
+                  ),
+                  GoRoute(
+                    path: 'maschine-koppeln',
+                    builder: (context, state) => const MaschineKoppelnPage(),
                   ),
                 ],
               ),

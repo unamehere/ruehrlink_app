@@ -18,8 +18,16 @@ import 'setup_step_layout.dart';
 /// Fortschritt (WS `onboard`). Während der Kopplung ist die Brücke im Heim-WLAN
 /// nicht erreichbar – die App fragt deshalb weiter `GET /info` ab, bis die
 /// Maschine als verbunden gemeldet wird (der WebSocket verbindet sich selbst neu).
+///
+/// Auch für „Maschine neu koppeln“ (Mehr) – dort mit eigenem [onDone]/[onLater].
 class MachineStep extends ConsumerStatefulWidget {
-  const MachineStep({super.key});
+  const MachineStep({super.key, this.onDone, this.onLater});
+
+  /// Nach erfolgreicher Kopplung. Standard: nächster Einrichtungsschritt.
+  final VoidCallback? onDone;
+
+  /// „Später“. Standard: nächster Einrichtungsschritt.
+  final VoidCallback? onLater;
 
   /// Die Brücke gibt nach höchstens 3 min auf; etwas Reserve für den Rückweg.
   static const timeout = Duration(minutes: 3, seconds: 30);
@@ -59,7 +67,7 @@ class _MachineStepState extends ConsumerState<MachineStep> {
     if (error == null) {
       ref.invalidate(bridgeInfoProvider);
       ref.invalidate(applianceStatusProvider);
-      ref.read(setupStepProvider.notifier).next();
+      (widget.onDone ?? ref.read(setupStepProvider.notifier).next)();
     }
   }
 
@@ -151,7 +159,9 @@ class _MachineStepState extends ConsumerState<MachineStep> {
           ),
           const SizedBox(height: Tokens.s),
           TextButton(
-            onPressed: _busy ? null : ref.read(setupStepProvider.notifier).next,
+            onPressed: _busy
+                ? null
+                : (widget.onLater ?? ref.read(setupStepProvider.notifier).next),
             child: Text(l10n.setupLater),
           ),
         ],

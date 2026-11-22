@@ -57,6 +57,11 @@ abstract class BridgeApi {
   /// nicht erreichbar, das Ergebnis steht danach in [info] (`appliance.connected`).
   Future<void> onboardMachine();
 
+  /// `POST /api/v1/machine/repair` – „Maschine neu koppeln“ ohne Werksreset (Fähigkeit
+  /// `machine.repair`): Der Rührlink vergisst nur die Kopplung mit der Maschine, danach
+  /// folgt [onboardMachine]. Programm läuft → [BridgeException] `busy` (409).
+  Future<void> repairMachine();
+
   /// `POST /api/v1/scale/watch` – Waage für [seconds] Sekunden liefern lassen. Solange die App
   /// die Waage zeigt, alle ~10 s erneuern; danach schaltet die Brücke sie ab (spart RAM).
   /// Werte kommen als [WeightEvent]. Ohne Waage → [BridgeException] `no_scale` (501),
