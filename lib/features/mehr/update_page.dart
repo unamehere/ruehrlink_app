@@ -11,10 +11,12 @@ import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
+import '../../ui/hilfe_knopf.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import '../hilfe/hilfe_themen.dart';
 import '../kochen/programs.dart';
 import 'compat_hints.dart';
 
@@ -340,6 +342,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         appBar: AppBar(
           title: Text(l10n.updateTitle),
           automaticallyImplyLeading: !busy,
+          actions: const [HilfeKnopf(hilfeUpdate)],
         ),
         body: AdaptivePage(
           primary: Column(

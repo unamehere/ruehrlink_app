@@ -50,6 +50,8 @@ flutter:
     # Platzhalter-Illustrationen (Fluent Emoji 3D, MIT) – siehe docs/illustrationen.md
     - assets/illustrations/
     - assets/brand/
+    # Bildanleitung „Maschine koppeln“ (eigene Fotos, verkleinert auf 1000 px)
+    - assets/anleitung/maschine-koppeln/
     # Eingebaute Firmware des Rührlink als Update-Datei .rlfw, von ruehrlink_esp/tools/firmware_sign.py pack
     # erzeugt (nicht im Repo)
     - assets/firmware/

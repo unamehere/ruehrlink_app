@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
+import '../../ui/hilfe_knopf.dart';
+import '../hilfe/hilfe_themen.dart';
 import 'bridge_step.dart';
 import 'done_step.dart';
 import 'machine_step.dart';
@@ -23,6 +25,13 @@ class EinrichtungPage extends ConsumerWidget {
     final steps = ref.read(setupStepProvider.notifier);
     // Zurück ist erlaubt bis zur WLAN-Wahl; danach ist die Brücke eingerichtet.
     final canGoBack = step.index > 0 && step.index <= SetupStep.wifi.index;
+    // Hilfe zum aktuellen Schritt, nur auf Tipp.
+    final HilfeThema? hilfe = switch (step) {
+      SetupStep.bridge => hilfeEinrichtungBluetooth,
+      SetupStep.wifi => hilfeEinrichtungWlan,
+      SetupStep.machine => hilfeMaschineKoppeln,
+      _ => null,
+    };
 
     return PopScope(
       canPop: false,
@@ -43,6 +52,7 @@ class EinrichtungPage extends ConsumerWidget {
             context.l10n.setupStepOf(step.index + 1, SetupStep.values.length),
             style: Theme.of(context).textTheme.titleMedium,
           ),
+          actions: [if (hilfe != null) HilfeKnopf(hilfe)],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(6),
             child: LinearProgressIndicator(

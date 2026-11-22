@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/l10n.dart';
+import '../../ui/hilfe_knopf.dart';
+import '../hilfe/hilfe_themen.dart';
 import '../../ui/illustrations.dart';
 import '../../ui/theme.dart';
 import 'assistent.dart';
@@ -20,7 +22,11 @@ class AssistentenSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.asSectionTitle, style: theme.textTheme.headlineSmall),
+          UeberschriftMitHilfe(
+            l10n.asSectionTitle,
+            hilfeProgramme,
+            style: theme.textTheme.headlineSmall,
+          ),
           const SizedBox(height: Tokens.s),
           Text(
             l10n.asSectionHint,

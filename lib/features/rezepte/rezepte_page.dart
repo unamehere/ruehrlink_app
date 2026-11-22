@@ -4,12 +4,13 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
+import '../../ui/hilfe_knopf.dart';
 import '../../ui/illustrations.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
+import '../hilfe/hilfe_themen.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
-import 'rezepte_hilfe.dart';
 
 /// Rezepte-Tab: Suche, Tags, Raster mit Fotos. Antippen → Rezeptseite.
 class RezeptePage extends ConsumerStatefulWidget {
@@ -54,7 +55,7 @@ class _RezeptePageState extends ConsumerState<RezeptePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.tabRezepte),
-        actions: const [RezepteHilfeButton()],
+        actions: const [HilfeKnopf(hilfeRezepte)],
       ),
       floatingActionButton: lib.recipes.isEmpty
           ? null
