@@ -630,6 +630,8 @@
   "asSaveStepIngredients": "Zutaten in die Schüssel geben.",
   "asSaveStepRest": "{step}: {minutes} min warten, Motor aus.",
   "@asSaveStepRest": {"placeholders": {"step": {"type": "String"}, "minutes": {"type": "int"}}},
+  "asSaveStepThen": "dann {step}",
+  "@asSaveStepThen": {"placeholders": {"step": {"type": "String"}}},
   "asIngredients": "Zutaten",
   "asSteps": "Ablauf · {time}",
   "@asSteps": {"placeholders": {"time": {"type": "String"}}},

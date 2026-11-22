@@ -12,6 +12,7 @@ import 'package:ruehrlink/core/api/fake_bridge_api.dart';
 import 'package:ruehrlink/core/models/models.dart';
 import 'package:ruehrlink/core/storage/app_storage.dart';
 import 'package:ruehrlink/core/storage/recipe_store.dart';
+import 'package:ruehrlink/features/kochen/programs.dart';
 import 'package:ruehrlink/features/rezepte/recipe_library.dart';
 import 'package:ruehrlink/features/rezepte/rezept_datei.dart';
 import 'package:ruehrlink/features/rezepte/rezept_teilen.dart';
@@ -446,6 +447,92 @@ void main() {
         await close(tester);
       },
     );
+
+    testWidgets('Maschinenschritt mit Phasen: Kochmodus und Editor', (
+      tester,
+    ) async {
+      await open(tester, const Size(390, 844));
+      const id = '11111111-2222-4333-8444-555555555555';
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(Scaffold).first),
+      );
+      unawaited(
+        container
+            .read(recipeLibraryProvider.notifier)
+            .save(
+              Recipe(
+                id: id,
+                rev: 0,
+                updated: DateTime.utc(2026, 11, 22),
+                title: 'Strudelteig',
+                servings: 1,
+                steps: const [
+                  RecipeStep(
+                    text: 'Unterrühren, dann kneten',
+                    machine: StepMachine.settings(
+                      MachineSettings(temperature: 0, time: 60, speed: 5),
+                      then: [
+                        MachineSettings(temperature: 0, time: 300, speed: 6),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+      );
+      await settle(tester);
+      await settle(tester);
+
+      // Kochmodus: Phasenliste, Gesamtzeit, ein Programm mit zwei Schritten
+      container.read(routerProvider).go('/rezepte/$id/kochen');
+      await settle(tester);
+      await tester.tap(find.text('Weiter'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('2 Phasen · 6:00 gesamt'), findsOneWidget);
+      expect(find.text('1:00 Stufe min → 5:00 Stufe 1'), findsOneWidget);
+      await tester.ensureVisible(find.text('An die Maschine senden'));
+      await tester.pump();
+      await tester.tap(find.text('An die Maschine senden'));
+      await settle(tester);
+      final seq = container.read(sequenceProvider).value!;
+      expect(seq.of, 2);
+      expect(seq.step, 1);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byTooltip('Kochmodus beenden'));
+      await settle(tester);
+      unawaited(container.read(sequenceControllerProvider).abort());
+      await settle(tester);
+
+      // Editor: Phase 2 sichtbar, „Phase anhängen“ übernimmt die letzten Werte
+      container.read(routerProvider).go('/rezepte/$id/bearbeiten');
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Phase 2 – direkt im Anschluss'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Phase anhängen'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Phase anhängen'));
+      await tester.pump();
+      expect(find.text('Phase 3 – direkt im Anschluss'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Speichern'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Speichern'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      final gespeichert = container.read(recipeLibraryProvider).recipes[id]!;
+      expect(gespeichert.steps.single.machine!.phasen, const [
+        MachineSettings(temperature: 0, time: 60, speed: 5),
+        MachineSettings(temperature: 0, time: 300, speed: 6),
+        MachineSettings(temperature: 0, time: 300, speed: 6),
+      ]);
+      await close(tester);
+    });
 
     testWidgets('Rezept von der echten Box (15.11., altes Format) öffnen', (
       tester,
