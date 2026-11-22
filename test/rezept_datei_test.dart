@@ -58,6 +58,14 @@ Recipe _recipe({
       text: 'Programm',
       machine: StepMachine.program('dinkelteig'),
     ),
+    // Maschinenschritt mit zwei Phasen (1 min Stufe min → 5 min Stufe 1)
+    const RecipeStep(
+      text: 'Unterrühren, dann kneten',
+      machine: StepMachine.settings(
+        MachineSettings(temperature: 0, time: 60, speed: 1),
+        then: [MachineSettings(temperature: 0, time: 300, speed: 2)],
+      ),
+    ),
   ],
 );
 
@@ -108,6 +116,17 @@ void main() {
 
       final d = RezeptDatei.lesen(bytes);
       expect(d.recipe.toJson(), r.toJson());
+      // Phasen kommen mit (Feld `then` im `machine`-Objekt)
+      expect(((json['steps'] as List).last as Map)['machine'], {
+        'temperature': 0,
+        'time': 60,
+        'speed': 1,
+        'then': [
+          {'temperature': 0, 'time': 300, 'speed': 2},
+        ],
+      });
+      expect(d.recipe.steps.last.machine!.phasen.length, 2);
+      expect(d.recipe.steps.last.machine!.gesamtS, 360);
       expect(d.photos[shaA], photo);
       expect(d.photos[shaB], stepPhoto);
       expect(d.hinweise.keine, isTrue);
@@ -175,7 +194,7 @@ void main() {
         final d = RezeptDatei.lesen(_bytes(json));
         expect(d.hinweise.neueresFormat, isTrue);
         expect(d.hinweise.unbekannteWerkzeuge, [1]);
-        expect(d.recipe.steps.length, 3);
+        expect(d.recipe.steps.length, 4);
         expect(d.recipe.steps[0].tool, isNull);
         expect(d.recipe.steps[0].ingredients.length, 2);
       },
@@ -309,7 +328,7 @@ void main() {
       expect(r.id, 'neu-1');
       expect(r.rev, 0);
       expect(r.title, 'Pizzateig (2)');
-      expect(r.steps.length, 3);
+      expect(r.steps.length, 4);
     });
   });
 

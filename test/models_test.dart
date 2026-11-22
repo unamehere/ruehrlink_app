@@ -180,6 +180,34 @@ void main() {
     expect((back['steps'] as List)[2], (_json(raw)['steps'] as List)[2]);
   });
 
+  test('Maschinenschritt mit Phasen (then)', () {
+    final m = StepMachine.fromJson(
+      _json(
+        '{"temperature":0,"time":60,"speed":1,'
+        '"then":[{"temperature":0,"time":300,"speed":2},'
+        '{"temperature":37,"time":600,"speed":0}]}',
+      ),
+    );
+    expect(
+      m.settings,
+      const MachineSettings(temperature: 0, time: 60, speed: 1),
+    );
+    expect(m.phasen.map((p) => p.time), [60, 300, 600]);
+    expect(m.gesamtS, 960);
+    expect(StepMachine.fromJson(m.toJson()).toJson(), m.toJson());
+    // ohne weitere Phasen: kein `then` im JSON (ältere Apps/Box sehen nichts Neues)
+    const eins = StepMachine.settings(
+      MachineSettings(temperature: 0, time: 60, speed: 1),
+    );
+    expect(eins.toJson().containsKey('then'), isFalse);
+    expect(eins.phasen.length, 1);
+    expect(StepMachine.phasen(m.phasen).toJson(), m.toJson());
+    // Programm: keine Phasen
+    expect(const StepMachine.program('x').phasen, isEmpty);
+    // ältere App (liest nur temperature/time/speed) bekommt Phase 1
+    expect(MachineSettings.fromJson(m.toJson()), m.settings);
+  });
+
   test('Programm', () {
     const raw = '''
 {
