@@ -42,9 +42,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(
         api.repairMachine,
-        throwsA(
-          isA<BridgeException>().having((e) => e.code, 'code', 'busy'),
-        ),
+        throwsA(isA<BridgeException>().having((e) => e.code, 'code', 'busy')),
       );
     });
   });

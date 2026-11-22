@@ -21,9 +21,8 @@ class MaschineKoppelnPage extends StatelessWidget {
       appBar: AppBar(title: Text(l10n.repairMachineTile)),
       body: MachineStep(
         onDone: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.repairMachineDone)));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.repairMachineDone)));
           context.go('/mehr');
         },
         onLater: () => context.go('/mehr'),
