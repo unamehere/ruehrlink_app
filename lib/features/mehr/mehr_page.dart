@@ -11,6 +11,7 @@ import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../version.dart';
 import '../einrichtung/setup_controller.dart';
+import 'maschine_koppeln_page.dart';
 
 /// Mehr-Tab. Vorerst nur die Verbindung zur Brücke; folgt: Brücke (Firmware,
 /// Update, Speicher), Home Assistant, Datensicherung, Hilfe.
@@ -20,6 +21,8 @@ class MehrPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final canRepair =
+        ref.watch(bridgeInfoProvider).value?.has('machine.repair') ?? false;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabMehr)),
       body: AdaptivePage(
@@ -66,6 +69,17 @@ class MehrPage extends ConsumerWidget {
                 onTap: () => context.go('/mehr/hinweise'),
               ),
             ),
+            if (canRepair) ...[
+              const SizedBox(height: Tokens.s),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.link_rounded, size: 32),
+                  title: Text(l10n.repairMachineTile),
+                  subtitle: Text(l10n.repairMachineTileText),
+                  onTap: () => confirmRepairMachine(context, ref),
+                ),
+              ),
+            ],
             const SizedBox(height: Tokens.s),
             Card(
               child: ListTile(

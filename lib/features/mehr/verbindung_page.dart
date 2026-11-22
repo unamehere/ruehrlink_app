@@ -18,6 +18,7 @@ import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import 'storage_row.dart';
 
 /// Brücke wählen: Demo-Modus, im WLAN gefunden (mDNS) oder IP von Hand.
 /// Bei einer echten Brücke folgt die Kopplung aus api.md: Anfrage stellen, ein
@@ -102,6 +103,7 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final current = ref.watch(bridgeTargetProvider);
+    final storage = ref.watch(bridgeInfoProvider).value?.storage;
 
     if (_pairing != null) {
       return Scaffold(
@@ -169,6 +171,11 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
                 }),
               ),
             ),
+            // Fehlt `storage` (ältere Firmware), keine Zeile.
+            if (storage != null) ...[
+              const SizedBox(height: Tokens.s),
+              StorageRow(storage),
+            ],
             if (current is! DemoTarget) ...[
               const SizedBox(height: Tokens.m),
               BigButton(

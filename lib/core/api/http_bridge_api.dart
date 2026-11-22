@@ -255,6 +255,9 @@ class HttpBridgeApi implements BridgeApi {
   Future<void> onboardMachine() => _send('POST', 'machine/onboard');
 
   @override
+  Future<void> repairMachine() => _send('POST', 'machine/repair');
+
+  @override
   Future<void> watchScale({int seconds = 30}) =>
       _send('POST', 'scale/watch', {'seconds': seconds});
 

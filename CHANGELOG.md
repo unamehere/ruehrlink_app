@@ -7,6 +7,34 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.5.0 – 22.11.2026
+
+### Neu
+- Rezepte teilen: Rezeptseite → Teilen erzeugt eine `.rlrezept`-Datei (mit Fotos) für WhatsApp, Mail usw.
+- Rezept-Dateien öffnen: „Öffnen mit Rührlink“ oder Rezeptliste → „Rezept-Datei öffnen“, mit Vorschau. Übernommen
+  wird immer als neues Rezept, bei gleichem Titel mit „(2)“.
+- 10 Grundrezepte (Pizzateig, Brot, Hefezopf, Marmorkuchen, Biskuit, Sahne, Baiser, Strudelteig, Béchamel,
+  Vanillepudding) über „Grundrezepte hinzufügen“ in der Rezeptliste.
+- Assistenten: Das Ergebnis lässt sich als normales Rezept speichern („Meine Pizza“ …) und danach im Editor ändern.
+- Nachstellen: Nach einem Maschinenschritt „Noch nicht fertig?“ mit kurzen Verlängerungen (+30 s/+1 min,
+  +1/+5 min, beim Gehen +5/+10 min) mit derselben Stufe und Temperatur.
+- Kleine (?)-Knöpfe erklären an vielen Stellen kurz, was passiert: Einrichtung, Maschine, Waage, Programme,
+  Kochmodus, Rezept-Editor, Update und Verbindung. Sie öffnen sich nur auf Tipp.
+- Bildanleitung „So geht's an der Maschine“ mit sechs Fotos beim Koppeln der Maschine.
+- Mehr → „Problem melden“: kurze Beschreibung, optional ein Bild, dazu ein Diagnosebericht, den du vor dem Senden
+  komplett siehst. Versand über das Teilen-Menü oder per E-Mail; die App selbst sendet nichts.
+- Mehr → „Maschine neu koppeln“ ohne Werksreset; Heim-WLAN, Handys und Rezepte bleiben (F18).
+- Mehr → Verbindung zeigt den Speicher des Rührlink (SD-Karte oder intern, Belegung, Hinweis wenn fast voll).
+
+### Geändert
+- Kochmodus: Nach einem fertigen Maschinenschritt bleibt die Seite stehen, damit man nachstellen kann; „Weiter“
+  geht wie gewohnt weiter.
+- Der Hinweis zum Koppeln nennt die Beschriftungen wie auf dem Display (Zahnrad → WiFi → Connect …).
+- Die Rezepthilfe nennt beim Wiegen jetzt auch ml und l.
+
+### Behoben
+- Ein neu angelegtes Rezept konnte nach dem Abgleich verschwinden und ließ sich nicht wieder öffnen (F20).
+
 ## 0.4.0 – 22.11.2026
 
 ### Neu
