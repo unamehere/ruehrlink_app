@@ -8,6 +8,20 @@ der Ordner `android/` bzw. `ios/` im Projekt enthält nur die plattformspezifisc
 
 > Rührlink ist ein unabhängiges Projekt und steht in keiner Verbindung zu Kenwood oder De'Longhi.
 
+## Was die App kann (Stand 0.5.0, Beta)
+
+- **Maschine steuern:** Temperatur, Zeit, Stufe, Rührintervall; gestartet wird immer am Knopf der Maschine.
+- **Programme und Assistenten:** feste Abläufe (z. B. Sahne, Teig, Schokolade) laufen auf dem Rührlink weiter, auch
+  wenn das Handy schläft. Assistenten rechnen Mengen und lassen sich als eigenes Rezept speichern.
+  Ist etwas noch nicht fertig: „Nachstellen“ mit +30 s, +1 min …
+- **Rezepte mit Fotos:** Editor, Kochmodus mit Live-Waage (Zutaten nacheinander abwiegen, auch ml/l),
+  Maschinenschritte mit mehreren Phasen, 10 Grundrezepte zum Hinzufügen.
+- **Rezepte teilen:** als Datei `.rlrezept` über WhatsApp, Mail usw.; Empfang über „Öffnen mit Rührlink“.
+- **Hilfe:** kleine (?)-Knöpfe an den wichtigen Stellen, Bildanleitung zum Koppeln der Maschine.
+- **Problem melden:** Diagnosebericht (App + Box-Log, Zugangsdaten maskiert) über das Teilen-Menü an
+  support@ruehrlink.de; die App sendet selbst nichts.
+- **Wartung:** Firmware-Update per Datei, Maschine neu koppeln ohne Werksreset, Speicheranzeige der Box.
+
 ## Grundsätze
 
 - **Lokal:** keine Cloud, kein Konto, keine Tracker. Daten liegen auf dem Handy und auf der Brücke.
@@ -37,7 +51,10 @@ flutter test           # wenige gezielte Tests
 flutter run            # auf Gerät/Emulator starten
 ```
 
-- **Android-Builds** brauchen Android Studio bzw. das Android-SDK (noch nicht eingerichtet).
+- **Android-Builds** brauchen Android Studio bzw. das Android-SDK. Release-APK:
+  `flutter build apk --release` (unter Git Bash vorher
+  `JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"`). Die eingebaute Firmware legt
+  `ruehrlink_esp/tools/firmware_sign.py pack … --out assets/firmware --replace` ab (nicht im Repo).
 - **iOS-Builds** brauchen einen Mac mit Xcode oder einen Cloud-Build-Dienst (z. B. Codemagic,
   GitHub Actions mit macOS-Runner).
 
