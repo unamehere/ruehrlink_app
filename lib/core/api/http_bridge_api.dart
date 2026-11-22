@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../event_log.dart';
 import '../models/json.dart';
 import '../models/models.dart';
 import 'bridge_api.dart';
@@ -97,12 +98,23 @@ class HttpBridgeApi implements BridgeApi {
           _errorCode(response),
         ),
       };
-    } on BridgeException {
+    } on BridgeException catch (e) {
+      _logError(method, path, e);
       rethrow;
-    } on Exception {
+    } on Exception catch (e) {
       // SocketException, TimeoutException, ClientException …
+      appEvents.add(
+        'api',
+        '$method $path → nicht erreichbar (${e.runtimeType})',
+      );
       throw const BridgeException(BridgeErrorKind.unreachable);
     }
+  }
+
+  /// Fehler fürs Ereignisprotokoll – nur Methode, Pfad, Status und Fehlercode, nie Header oder Body.
+  static void _logError(String method, String path, BridgeException e) {
+    final code = e.code != null ? ' ${e.code}' : '';
+    appEvents.add('api', '$method $path → ${e.statusCode ?? e.kind.name}$code');
   }
 
   static String? _errorCode(http.Response r) {
@@ -269,6 +281,10 @@ class HttpBridgeApi implements BridgeApi {
       _send('POST', 'time', {'epoch': now.millisecondsSinceEpoch ~/ 1000});
 
   @override
+  Future<Json> diag() async =>
+      _decode(await _request('GET', 'diag', timeout: _longTimeout));
+
+  @override
   Future<void> reset() => _send('POST', 'reset');
 
   /// Eigener [HttpClient] statt `package:http`: nur so lässt sich der Fortschritt
@@ -366,6 +382,10 @@ class HttpBridgeApi implements BridgeApi {
   void _setOnline(bool online) {
     if (_online == online || _events.isClosed) return;
     _online = online;
+    appEvents.add(
+      'verbindung',
+      online ? 'Live-Verbindung steht' : 'Live-Verbindung unterbrochen',
+    );
     _events.add(ConnectionEvent(online: online));
   }
 

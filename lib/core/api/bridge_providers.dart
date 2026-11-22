@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../event_log.dart';
 import '../models/models.dart';
 import '../storage/app_storage.dart';
 import 'bridge_api.dart';
@@ -20,12 +21,17 @@ class BridgeTargetNotifier extends Notifier<BridgeTarget> {
       ref.read(appStorageProvider).bridge ?? const DemoTarget();
 
   Future<void> select(BridgeTarget target) async {
+    appEvents.add('verbindung', switch (target) {
+      DemoTarget() => 'Demo-Modus gewählt',
+      final NetworkTarget t => 'Rührlink gewählt: ${t.host}:${t.port}',
+    });
     state = target;
     await ref.read(appStorageProvider).setBridge(target);
   }
 
   /// Gespeicherte Brücke samt Token vergessen (z. B. nach dem Zurücksetzen).
   Future<void> forget() async {
+    appEvents.add('verbindung', 'Rührlink vergessen');
     state = const DemoTarget();
     await ref.read(appStorageProvider).clearBridge();
   }
@@ -54,6 +60,11 @@ final bridgeInfoProvider = FutureProvider<BridgeInfo>((ref) async {
   });
   final api = ref.watch(bridgeApiProvider);
   final info = await api.info();
+  appEvents.add(
+    'verbindung',
+    'Rührlink ${info.fw} (api ${info.api}), Maschine '
+        '${info.appliance?.connected == true ? 'verbunden' : 'nicht verbunden'}',
+  );
   // Bei jedem Verbinden die Uhrzeit übergeben; Fehler sind hier unkritisch.
   unawaited(api.setTime(DateTime.now()).catchError((Object _) {}));
   return info;

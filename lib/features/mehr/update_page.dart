@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
+import '../../core/event_log.dart';
 import '../../core/models/models.dart';
 import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
@@ -69,12 +70,17 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     });
     try {
       final pkg = await FirmwarePackage.open(await read());
+      appEvents.add(
+        'update',
+        'Datei geprüft: Firmware ${pkg.manifest.version}',
+      );
       if (!mounted) return;
       setState(() {
         _phase = _Phase.idle;
         _selected = pkg;
       });
     } on FirmwareFileException catch (e) {
+      appEvents.add('update', 'Datei abgelehnt: ${e.error.name}');
       _fail(switch (e.error) {
         FirmwareFileError.invalid => l10n.updateFileInvalid,
         FirmwareFileError.damaged => l10n.updateFileDamaged,
@@ -119,6 +125,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
       _error = null;
     });
     final api = ref.read(bridgeApiProvider);
+    appEvents.add('update', 'Upload $current → $v');
     try {
       await api.uploadFirmware(
         pkg.image,
@@ -129,6 +136,10 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         },
       );
     } on BridgeException catch (e) {
+      appEvents.add(
+        'update',
+        'Upload fehlgeschlagen: ${e.code ?? e.kind.name}',
+      );
       _fail(switch (e.code) {
         'busy' => l10n.updateBusy,
         'signature' || 'sha256' || 'image' || 'size' => l10n.updateRejected,
@@ -154,6 +165,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         if (!mounted) return;
         api.reconnect();
         ref.invalidate(bridgeInfoProvider);
+        appEvents.add('update', 'Neustart fertig, läuft ${info.fw}');
         if (compareVersions(info.fw, expected) == 0) {
           setState(() => _phase = _Phase.done);
         } else {
@@ -164,6 +176,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         await Future<void>.delayed(const Duration(seconds: 2));
       }
     }
+    appEvents.add('update', 'Keine Antwort nach dem Neustart');
     _fail(l10n.updateNoAnswer);
   }
 

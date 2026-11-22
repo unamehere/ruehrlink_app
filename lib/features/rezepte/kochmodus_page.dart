@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/bridge_providers.dart';
+import '../../core/event_log.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
@@ -47,7 +48,14 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
   final _weighReached = <int>{};
 
   @override
+  void initState() {
+    super.initState();
+    appEvents.add('kochmodus', 'geöffnet (Rezept ${widget.id})');
+  }
+
+  @override
   void dispose() {
+    appEvents.add('kochmodus', 'geschlossen auf Seite ${_page + 1}');
     _pages.dispose();
     super.dispose();
   }
@@ -165,7 +173,15 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
             child: PageView.builder(
               controller: _pages,
               itemCount: total,
-              onPageChanged: (p) => setState(() => _page = p),
+              onPageChanged: (p) {
+                final s = pages[p];
+                appEvents.add(
+                  'kochmodus',
+                  'Seite ${p + 1}/$total: ${s.art.name}'
+                      '${s.schritt != null ? ' ${s.schritt! + 1}' : ''}',
+                );
+                setState(() => _page = p);
+              },
               itemBuilder: (context, p) {
                 final seite = pages[p];
                 if (seite.art == _Art.bereitstellen) {
