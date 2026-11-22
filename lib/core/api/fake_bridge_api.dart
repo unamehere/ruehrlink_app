@@ -298,6 +298,13 @@ class FakeBridgeApi implements BridgeApi {
   }
 
   @override
+  Future<Recipe?> recipe(String id) async {
+    await _wait();
+    final r = _recipes[id];
+    return r == null ? null : Recipe.fromJson(r);
+  }
+
+  @override
   Future<RecipeWriteResult> putRecipe(Recipe recipe) async {
     await _wait();
     final live = readInt(_recipes[recipe.id]?['rev']);

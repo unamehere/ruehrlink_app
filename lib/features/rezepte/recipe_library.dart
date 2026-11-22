@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pointycastle/digests/sha256.dart';
@@ -89,6 +90,11 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
   Future<void>? _running;
   bool _again = false;
 
+  /// Hier gespeicherte Rezepte mit laufender Nummer (F20): Eine Abgleich-Antwort, die vor dem
+  /// Speichern angefragt wurde, kennt sie noch nicht und darf sie nicht wieder entfernen.
+  final _saved = <String, (int, Recipe)>{};
+  int _saveSeq = 0;
+
   @override
   RecipeLibraryState build() {
     _api = ref.watch(bridgeApiProvider);
@@ -138,6 +144,7 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
   }
 
   Future<void> _sync() async {
+    final startSeq = _saveSeq;
     try {
       var since = state.rev;
       var changes = await _api.recipeChanges(since);
@@ -154,6 +161,11 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
       for (final id in changes.deleted) {
         next.remove(id);
       }
+      // Nach der Anfrage gespeichert → fehlt evtl. in der Antwort (bei since = 0 sonst verloren).
+      _saved.removeWhere((_, e) => e.$1 <= startSeq);
+      for (final (_, r) in _saved.values) {
+        next.putIfAbsent(r.id, () => r);
+      }
       state = RecipeLibraryState(rev: changes.rev, recipes: next);
       await _store.save(
         _key,
@@ -163,7 +175,27 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
       if (ref.mounted) {
         state = state.copyWith(loading: false, offline: true, syncing: false);
       }
+    } on Object catch (e) {
+      // Unerwartete Antwort: nicht ewig „wird abgeglichen“ zeigen, die Kopie bleibt.
+      debugPrint('Rezepte: Abgleich fehlgeschlagen: $e');
+      if (ref.mounted) {
+        state = state.copyWith(loading: false, syncing: false);
+      }
     }
+  }
+
+  /// Ein einzelnes Rezept direkt von der Brücke holen, z. B. wenn die Rezeptseite eine ID öffnet,
+  /// die der Abgleich (noch) nicht geliefert hat. `null` = gibt es nicht; nicht erreichbar →
+  /// [BridgeException].
+  Future<Recipe?> fetch(String id) async {
+    final r = await _api.recipe(id);
+    if (r != null && ref.mounted) {
+      final known = state.recipes[id];
+      if (known == null || known.rev < r.rev) {
+        state = state.copyWith(recipes: {...state.recipes, id: r});
+      }
+    }
+    return r;
   }
 
   /// Foto (WebP) hochladen und lokal ablegen; liefert den SHA-256 für [Recipe.photo].
@@ -186,6 +218,14 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
         updated: result.updated ?? DateTime.now().toUtc(),
       );
       state = state.copyWith(recipes: {...state.recipes, saved.id: saved});
+      _saved[saved.id] = (++_saveSeq, saved);
+      // Gleich in die Kopie, damit es auch nach einem Neustart ohne Verbindung da ist (F20).
+      unawaited(
+        _store.save(
+          _key,
+          CachedLibrary(rev: state.rev, recipes: state.recipes.values.toList()),
+        ),
+      );
       // Bibliotheks-Revision erst über den Abgleich – sonst fehlten Änderungen anderer dazwischen.
       unawaited(sync());
     }
@@ -202,6 +242,7 @@ class RecipeLibrary extends Notifier<RecipeLibraryState> {
       result = RecipeWritten(rev: recipe.rev); // war schon weg
     }
     if (result is RecipeWritten && ref.mounted) {
+      _saved.remove(recipe.id);
       state = state.copyWith(recipes: {...state.recipes}..remove(recipe.id));
       unawaited(sync());
     }

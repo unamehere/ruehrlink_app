@@ -180,6 +180,17 @@ class HttpBridgeApi implements BridgeApi {
       );
 
   @override
+  Future<Recipe?> recipe(String id) async {
+    final r = await _request('GET', 'recipes/$id', pass: const {404});
+    if (r.statusCode == 404) return null;
+    try {
+      return Recipe.fromJson(_decode(r));
+    } on TypeError {
+      throw BridgeException(BridgeErrorKind.protocol, r.statusCode);
+    }
+  }
+
+  @override
   Future<RecipeWriteResult> putRecipe(Recipe recipe) async => _writeResult(
     await _request(
       'PUT',

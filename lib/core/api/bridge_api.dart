@@ -39,6 +39,9 @@ abstract class BridgeApi {
   /// (0 = alles). Ist `rev` der Antwort kleiner als [since], muss die App alles neu holen.
   Future<RecipeChanges> recipeChanges(int since);
 
+  /// `GET /api/v1/recipes/{id}` – ein Rezept; `null`, wenn es das nicht (mehr) gibt.
+  Future<Recipe?> recipe(String id);
+
   /// `PUT /api/v1/recipes/{id}` mit `If-Match: <recipe.rev>` (0 = neues Rezept).
   /// Hat jemand anderes inzwischen geändert oder gelöscht → [RecipeConflict] statt Überschreiben.
   Future<RecipeWriteResult> putRecipe(Recipe recipe);

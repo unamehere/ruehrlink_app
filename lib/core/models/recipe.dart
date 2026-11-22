@@ -64,7 +64,7 @@ class Recipe {
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       title: readString(json['title']),
       servings: readInt(json['servings'], 1),
-      photo: json['photo'] as String?,
+      photo: json['photo'] is String ? json['photo'] as String : null,
       tags: json['tags'] is List
           ? List.unmodifiable((json['tags'] as List).whereType<String>())
           : const [],
@@ -154,14 +154,28 @@ class Ingredient {
 
 /// Einheiten zur Auswahl im Editor (in dieser Reihenfolge). `''` = ohne Einheit („2 Eier“).
 /// Abwiegen lassen sich g, kg, ml und l.
-const recipeUnits = ['g', 'kg', 'ml', 'l', 'EL', 'TL', 'Prise', 'Msp.', 'Pck.', 'Stück', ''];
+const recipeUnits = [
+  'g',
+  'kg',
+  'ml',
+  'l',
+  'EL',
+  'TL',
+  'Prise',
+  'Msp.',
+  'Pck.',
+  'Stück',
+  '',
+];
 
 /// Dichte in g/ml für das Abwiegen von Flüssigkeiten; grob genug für die Toleranz der Waage
 /// (3 %). Unbekannt → wie Wasser.
 double liquidDensity(String name) {
   final n = name.toLowerCase();
   // „Öl“, „Rapsöl“, „Olivenöl extra“ – aber nicht „Kölsch“
-  if (n.split(RegExp(r'[\s,()/-]+')).any((w) => w.endsWith('öl') || w.endsWith('oel'))) {
+  if (n
+      .split(RegExp(r'[\s,()/-]+'))
+      .any((w) => w.endsWith('öl') || w.endsWith('oel'))) {
     return 0.92;
   }
   if (n.contains('honig')) return 1.4;
@@ -265,7 +279,7 @@ class RecipeStep {
 
   factory RecipeStep.fromJson(Json json) => RecipeStep(
     text: readString(json['text']),
-    photo: json['photo'] as String?,
+    photo: json['photo'] is String ? json['photo'] as String : null,
     ingredients: readList(json['ingredients'], Ingredient.fromJson),
     tool: Werkzeug.fromJson(json['tool']),
     machine: json['machine'] is Map
@@ -320,6 +334,15 @@ class RecipeConflict extends RecipeWriteResult {
   final bool deleted;
 }
 
+Recipe? _tryRecipe(Json json) {
+  try {
+    final r = Recipe.fromJson(json);
+    return r.id.isEmpty ? null : r;
+  } on Object {
+    return null;
+  }
+}
+
 /// Antwort von `GET /api/v1/recipes?since=<rev>`.
 class RecipeChanges {
   const RecipeChanges({
@@ -334,7 +357,10 @@ class RecipeChanges {
 
   factory RecipeChanges.fromJson(Json json) => RecipeChanges(
     rev: readInt(json['rev']),
-    changed: readList(json['changed'], Recipe.fromJson),
+    // Ein unlesbares Rezept darf den Abgleich der übrigen nicht verhindern (F20).
+    changed: [
+      for (final r in readList(json['changed'], (j) => j)) ?_tryRecipe(r),
+    ],
     deleted: json['deleted'] is List
         ? List.unmodifiable((json['deleted'] as List).whereType<String>())
         : const [],

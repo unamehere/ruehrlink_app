@@ -189,6 +189,97 @@ void main() {
     });
   });
 
+  group('F20: neues Rezept bleibt da', () {
+    late _GateApi api;
+    late MemoryRecipeStore store;
+    late ProviderContainer c;
+
+    Future<void> make() async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      api = _GateApi();
+      store = MemoryRecipeStore();
+      c = ProviderContainer(
+        overrides: [
+          appStorageProvider.overrideWithValue(AppStorage(prefs)),
+          bridgeApiProvider.overrideWithValue(api),
+          recipeStoreProvider.overrideWithValue(store),
+        ],
+      );
+      addTearDown(() {
+        c.dispose();
+        api.close();
+      });
+      c.listen(recipeLibraryProvider, (_, _) {});
+      await c.read(recipeLibraryProvider.notifier).sync();
+    }
+
+    test(
+      'Abgleich-Antwort von vor dem Speichern entfernt es nicht (since=0)',
+      () async {
+        await make();
+        // Frische Box ohne Rezepte → die App fragt immer mit since=0.
+        api.empty = true;
+        final library = c.read(recipeLibraryProvider.notifier);
+        await library.sync();
+        expect(c.read(recipeLibraryProvider).rev, 0);
+
+        // Ein Abgleich läuft (z. B. vom Start), seine Antwort ist schon unterwegs …
+        final gate = api.gate = Completer();
+        final running = library.sync();
+        // … währenddessen wird ein neues Rezept gespeichert.
+        final saved = await library.save(_recipe('neu-f20'));
+        expect(saved, isA<RecipeWritten>());
+        var missing = false;
+        c.listen(recipeLibraryProvider, (_, s) {
+          if (!s.recipes.containsKey('neu-f20')) missing = true;
+        });
+        api.empty = false;
+        gate.complete();
+        await running;
+        await library.sync();
+        expect(missing, isFalse);
+        expect(c.read(recipeLibraryProvider).recipes['neu-f20'], isNotNull);
+      },
+    );
+
+    test('nach dem Speichern sofort in der lokalen Kopie', () async {
+      await make();
+      await c.read(recipeLibraryProvider.notifier).save(_recipe('neu-kopie'));
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        store.libraries['demo']!.recipes.map((r) => r.id),
+        contains('neu-kopie'),
+      );
+    });
+
+    test('Rezept, das der Abgleich nicht kennt, einzeln nachladen', () async {
+      await make();
+      final library = c.read(recipeLibraryProvider.notifier);
+      api.empty = true; // Abgleich liefert es (noch) nicht
+      await api.putRecipe(_recipe('direkt'));
+      await library.sync();
+      expect(c.read(recipeLibraryProvider).recipes['direkt'], isNull);
+      final r = await library.fetch('direkt');
+      expect(r?.title, 'Test');
+      expect(c.read(recipeLibraryProvider).recipes['direkt'], isNotNull);
+      expect(await library.fetch('gibt-es-nicht'), isNull);
+    });
+
+    test('ein unlesbares Rezept bricht den Abgleich nicht ab', () {
+      final changes = RecipeChanges.fromJson({
+        'rev': 3,
+        'changed': [
+          {'id': 'a', 'rev': 1, 'title': 'Gut', 'photo': 12},
+          {'rev': 2, 'title': 'Ohne ID'},
+          'Unsinn',
+        ],
+      });
+      expect(changes.changed.map((r) => r.id), ['a']);
+      expect(changes.changed.single.photo, isNull);
+    });
+  });
+
   group('Bildschirme', () {
     // Simulierte Brücke tickt weiter, daher kein pumpAndSettle; zwei Bilder für Übergänge.
     Future<void> settle(WidgetTester tester) async {
@@ -367,4 +458,28 @@ void main() {
       await close(tester);
     });
   });
+}
+
+/// Demo-Brücke, deren Abgleich-Antworten sich zurückhalten lassen (F20).
+class _GateApi extends FakeBridgeApi {
+  _GateApi() : super(latency: Duration.zero);
+
+  /// Antwortet wie eine leere Box (rev 0).
+  bool empty = false;
+
+  /// Solange gesetzt: Antwort wird beim Aufruf festgehalten und erst danach ausgeliefert.
+  Completer<void>? gate;
+
+  @override
+  Future<RecipeChanges> recipeChanges(int since) async {
+    final snapshot = empty
+        ? const RecipeChanges(rev: 0)
+        : await super.recipeChanges(since);
+    final g = gate;
+    if (g != null) {
+      gate = null;
+      await g.future;
+    }
+    return snapshot;
+  }
 }
