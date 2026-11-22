@@ -184,6 +184,11 @@ class FakeBridgeApi implements BridgeApi {
         throw const BridgeException(BridgeErrorKind.rejected, 400, 'hot_speed');
       }
     }
+    // Wie die Brücke: ein Programm darf nicht mit „Motor aus, ohne Hitze“ beginnen.
+    final first = program.steps.first.settings;
+    if (first.speed == 0 && first.temperature == 0) {
+      throw const BridgeException(BridgeErrorKind.rejected, 400, 'first_step');
+    }
     _seqSteps = program.steps;
     _applyStep(0);
     _seqSet(

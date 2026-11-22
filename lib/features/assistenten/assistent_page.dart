@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
@@ -13,10 +15,11 @@ import '../../ui/widgets/hint_card.dart';
 import '../../ui/werkzeug.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../kochen/programs.dart';
+import '../rezepte/recipe_library.dart';
+import 'als_rezept.dart';
 import 'assistent.dart';
 import 'katalog.dart';
 import 'sicherheit.dart';
-import 'werte.dart';
 
 /// Einheitlicher Ablauf aller Assistenten: eine Frage je Seite mit großen Kacheln (Vorschlag ist
 /// vorausgewählt, „Weiter“ übernimmt ihn), danach das Ergebnis mit Zutaten, Ablauf und „Starten“.
@@ -297,6 +300,14 @@ class _AssistentPageState extends ConsumerState<AssistentPage> {
           const SizedBox(height: Tokens.m),
           HintCard(icon: Icons.hourglass_top_rounded, text: l10n.programBusy),
         ],
+        const SizedBox(height: Tokens.l),
+        // Dauerhafte eigene Werte: als normales Rezept speichern, im Editor änderbar.
+        BigButton(
+          label: l10n.asSaveRecipe,
+          icon: Icons.bookmark_add_outlined,
+          kind: BigButtonKind.secondary,
+          onPressed: _alsRezeptSpeichern,
+        ),
       ],
     );
 
@@ -310,6 +321,69 @@ class _AssistentPageState extends ConsumerState<AssistentPage> {
         onPressed: program == null || busy ? null : () => _starte(program),
       ),
     );
+  }
+
+  /// Dialog mit Titelvorschlag; der Dialog bleibt bei Fehlern offen (nichts geht verloren).
+  Future<void> _alsRezeptSpeichern() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    final id = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _RezeptSpeichernDialog(
+        vorschlag: _as.rezeptTitel(l10n),
+        speichern: _speichere,
+      ),
+    );
+    if (id == null || !mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(l10n.asSaveDone),
+        action: SnackBarAction(
+          label: l10n.asSaveOpen,
+          onPressed: () => router.go('/rezepte/$id'),
+        ),
+      ),
+    );
+  }
+
+  /// Rezept anlegen; bei Fehlern [_SpeichernFehler] mit der Meldung für den Dialog.
+  /// [id] bleibt für alle Versuche im Dialog gleich: Kam die Antwort nicht an, obwohl die Brücke
+  /// gespeichert hat, meldet sie beim nächsten Versuch einen Konflikt – dann ist es schon da.
+  Future<void> _speichere(String id, String titel) async {
+    final l10n = context.l10n;
+    final info = ref.read(bridgeInfoProvider).value;
+    final caps = info?.readyCaps ?? info?.appliance?.caps;
+    if (info == null) throw _SpeichernFehler(l10n.bridgeUnreachable);
+    if (caps == null) throw _SpeichernFehler(l10n.asSaveNoMachine);
+    final rezept = rezeptAusPlan(
+      _as.plan(_antworten),
+      id: id,
+      titel: titel,
+      portionen: _as.portionen(_antworten),
+      caps: caps,
+      l10n: l10n,
+      jetzt: DateTime.now(),
+    );
+    if (rezept == null) throw _SpeichernFehler(l10n.asSaveInvalid);
+    final library = ref.read(recipeLibraryProvider.notifier);
+    try {
+      final result = await library.save(rezept);
+      if (result is RecipeConflict) {
+        if (result.currentRev > 0 && !result.deleted) {
+          await library.sync(); // früherer Versuch ist doch angekommen
+          return;
+        }
+        throw _SpeichernFehler(l10n.asSaveFailed);
+      }
+    } on BridgeException catch (e) {
+      throw _SpeichernFehler(
+        e.kind == BridgeErrorKind.rejected
+            ? l10n.editorSaveRejected(e.code ?? '${e.statusCode}')
+            : l10n.bridgeUnreachable,
+      );
+    }
   }
 
   String _antwortText(AppLocalizations l10n, Frage f) {
@@ -360,50 +434,117 @@ class _AssistentPageState extends ConsumerState<AssistentPage> {
 }
 
 // ---------------------------------------------------------------------------
-// Texte
+// Als Rezept speichern
 
-String zutatName(AppLocalizations l10n, ZutatMenge z) => switch (z.zutat) {
-  Zutat.mehl =>
-    z.sorte is Mehl
-        ? l10n.asIngFlourOf(mehlName(l10n, z.sorte! as Mehl))
-        : l10n.asIngFlour,
-  Zutat.wasser => l10n.asIngWater,
-  Zutat.salz => l10n.asIngSalt,
-  Zutat.hefeFrisch => l10n.asIngYeastFresh,
-  Zutat.hefeTrocken => l10n.asIngYeastDry,
-  Zutat.olivenoel => l10n.asIngOil,
-  Zutat.eiweiss => l10n.asIngEggWhite,
-  Zutat.prisesalz => l10n.asIngSalt,
-  Zutat.sahne => l10n.asIngCream,
-  Zutat.schokolade =>
-    z.sorte is Schokolade
-        ? schokoladeName(l10n, z.sorte! as Schokolade)
-        : l10n.asIngChocolate,
-};
-
-String mengeText(AppLocalizations l10n, ZutatMenge z) {
-  final m = z.menge;
-  final zahl = m == m.roundToDouble()
-      ? '${m.round()}'
-      : m.toStringAsFixed(1).replaceAll('.', ',');
-  return switch (z.einheit) {
-    Einheit.g => '$zahl g',
-    Einheit.ml => '$zahl ml',
-    Einheit.stueck => zahl,
-    Einheit.prise => l10n.asPinch,
-  };
+class _SpeichernFehler implements Exception {
+  const _SpeichernFehler(this.meldung);
+  final String meldung;
 }
 
-String hinweisText(AppLocalizations l10n, Hinweis h) => switch (h) {
-  Hinweis.knopfNachRuhe => l10n.asHintPressAfterRest,
-  Hinweis.wenigMehl => l10n.asHintLittleFlour(TeigWerte.minMehlG),
-  Hinweis.vielMehl => l10n.asHintMuchFlour(TeigWerte.maxMehlG),
-  Hinweis.fettfrei => l10n.asHintGreaseFree,
-  Hinweis.lieberKuerzer => l10n.asHintRatherShort,
-  Hinweis.schokoladeHacken => l10n.asHintChopChocolate,
-  Hinweis.warmhalten => l10n.asHintKeepWarm,
-  Hinweis.spritzschutz => l10n.asHintSplashGuard,
-};
+/// Titel ändern und speichern. Schließt sich erst nach dem Speichern (mit der Rezept-ID);
+/// Fehler stehen im Dialog, der Titel bleibt stehen.
+class _RezeptSpeichernDialog extends StatefulWidget {
+  const _RezeptSpeichernDialog({
+    required this.vorschlag,
+    required this.speichern,
+  });
+
+  final String vorschlag;
+  final Future<void> Function(String id, String titel) speichern;
+
+  @override
+  State<_RezeptSpeichernDialog> createState() => _RezeptSpeichernDialogState();
+}
+
+class _RezeptSpeichernDialogState extends State<_RezeptSpeichernDialog> {
+  late final _titel = TextEditingController(text: widget.vorschlag);
+  final _id = newRecipeId();
+  bool _speichert = false;
+  String? _fehler;
+
+  @override
+  void dispose() {
+    _titel.dispose();
+    super.dispose();
+  }
+
+  Future<void> _speichern() async {
+    final l10n = context.l10n;
+    final titel = _titel.text.trim();
+    if (titel.isEmpty) {
+      setState(() => _fehler = l10n.asSaveNameMissing);
+      return;
+    }
+    setState(() {
+      _speichert = true;
+      _fehler = null;
+    });
+    try {
+      await widget.speichern(_id, titel);
+      if (mounted) Navigator.of(context).pop(_id);
+    } on _SpeichernFehler catch (e) {
+      if (mounted) {
+        setState(() {
+          _speichert = false;
+          _fehler = e.meldung;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: Text(l10n.asSaveRecipe),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _titel,
+            autofocus: true,
+            maxLength: rezeptTitelMaxBytes,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(labelText: l10n.asSaveName),
+            onSubmitted: (_) => _speichert ? null : _speichern(),
+          ),
+          Text(
+            l10n.asSaveHint,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (_fehler != null) ...[
+            const SizedBox(height: Tokens.m),
+            Text(
+              _fehler!,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _speichert ? null : () => Navigator.of(context).pop(),
+          child: Text(l10n.asSaveCancel),
+        ),
+        FilledButton(
+          onPressed: _speichert ? null : _speichern,
+          child: _speichert
+              ? const SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(l10n.asSaveConfirm),
+        ),
+      ],
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Kacheln

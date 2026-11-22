@@ -4,6 +4,7 @@ import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
+import 'nachstellen.dart';
 
 /// Stand des Programms auf der Brücke: erst `GET /sequence`, dann jede `seq`-Nachricht.
 /// Ältere Firmware ohne Programme oder keine Brücke → [SequenceState.idle].
@@ -80,9 +81,32 @@ class SequenceController {
   SequenceController(this.ref);
   final Ref ref;
 
-  Future<StartResult> start(Program program, AppLocalizations l10n) async {
+  Future<StartResult> start(Program program, AppLocalizations l10n) => _start(
+    program,
+    l10n,
+    bezugS: program.steps.isEmpty ? 0 : program.steps.last.settings.time,
+  );
+
+  /// Letzten Schritt des zuletzt hier gestarteten Programms noch [zusatzS] Sekunden laufen lassen
+  /// (gleiche Stufe und Temperatur, siehe `nachstellen.dart`).
+  Future<StartResult> nachstellen(int zusatzS, AppLocalizations l10n) {
+    final lauf = ref.read(letzterLaufProvider);
+    if (lauf == null) return Future.value(l10n.startFailed);
+    return _start(nachstellProgramm(lauf, zusatzS), l10n, bezugS: lauf.bezugS);
+  }
+
+  Future<StartResult> _start(
+    Program program,
+    AppLocalizations l10n, {
+    required int bezugS,
+  }) async {
     try {
       await ref.read(bridgeApiProvider).startSequence(program);
+      if (program.steps.isNotEmpty) {
+        ref
+            .read(letzterLaufProvider.notifier)
+            .merken(LetzterLauf(programm: program, bezugS: bezugS));
+      }
       return null;
     } on BridgeException catch (e) {
       return switch ((e.kind, e.code, e.statusCode)) {
