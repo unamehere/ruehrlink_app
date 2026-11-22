@@ -15,6 +15,9 @@ import 'scale.dart';
 /// grau → bernstein (fast) → grün (passt) → rot (zu viel), kurze Vibration beim Erreichen.
 ///
 /// Einsetzbar im Kochmodus (Schritt mit `weigh`), im Waage-Fenster des Koch-Tabs usw.
+/// So lange muss das Gewicht ruhig im Zielbereich liegen, bevor es als „fertig eingewogen“ gilt.
+const scaleSettleTime = Duration(milliseconds: 2500);
+
 class ScaleView extends ConsumerStatefulWidget {
   const ScaleView({
     super.key,
@@ -23,6 +26,7 @@ class ScaleView extends ConsumerStatefulWidget {
     this.size = 240,
     this.autoTare = false,
     this.onReached,
+    this.onSettled,
   });
 
   /// Beim ersten Messwert einmal Tara setzen (Kochmodus: jede Zutat für sich wiegen).
@@ -30,6 +34,10 @@ class ScaleView extends ConsumerStatefulWidget {
 
   /// Wird einmal aufgerufen, wenn das Gewicht in den Zielbereich kommt.
   final VoidCallback? onReached;
+
+  /// Wird einmal aufgerufen, wenn das Gewicht [scaleSettleTime] ohne Unterbrechung im Zielbereich
+  /// liegt (für „automatisch zur nächsten Zutat“). Verlässt es den Bereich, beginnt die Zeit neu.
+  final VoidCallback? onSettled;
 
   /// Zielmenge in Gramm (`null` = einfach wiegen).
   final double? target;
@@ -49,6 +57,8 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
   bool _taring = false;
   bool _autoTared = false;
   bool _reached = false;
+  bool _settled = false;
+  Timer? _settle;
   ScaleZone? _lastZone;
 
   @override
@@ -61,6 +71,7 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
   @override
   void dispose() {
     _tick.cancel();
+    _settle?.cancel();
     super.dispose();
   }
 
@@ -116,6 +127,19 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
           WidgetsBinding.instance.addPostFrameCallback((_) => cb());
         }
       }
+    }
+    if (zone == ScaleZone.onTarget) {
+      if (_settle == null && !_settled && widget.onSettled != null) {
+        _settle = Timer(scaleSettleTime, () {
+          _settle = null;
+          if (!mounted || _settled) return;
+          _settled = true;
+          widget.onSettled?.call();
+        });
+      }
+    } else {
+      _settle?.cancel();
+      _settle = null;
     }
     _lastZone = zone;
 

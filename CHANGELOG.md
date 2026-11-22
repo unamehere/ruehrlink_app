@@ -20,6 +20,8 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
   Liste mit Haken), erst danach zum nächsten Schritt (F23).
 - Kochmodus: Wischen zwischen Schritten bleibt frei; offene Zutaten in verlassenen Schritten werden oben dezent
   angezeigt.
+- Neue Einstellung (Mehr → Hinweise beim Kochen): „Automatisch zur nächsten Zutat“. Liegt das Gewicht gut 2 s
+  ruhig im Zielbereich, zeigt der Kochmodus die nächste Zutat. Ab Werk aus.
 - Die App holt den Programmstand nach dem Wiederverbinden und während eines Programms alle 5 s neu.
 - Wird ein Start abgelehnt, nennt die App nur, was fehlt, z. B. „Kopf der Maschine schließen.“ (F25).
 

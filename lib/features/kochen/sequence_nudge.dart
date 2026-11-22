@@ -270,6 +270,15 @@ class NudgeSettingsPage extends ConsumerWidget {
                 onChanged: ref.read(scalePopupProvider.notifier).set,
               ),
             ),
+            const SizedBox(height: Tokens.m),
+            Card(
+              child: SwitchListTile(
+                title: Text(l10n.weighAutoNextSetting),
+                subtitle: Text(l10n.weighAutoNextSettingDetail),
+                value: ref.watch(weighAutoNextProvider),
+                onChanged: ref.read(weighAutoNextProvider.notifier).set,
+              ),
+            ),
             const SizedBox(height: Tokens.l),
             const SicherheitsHinweiseEinstellung(),
             const SizedBox(height: Tokens.l),
