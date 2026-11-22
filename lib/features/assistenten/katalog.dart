@@ -46,6 +46,52 @@ String schokoladeName(AppLocalizations l10n, Schokolade s) => switch (s) {
 };
 
 // ---------------------------------------------------------------------------
+// Texte zu Zutaten und Hinweisen (Ergebnisseite, „Als Rezept speichern“)
+
+String zutatName(AppLocalizations l10n, ZutatMenge z) => switch (z.zutat) {
+  Zutat.mehl =>
+    z.sorte is Mehl
+        ? l10n.asIngFlourOf(mehlName(l10n, z.sorte! as Mehl))
+        : l10n.asIngFlour,
+  Zutat.wasser => l10n.asIngWater,
+  Zutat.salz => l10n.asIngSalt,
+  Zutat.hefeFrisch => l10n.asIngYeastFresh,
+  Zutat.hefeTrocken => l10n.asIngYeastDry,
+  Zutat.olivenoel => l10n.asIngOil,
+  Zutat.eiweiss => l10n.asIngEggWhite,
+  Zutat.prisesalz => l10n.asIngSalt,
+  Zutat.sahne => l10n.asIngCream,
+  Zutat.schokolade =>
+    z.sorte is Schokolade
+        ? schokoladeName(l10n, z.sorte! as Schokolade)
+        : l10n.asIngChocolate,
+};
+
+String mengeText(AppLocalizations l10n, ZutatMenge z) {
+  final m = z.menge;
+  final zahl = m == m.roundToDouble()
+      ? '${m.round()}'
+      : m.toStringAsFixed(1).replaceAll('.', ',');
+  return switch (z.einheit) {
+    Einheit.g => '$zahl g',
+    Einheit.ml => '$zahl ml',
+    Einheit.stueck => zahl,
+    Einheit.prise => l10n.asPinch,
+  };
+}
+
+String hinweisText(AppLocalizations l10n, Hinweis h) => switch (h) {
+  Hinweis.knopfNachRuhe => l10n.asHintPressAfterRest,
+  Hinweis.wenigMehl => l10n.asHintLittleFlour(TeigWerte.minMehlG),
+  Hinweis.vielMehl => l10n.asHintMuchFlour(TeigWerte.maxMehlG),
+  Hinweis.fettfrei => l10n.asHintGreaseFree,
+  Hinweis.lieberKuerzer => l10n.asHintRatherShort,
+  Hinweis.schokoladeHacken => l10n.asHintChopChocolate,
+  Hinweis.warmhalten => l10n.asHintKeepWarm,
+  Hinweis.spritzschutz => l10n.asHintSplashGuard,
+};
+
+// ---------------------------------------------------------------------------
 // Gemeinsame Fragen der Teig-Assistenten
 
 const _mehlBild = 'mehl';
@@ -179,6 +225,12 @@ class PizzaAssistent extends Assistent {
       l10n.asPizzaName(wert<int>(a, 'anzahl'));
 
   @override
+  String rezeptTitel(AppLocalizations l10n) => l10n.asSaveTitlePizza;
+
+  @override
+  int portionen(Antworten a) => wert<int>(a, 'anzahl');
+
+  @override
   AssistentPlan plan(Antworten a) {
     final hydration = wert<int>(a, 'wasser');
     final gehzeit = wert<Gehzeit>(a, 'gehzeit');
@@ -234,6 +286,9 @@ class TeigAssistent extends Assistent {
     mehlName(l10n, wert<Mehl>(a, 'mehl')),
     wert<int>(a, 'menge'),
   );
+
+  @override
+  String rezeptTitel(AppLocalizations l10n) => l10n.asSaveTitleDough;
 
   @override
   AssistentPlan plan(Antworten a) => teigPlan(
@@ -293,6 +348,9 @@ class EischneeAssistent extends Assistent {
       l10n.asEggName(wert<int>(a, 'anzahl'));
 
   @override
+  String rezeptTitel(AppLocalizations l10n) => l10n.asSaveTitleEgg;
+
+  @override
   AssistentPlan plan(Antworten a) => eischneePlan(
     anzahl: wert<int>(a, 'anzahl'),
     steif: wert<bool>(a, 'steif'),
@@ -334,6 +392,9 @@ class SahneAssistent extends Assistent {
   @override
   String programmName(AppLocalizations l10n, Antworten a) =>
       l10n.asCreamName(wert<int>(a, 'menge'));
+
+  @override
+  String rezeptTitel(AppLocalizations l10n) => l10n.asSaveTitleCream;
 
   @override
   AssistentPlan plan(Antworten a) => sahnePlan(ml: wert<int>(a, 'menge'));
@@ -383,6 +444,9 @@ class SchokoladeAssistent extends Assistent {
   @override
   String programmName(AppLocalizations l10n, Antworten a) =>
       l10n.asChocName(schokoladeName(l10n, wert<Schokolade>(a, 'sorte')));
+
+  @override
+  String rezeptTitel(AppLocalizations l10n) => l10n.asSaveTitleChoc;
 
   @override
   AssistentPlan plan(Antworten a) => schokoladePlan(

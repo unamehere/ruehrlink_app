@@ -205,6 +205,12 @@ abstract class Assistent {
   /// Name des Programms auf der Brücke (kurz, z. B. „Pizzateig für 4“).
   String programmName(AppLocalizations l10n, Antworten a);
 
+  /// Vorschlag für den Titel bei „Als Rezept speichern“ (z. B. „Meine Pizza“).
+  String rezeptTitel(AppLocalizations l10n);
+
+  /// Portionen des gespeicherten Rezepts (z. B. Anzahl Pizzen), sonst 1.
+  int portionen(Antworten a) => 1;
+
   /// Zutaten und Ablauf aus den Antworten. Fehlende Antworten → Vorschlag der Frage.
   AssistentPlan plan(Antworten a);
 
