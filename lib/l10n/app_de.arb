@@ -338,6 +338,8 @@
   "@scaleOver": {"placeholders": {"grams": {"type": "int"}}},
   "scalePopupSetting": "Waage beim Hochklappen zeigen",
   "scalePopupSettingDetail": "Klappst du den Kopf der Maschine hoch, öffnet sich im Koch-Tab die Waage.",
+  "weighAutoNextSetting": "Automatisch zur nächsten Zutat",
+  "weighAutoNextSettingDetail": "Liegt das Gewicht gut 2 Sekunden ruhig im Zielbereich, zeigt der Kochmodus von selbst die nächste Zutat. Aus: Du tippst selbst auf „Nächste Zutat“.",
 
   "recipesSearch": "Rezept suchen",
   "recipesHelp": "Hilfe zu Rezepten",

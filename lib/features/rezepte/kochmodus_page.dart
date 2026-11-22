@@ -21,6 +21,7 @@ import '../assistenten/sicherheit.dart';
 import '../hilfe/hilfe_themen.dart';
 import '../kochen/nachstellen.dart';
 import '../kochen/programs.dart';
+import '../waage/scale_sheet.dart';
 import 'recipe_library.dart';
 import 'weigh_step_slot.dart';
 
@@ -312,6 +313,17 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   weighIndex: n == 0 ? 0 : _aktuelleZutat(p, n),
                   weighDone: _fertig(p),
                   onWeighReached: (i) => setState(() => _abhaken(p, i)),
+                  onWeighSettled: (i) {
+                    // Einstellung „Automatisch zur nächsten Zutat“: nur innerhalb des Schritts,
+                    // nie automatisch zum nächsten Schritt (Werkzeugwechsel o. Ä. bleibt beim Koch).
+                    if (!ref.read(weighAutoNextProvider) || p != _page) return;
+                    final next = _naechsteOffene(p, n, i);
+                    if (next == null) return;
+                    setState(() {
+                      _abhaken(p, i);
+                      _zutat[p] = next;
+                    });
+                  },
                   onWeighSelect: (i) => setState(() => _zutat[p] = i),
                 );
               },
@@ -590,6 +602,7 @@ class _StepPage extends StatelessWidget {
     required this.weighIndex,
     required this.weighDone,
     required this.onWeighReached,
+    required this.onWeighSettled,
     required this.onWeighSelect,
   });
 
@@ -610,6 +623,7 @@ class _StepPage extends StatelessWidget {
   final int weighIndex;
   final Set<int> weighDone;
   final ValueChanged<int> onWeighReached;
+  final ValueChanged<int> onWeighSettled;
   final ValueChanged<int> onWeighSelect;
 
   @override
@@ -637,6 +651,7 @@ class _StepPage extends StatelessWidget {
                 current: weighIndex,
                 done: weighDone,
                 onReached: onWeighReached,
+                onSettled: onWeighSettled,
                 onSelect: onWeighSelect,
               ),
               if (machine != null) ...[
@@ -723,6 +738,7 @@ class _WeighSequence extends StatelessWidget {
     required this.current,
     required this.done,
     required this.onReached,
+    required this.onSettled,
     required this.onSelect,
   });
 
@@ -730,6 +746,7 @@ class _WeighSequence extends StatelessWidget {
   final int current;
   final Set<int> done;
   final ValueChanged<int> onReached;
+  final ValueChanged<int> onSettled;
   final ValueChanged<int> onSelect;
 
   @override
@@ -755,6 +772,7 @@ class _WeighSequence extends StatelessWidget {
           key: ValueKey(current),
           ingredient: ingredients[current],
           onReached: () => onReached(current),
+          onSettled: () => onSettled(current),
         ),
         if (n > 1) ...[
           const SizedBox(height: Tokens.s),

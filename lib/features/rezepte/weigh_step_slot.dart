@@ -12,10 +12,18 @@ import 'recipe_library.dart';
 ///  - Pro Zutat eine neue Instanz (Key): Beim ersten Messwert setzt die Waage einmal Tara, damit
 ///    jede Zutat für sich gewogen wird.
 class WeighStepSlot extends StatelessWidget {
-  const WeighStepSlot({super.key, required this.ingredient, this.onReached});
+  const WeighStepSlot({
+    super.key,
+    required this.ingredient,
+    this.onReached,
+    this.onSettled,
+  });
 
   final Ingredient ingredient;
   final VoidCallback? onReached;
+
+  /// Gewicht liegt [scaleSettleTime] ruhig im Zielbereich (siehe [ScaleView.onSettled]).
+  final VoidCallback? onSettled;
 
   @override
   Widget build(BuildContext context) => ScaleView(
@@ -24,5 +32,6 @@ class WeighStepSlot extends StatelessWidget {
     size: 220,
     autoTare: true,
     onReached: onReached,
+    onSettled: onSettled,
   );
 }

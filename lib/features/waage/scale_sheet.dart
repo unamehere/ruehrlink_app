@@ -27,6 +27,22 @@ class ScalePopupNotifier extends Notifier<bool> {
   }
 }
 
+/// Kochmodus: nach erreichter Zielmenge von selbst zur nächsten Zutat, sobald das Gewicht
+/// [scaleSettleTime] ruhig im Zielbereich liegt.
+final weighAutoNextProvider = NotifierProvider<WeighAutoNextNotifier, bool>(
+  WeighAutoNextNotifier.new,
+);
+
+class WeighAutoNextNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.read(appStorageProvider).weighAutoNext;
+
+  Future<void> set(bool on) async {
+    state = on;
+    await ref.read(appStorageProvider).setWeighAutoNext(on);
+  }
+}
+
 /// Waage als Fenster von unten. [closeWhenLidCloses]: schließt sich von selbst, sobald der Kopf
 /// wieder zu ist (so beim automatischen Öffnen; von Hand geöffnet bleibt es offen).
 Future<void> showScaleSheet(

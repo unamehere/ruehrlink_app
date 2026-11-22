@@ -55,6 +55,12 @@ class AppStorage {
   bool get scalePopup => _prefs.getBool(_kScalePopup) ?? true;
   Future<void> setScalePopup(bool on) => _prefs.setBool(_kScalePopup, on);
 
+  static const _kWeighAutoNext = 'weighAutoNext';
+
+  /// Kochmodus: nach erreichter Zielmenge von selbst zur nächsten Zutat (ab Werk aus).
+  bool get weighAutoNext => _prefs.getBool(_kWeighAutoNext) ?? false;
+  Future<void> setWeighAutoNext(bool on) => _prefs.setBool(_kWeighAutoNext, on);
+
   static const _kSafetyHints = 'safetyHints';
 
   /// Sicherheitshinweise: 0 alle, 1 nur kritische, 2 aus.
