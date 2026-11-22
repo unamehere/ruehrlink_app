@@ -1,10 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
-import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
 import '../../ui/illustrations.dart';
@@ -15,6 +13,7 @@ import '../../ui/widgets/smooth_countdown.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../assistenten/assistenten_section.dart';
 import '../maschine/live_status_band.dart';
+import '../mehr/compat_hints.dart';
 import '../waage/scale_sheet.dart';
 import 'programs.dart';
 import 'schnellprogramme.dart';
@@ -46,7 +45,7 @@ class KochenPage extends ConsumerWidget {
                   HintCard(icon: Icons.science_outlined, text: l10n.demoBanner),
                   const SizedBox(height: Tokens.m),
                 ],
-                const _FirmwareHint(),
+                const BridgeHints(),
                 const _StatusLine(),
                 const SizedBox(height: Tokens.l),
                 const _SequencePanel(),
@@ -56,38 +55,6 @@ class KochenPage extends ConsumerWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Brücke älter als die Firmware der App → Update anbieten; neuer → App aktualisieren.
-class _FirmwareHint extends ConsumerWidget {
-  const _FirmwareHint();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
-    final check = ref.watch(firmwareCheckProvider);
-    if (check == FirmwareCheck.current) return const SizedBox.shrink();
-    final older = check != FirmwareCheck.bridgeNewer;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Tokens.m),
-      child: GestureDetector(
-        onTap: older ? () => context.go('/mehr/update') : null,
-        child: HintCard(
-          icon: older
-              ? Icons.system_update_rounded
-              : Icons.info_outline_rounded,
-          text: switch (check) {
-            FirmwareCheck.bugfix => l10n.updateBugfixAvailable,
-            FirmwareCheck.bridgeNewer => l10n.updateAppOlder,
-            _ => l10n.updateAvailable,
-          },
-          detail: older ? l10n.updateTapHint : l10n.updateAppOlderDetail,
-          // Bugfix nur dezent, ein nötiges Update hervorgehoben.
-          emphasized: check == FirmwareCheck.bridgeOlder,
         ),
       ),
     );
@@ -127,8 +94,9 @@ class _Greeting extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final info = ref.watch(bridgeInfoProvider).value;
     final hasScale =
-        ref.watch(bridgeInfoProvider).value?.readyCaps?.hasScale ?? false;
+        (info?.readyCaps?.hasScale ?? false) && (info?.has('scale') ?? false);
     final dark = theme.brightness == Brightness.dark;
     return Row(
       children: [
@@ -427,7 +395,9 @@ class _ProgramSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final caps = ref.watch(bridgeInfoProvider).value?.readyCaps;
+    final info = ref.watch(bridgeInfoProvider).value;
+    // Ohne Fähigkeit `sequence` (ältere Firmware) keine Programme – der Hinweis steht oben.
+    final caps = (info?.has('sequence') ?? false) ? info?.readyCaps : null;
     final fromBridge =
         ref.watch(bridgeProgramsProvider).value ?? const <Program>[];
 

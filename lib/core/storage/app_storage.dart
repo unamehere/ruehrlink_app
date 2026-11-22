@@ -60,6 +60,13 @@ class AppStorage {
   /// Sicherheitshinweise: 0 alle, 1 nur kritische, 2 aus.
   int get safetyHints => _prefs.getInt(_kSafetyHints) ?? 0;
   Future<void> setSafetyHints(int v) => _prefs.setInt(_kSafetyHints, v);
+
+  static const _kFeatureHintFw = 'featureHintFw';
+
+  /// Firmware-Version, zu der der Hinweis „Dafür braucht dein Rührlink ein Update“ schon kam.
+  String? get featureHintFw => _prefs.getString(_kFeatureHintFw);
+  Future<void> setFeatureHintFw(String fw) =>
+      _prefs.setString(_kFeatureHintFw, fw);
 }
 
 /// Wird in `main.dart` mit der geladenen Instanz überschrieben.

@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
+import '../../core/models/models.dart';
 import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
@@ -12,15 +16,22 @@ import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../kochen/programs.dart';
+import 'compat_hints.dart';
 
-enum _Phase { idle, uploading, restarting, done, failed }
+/// Releases der Firmware – öffnet der Browser, die App selbst fragt nirgends nach Updates.
+final firmwareReleasesUrl = Uri.parse(
+  'https://github.com/unamehere/ruehrlink_esp/releases',
+);
 
-/// Firmware der Brücke aktualisieren – mit der Firmware, die diese App mitbringt.
-/// Ablauf: `ruehrlink_esp/docs/updates.md` (Upload, Neustart, Probebetrieb, ggf. Rollback).
+enum _Phase { idle, checking, uploading, restarting, done, failed }
+
+/// Firmware des Rührlink aktualisieren – mit einer Update-Datei `.rlfw`, die der Nutzer selbst
+/// heruntergeladen hat, oder mit der Firmware, die diese App mitbringt.
+/// Ablauf: `ruehrlink_esp/docs/updates.md` (lokal prüfen, Upload, Neustart, Probebetrieb, ggf. Rollback).
 class UpdatePage extends ConsumerStatefulWidget {
   const UpdatePage({super.key});
 
-  /// So lange darf die Brücke zum Neustart brauchen, bis sie wieder antwortet.
+  /// So lange darf der Rührlink zum Neustart brauchen, bis er wieder antwortet.
   static const restartTimeout = Duration(seconds: 90);
 
   @override
@@ -32,13 +43,75 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
   double _progress = 0;
   String? _error;
 
-  Future<void> _start(FirmwareManifest m) async {
-    final l10n = context.l10n;
+  /// Geprüfte Datei, die auf Bestätigung wartet.
+  FirmwarePackage? _selected;
+
+  bool get _machineBusy {
     final status = ref.read(applianceStatusProvider).value;
     final seq = ref.read(sequenceProvider).value;
-    if ((status?.active ?? false) || (seq?.active ?? false)) {
+    return (status?.active ?? false) || (seq?.active ?? false);
+  }
+
+  Future<void> _pickFile() async {
+    final file = await openFile();
+    if (file == null || !mounted) return;
+    await _check(file.readAsBytes);
+  }
+
+  Future<void> _useBundled(BundledFirmware b) => _check(b.bytes);
+
+  Future<void> _check(Future<Uint8List> Function() read) async {
+    final l10n = context.l10n;
+    setState(() {
+      _phase = _Phase.checking;
+      _error = null;
+      _selected = null;
+    });
+    try {
+      final pkg = await FirmwarePackage.open(await read());
+      if (!mounted) return;
+      setState(() {
+        _phase = _Phase.idle;
+        _selected = pkg;
+      });
+    } on FirmwareFileException catch (e) {
+      _fail(switch (e.error) {
+        FirmwareFileError.invalid => l10n.updateFileInvalid,
+        FirmwareFileError.damaged => l10n.updateFileDamaged,
+        FirmwareFileError.signature => l10n.updateFileSignature,
+        FirmwareFileError.appTooOld => l10n.updateFileAppTooOld,
+      });
+    } on Exception {
+      _fail(l10n.updateFileInvalid);
+    }
+  }
+
+  Future<void> _install(FirmwarePackage pkg, String current) async {
+    final l10n = context.l10n;
+    if (_machineBusy) {
       setState(() => _error = l10n.updateBusy);
       return;
+    }
+    final v = pkg.manifest.version;
+    if (current.isNotEmpty && compareVersions(v, current) < 0) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.updateDowngradeTitle),
+          content: Text(l10n.updateDowngradeText(current, v)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.updateDowngradeConfirm),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
     }
     setState(() {
       _phase = _Phase.uploading;
@@ -47,11 +120,10 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     });
     final api = ref.read(bridgeApiProvider);
     try {
-      final image = await m.loadImage();
       await api.uploadFirmware(
-        image,
-        sha256: m.sha256,
-        signature: m.sig,
+        pkg.image,
+        sha256: pkg.manifest.sha256,
+        signature: pkg.manifest.sig,
         onProgress: (p) {
           if (mounted) setState(() => _progress = p);
         },
@@ -67,11 +139,11 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     }
     if (!mounted) return;
     setState(() => _phase = _Phase.restarting);
-    await _waitForRestart(api, m.version);
+    await _waitForRestart(api, v);
   }
 
-  /// Nach dem Neustart fragen, bis die Brücke wieder antwortet. Die erste Antwort
-  /// bestätigt auf der Brücke zugleich die neue Firmware.
+  /// Nach dem Neustart fragen, bis der Rührlink wieder antwortet. Die erste Antwort
+  /// bestätigt dort zugleich die neue Firmware.
   Future<void> _waitForRestart(BridgeApi api, String expected) async {
     final l10n = context.l10n;
     await Future<void>.delayed(const Duration(seconds: 4));
@@ -109,8 +181,12 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
     final theme = Theme.of(context);
     final info = ref.watch(bridgeInfoProvider).value;
     final bundled = ref.watch(bundledFirmwareProvider).value;
-    final check = ref.watch(firmwareCheckProvider);
+    final bundledUpdate = ref.watch(bundledUpdateProvider);
+    final machineBusy =
+        (ref.watch(applianceStatusProvider).value?.active ?? false) ||
+        (ref.watch(sequenceProvider).value?.active ?? false);
     final busy = _phase == _Phase.uploading || _phase == _Phase.restarting;
+    final current = info?.fw ?? '';
 
     final List<Widget> body;
     switch (_phase) {
@@ -146,7 +222,7 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
         body = [
           HintCard(
             icon: Icons.check_circle_rounded,
-            text: l10n.updateDone(bundled?.version ?? ''),
+            text: l10n.updateDone(_selected?.manifest.version ?? ''),
             emphasized: true,
           ),
           const SizedBox(height: Tokens.l),
@@ -155,58 +231,106 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
             onPressed: () => Navigator.of(context).maybePop(),
           ),
         ];
+      case _Phase.checking:
+        body = [
+          HintCard(icon: Icons.fact_check_outlined, text: l10n.updateChecking),
+          const SizedBox(height: Tokens.xl),
+          const Center(child: CircularProgressIndicator()),
+        ];
       case _Phase.idle:
       case _Phase.failed:
+        final selected = _selected;
+        final canOta = info == null || info.has('ota');
         body = [
-          _VersionRow(label: l10n.updateBridgeVersion, value: info?.fw ?? '–'),
           _VersionRow(
-            label: l10n.updateAppVersion,
-            value: bundled?.version ?? '–',
+            label: l10n.updateBridgeVersion,
+            value: current.isEmpty ? '–' : current,
           ),
+          if (bundled != null)
+            _VersionRow(
+              label: l10n.updateAppVersion,
+              value: bundled.manifest.version,
+            ),
           const SizedBox(height: Tokens.l),
+          if (info != null && info.compat != BridgeCompat.ok) ...[
+            CompatHint(compat: info.compat),
+            const SizedBox(height: Tokens.m),
+          ],
           if (_error != null) ...[
             HintCard(icon: Icons.error_outline_rounded, text: _error!),
             const SizedBox(height: Tokens.m),
           ],
-          if (bundled == null)
-            HintCard(
-              icon: Icons.info_outline_rounded,
-              text: l10n.updateNoFirmware,
-            )
-          else if (check == FirmwareCheck.bridgeNewer)
-            HintCard(
-              icon: Icons.info_outline_rounded,
-              text: l10n.updateAppOlder,
-              detail: l10n.updateAppOlderDetail,
-            )
-          else ...[
-            if (check == FirmwareCheck.current)
-              HintCard(icon: Icons.check_rounded, text: l10n.updateCurrent)
-            else
-              HintCard(
-                icon: Icons.system_update_rounded,
-                text: check == FirmwareCheck.bugfix
-                    ? l10n.updateBugfixAvailable
-                    : l10n.updateAvailable,
-                detail: l10n.updateExplain,
-                emphasized: check == FirmwareCheck.bridgeOlder,
-              ),
-            // Brücke mit neuerem Bugfix nicht zurückstufen – „Erneut installieren“ nur bei gleicher Version.
-            if (info == null ||
-                compareVersions(info.fw, bundled.version) <= 0) ...[
-              const SizedBox(height: Tokens.l),
+          if (!canOta)
+            HintCard(icon: Icons.usb_rounded, text: l10n.updateNeedsUsb)
+          else if (machineBusy)
+            HintCard(icon: Icons.info_outline_rounded, text: l10n.updateBusy)
+          else if (selected != null) ...[
+            _PackageCard(pkg: selected, current: current),
+            const SizedBox(height: Tokens.l),
+            if (compareVersions(selected.manifest.version, current) != 0 ||
+                current.isEmpty)
               BigButton(
-                label: check == FirmwareCheck.current
-                    ? l10n.updateReinstall
-                    : l10n.updateStart,
+                label: l10n.updateStart,
                 icon: Icons.system_update_rounded,
-                kind: check == FirmwareCheck.current
+                kind: compareVersions(selected.manifest.version, current) < 0
                     ? BigButtonKind.secondary
                     : BigButtonKind.primary,
-                onPressed: info == null ? null : () => _start(bundled),
+                onPressed: info == null
+                    ? null
+                    : () => _install(selected, current),
               ),
+            const SizedBox(height: Tokens.s),
+            BigButton(
+              label: l10n.updateOtherFile,
+              icon: Icons.folder_open_rounded,
+              kind: BigButtonKind.secondary,
+              onPressed: _pickFile,
+            ),
+          ] else ...[
+            if (bundledUpdate != null && bundled != null) ...[
+              HintCard(
+                icon: Icons.system_update_rounded,
+                text: l10n.updateAvailable,
+                detail: l10n.updateExplain,
+              ),
+              const SizedBox(height: Tokens.m),
+              BigButton(
+                label: l10n.updateInstallBundled(bundledUpdate.version),
+                icon: Icons.system_update_rounded,
+                onPressed: () => _useBundled(bundled),
+              ),
+              const SizedBox(height: Tokens.s),
             ],
+            BigButton(
+              label: l10n.updatePickFile,
+              icon: Icons.folder_open_rounded,
+              kind: bundledUpdate != null
+                  ? BigButtonKind.secondary
+                  : BigButtonKind.primary,
+              onPressed: _pickFile,
+            ),
+            const SizedBox(height: Tokens.s),
+            Text(
+              l10n.updatePickFileHint,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
+          const SizedBox(height: Tokens.m),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              icon: const Icon(Icons.open_in_new_rounded),
+              label: Text(l10n.updateGithubLink),
+              onPressed: () => unawaited(
+                launchUrl(
+                  firmwareReleasesUrl,
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+            ),
+          ),
         ];
     }
 
@@ -223,6 +347,90 @@ class _UpdatePageState extends ConsumerState<UpdatePage> {
             children: body,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Geprüfte Update-Datei: Version, Kanal, Sicherheitsupdate, Notizen, ggf. Downgrade-Warnung.
+class _PackageCard extends StatelessWidget {
+  const _PackageCard({required this.pkg, required this.current});
+
+  final FirmwarePackage pkg;
+  final String current;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final m = pkg.manifest;
+    final cmp = current.isEmpty ? 1 : compareVersions(m.version, current);
+    final fg = theme.colorScheme.onSurfaceVariant;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Tokens.m),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.updateFileVersion(m.version),
+              style: theme.textTheme.titleLarge,
+            ),
+            if (m.security)
+              _Line(
+                Icons.shield_outlined,
+                l10n.updateSecurity,
+                emphasized: true,
+              ),
+            if (m.channel == 'beta')
+              _Line(Icons.science_outlined, l10n.updateBeta),
+            if (cmp == 0) _Line(Icons.check_rounded, l10n.updateSameVersion),
+            if (cmp < 0)
+              _Line(
+                Icons.history_rounded,
+                l10n.updateDowngrade(current),
+                emphasized: true,
+              ),
+            if (m.notes.isNotEmpty) ...[
+              const SizedBox(height: Tokens.s),
+              Text(
+                m.notes,
+                style: theme.textTheme.bodyLarge?.copyWith(color: fg),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Line extends StatelessWidget {
+  const _Line(this.icon, this.text, {this.emphasized = false});
+
+  final IconData icon;
+  final String text;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = emphasized
+        ? theme.colorScheme.tertiary
+        : theme.colorScheme.onSurfaceVariant;
+    return Padding(
+      padding: const EdgeInsets.only(top: Tokens.s / 2),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: Tokens.s),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(color: color),
+            ),
+          ),
+        ],
       ),
     );
   }

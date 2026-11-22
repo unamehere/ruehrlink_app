@@ -91,8 +91,11 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
         DateTime.now().difference(reading.at) < scaleStaleAfter;
     final net = live ? reading.net : null;
     final target = widget.target;
+    // Tara gibt es erst mit Fähigkeit `scale.tare` (alle bisherigen Firmwares haben sie).
+    final canTare =
+        ref.watch(bridgeInfoProvider).value?.has('scale.tare') ?? true;
 
-    if (widget.autoTare && live && !_autoTared) {
+    if (widget.autoTare && canTare && live && !_autoTared) {
       _autoTared = true;
       // nach dem Bauen, nicht währenddessen (setState in _tare)
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,7 +103,7 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
       });
     }
     // Erst nach der Auto-Tara bewerten, sonst zählt der Schüsselinhalt mit.
-    final settled = !widget.autoTare || (_autoTared && !_taring);
+    final settled = !widget.autoTare || !canTare || (_autoTared && !_taring);
     final zone = net != null && target != null && settled
         ? scaleZone(net, target)
         : null;
@@ -217,7 +220,7 @@ class _ScaleViewState extends ConsumerState<ScaleView> {
           icon: Icons.exposure_zero_rounded,
           kind: BigButtonKind.secondary,
           busy: _taring,
-          onPressed: live ? _tare : null,
+          onPressed: live && canTare ? _tare : null,
         ),
       ],
     );

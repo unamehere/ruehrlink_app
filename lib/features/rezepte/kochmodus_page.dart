@@ -653,7 +653,9 @@ class _MachinePanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final caps = ref.watch(bridgeInfoProvider).value?.readyCaps;
+    final info = ref.watch(bridgeInfoProvider).value;
+    // Gestartet wird als Programm – ohne Fähigkeit `sequence` geht der Knopf aus.
+    final caps = (info?.has('sequence') ?? false) ? info?.readyCaps : null;
     final seq = ref.watch(sequenceProvider).value;
     final m = step.machine!;
     final v = m.settings;

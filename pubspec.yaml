@@ -2,8 +2,9 @@ name: ruehrlink
 description: "Rührlink – die App zur Rührlink. Strikt lokal im Heim-WLAN."
 publish_to: 'none'
 
-# Später: aus der Datei VERSION abgeleitet (App-Version = Firmware-Version).
-version: 0.3.10+25
+# Eigene Versionsnummer der App, unabhängig von der Firmware (Kompatibilität über api/features,
+# siehe ruehrlink_esp/docs/api.md). Zusammen mit lib/version.dart hochzählen.
+version: 0.4.0+26
 
 environment:
   sdk: ^3.14.0
@@ -32,6 +33,10 @@ dependencies:
   flutter_image_compress: ^2.5.1
   path_provider: ^2.1.6
   flutter_svg: ^2.4.0
+  archive: ^4.0.0
+  crypto: ^3.0.6
+  file_selector: ^1.0.3
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -45,5 +50,6 @@ flutter:
     # Platzhalter-Illustrationen (Fluent Emoji 3D, MIT) – siehe docs/illustrationen.md
     - assets/illustrations/
     - assets/brand/
-    # Firmware der Brücke, von ruehrlink_esp/tools/firmware_sign.py erzeugt (nicht im Repo)
+    # Eingebaute Firmware des Rührlink als Update-Datei .rlfw, von ruehrlink_esp/tools/firmware_sign.py pack
+    # erzeugt (nicht im Repo)
     - assets/firmware/

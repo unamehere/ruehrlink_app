@@ -12,8 +12,10 @@ void main() {
 {
   "id": "98C0",
   "name": "Rührlink",
-  "fw": "0.1.0",
+  "fw": "0.4.0",
   "api": 1,
+  "apiSupported": [1],
+  "features": ["scale", "scale.tare", "sequence"],
   "storage": {"backend": "sd", "totalKB": 30000000, "freeKB": 29000000},
   "appliance": {
     "paired": true,
@@ -48,6 +50,49 @@ void main() {
     expect(caps.remoteStart, isFalse);
     // Rundreise: toJson ergibt wieder dasselbe JSON.
     expect(info.toJson(), _json(raw));
+  });
+
+  test('GET /info: api und Fähigkeiten', () {
+    BridgeInfo info(Map<String, Object?> j) =>
+        BridgeInfo.fromJson({'id': 'X', 'fw': '0.3.3', ...j});
+    // Firmware 0.3.x: api 1, aber noch keine features → alles, was 0.3 konnte.
+    final alt = info({'api': 1});
+    expect(alt.compat, BridgeCompat.ok);
+    expect(alt.apiSupported, [1]);
+    expect(alt.has('scale.tare'), isTrue);
+    // ganz ohne api → wie 1
+    expect(info({}).compat, BridgeCompat.ok);
+    // fehlende Fähigkeit, unbekannte ignoriert
+    final neu = info({
+      'api': 1,
+      'features': ['scale', 'zukunft'],
+    });
+    expect(neu.has('scale'), isTrue);
+    expect(neu.has('scale.tare'), isFalse);
+    // API passt nicht → nur Status, Steuern gesperrt
+    const appliance = {
+      'connected': true,
+      'caps': {'model': 'm', 'speeds': <Object>[]},
+    };
+    final zuNeu = info({
+      'api': 2,
+      'apiSupported': [2],
+      'appliance': appliance,
+    });
+    expect(zuNeu.compat, BridgeCompat.appTooOld);
+    expect(zuNeu.readyCaps, isNull);
+    expect(
+      info({'api': 0, 'appliance': appliance}).compat,
+      BridgeCompat.bridgeTooOld,
+    );
+    // neue Firmware, die die alte API noch mitspricht
+    final beide = info({
+      'api': 2,
+      'apiSupported': [1, 2],
+      'appliance': appliance,
+    });
+    expect(beide.compat, BridgeCompat.ok);
+    expect(beide.readyCaps, isNotNull);
   });
 
   test('WebSocket-Nachrichten', () {
