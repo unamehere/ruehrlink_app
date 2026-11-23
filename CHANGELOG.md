@@ -7,6 +7,15 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.5.2 – 23.11.2026
+
+### Geändert
+- Kochmodus: Der Knopf heißt nur „Nächste Zutat“; mit ‹ › neben „Zutat 2 von 4“ geht es auch zurück zu schon
+  gewogenen Zutaten (F23).
+- Rezept-Editor: Die Stufe wählt man mit demselben Regler wie im Maschinen-Tab statt aus einer Liste.
+- Rezept-Editor: Die Auswahl „Einzelwerte / Programm“ entfällt. Maschinenschritte bestehen aus Phasen; Box-Programme
+  startet man weiter im Koch-Tab.
+
 ## 0.5.1 – 22.11.2026
 
 ### Neu
@@ -18,8 +27,6 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 ### Geändert
 - Kochmodus: Der Hauptknopf führt durch alle Wiegezutaten eines Schritts („Nächste Zutat: …“, „Zutat 2 von 4“,
   Liste mit Haken), erst danach zum nächsten Schritt (F23).
-- Kochmodus: Der Knopf heißt nur „Nächste Zutat“; mit ‹ › neben „Zutat 2 von 4“ geht es auch zurück zu schon
-  gewogenen Zutaten.
 - Kochmodus: Wischen zwischen Schritten bleibt frei; offene Zutaten in verlassenen Schritten werden oben dezent
   angezeigt.
 - Neue Einstellung (Mehr → Hinweise beim Kochen): „Automatisch zur nächsten Zutat“. Liegt das Gewicht gut 2 s

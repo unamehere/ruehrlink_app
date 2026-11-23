@@ -20,7 +20,11 @@ class SpeedSlider extends StatelessWidget {
     required this.options,
     required this.selected,
     required this.onChanged,
+    this.framed = true,
   });
+
+  /// `false`: ohne eigene Karte, z. B. wenn der Regler schon in einer Karte liegt.
+  final bool framed;
 
   final String label;
   final List<SpeedOption> options;
@@ -56,62 +60,61 @@ class SpeedSlider extends StatelessWidget {
         ? options[i].label
         : '${speedGroupTitle(context, options[i].group)} ${options[i].label}';
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Tokens.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Kopfzeile: „Stufe“ links, gewählte Stufe rechts – dezent, nicht riesig.
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           children: [
-            // Kopfzeile: „Stufe“ links, gewählte Stufe rechts – dezent, nicht riesig.
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Icon(Icons.speed_rounded, color: theme.colorScheme.primary),
-                const SizedBox(width: Tokens.s),
-                Text(label, style: theme.textTheme.titleMedium),
-                const Spacer(),
-                if (current.group == SpeedGroup.stir) ...[
-                  RuehrIcon(
-                    size: 28,
+            Icon(Icons.speed_rounded, color: theme.colorScheme.primary),
+            const SizedBox(width: Tokens.s),
+            Text(label, style: theme.textTheme.titleMedium),
+            const Spacer(),
+            if (current.group == SpeedGroup.stir) ...[
+              RuehrIcon(
+                size: 28,
+                color: theme.colorScheme.onSurfaceVariant,
+                semanticLabel: caption,
+              ),
+              const SizedBox(width: Tokens.s),
+            ] else if (caption != null) ...[
+              Flexible(
+                child: Text(
+                  caption,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
-                    semanticLabel: caption,
                   ),
-                  const SizedBox(width: Tokens.s),
-                ] else if (caption != null) ...[
-                  Flexible(
-                    child: Text(
-                      caption,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: Tokens.s),
-                ],
-                Text(current.label, style: theme.textTheme.headlineSmall),
-              ],
-            ),
-            const SizedBox(height: Tokens.s),
-            Semantics(
-              slider: true,
-              label: label,
-              value: describe(index),
-              increasedValue: index < options.length - 1
-                  ? describe(index + 1)
-                  : null,
-              decreasedValue: index > 0 ? describe(index - 1) : null,
-              onIncrease: index < options.length - 1
-                  ? () => _select(index + 1)
-                  : null,
-              onDecrease: index > 0 ? () => _select(index - 1) : null,
-              excludeSemantics: true,
-              child: _Track(options: options, index: index, onSelect: _select),
-            ),
+                ),
+              ),
+              const SizedBox(width: Tokens.s),
+            ],
+            Text(current.label, style: theme.textTheme.headlineSmall),
           ],
         ),
-      ),
+        const SizedBox(height: Tokens.s),
+        Semantics(
+          slider: true,
+          label: label,
+          value: describe(index),
+          increasedValue: index < options.length - 1
+              ? describe(index + 1)
+              : null,
+          decreasedValue: index > 0 ? describe(index - 1) : null,
+          onIncrease: index < options.length - 1
+              ? () => _select(index + 1)
+              : null,
+          onDecrease: index > 0 ? () => _select(index - 1) : null,
+          excludeSemantics: true,
+          child: _Track(options: options, index: index, onSelect: _select),
+        ),
+      ],
+    );
+    if (!framed) return content;
+    return Card(
+      child: Padding(padding: const EdgeInsets.all(Tokens.m), child: content),
     );
   }
 }

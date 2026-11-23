@@ -18,7 +18,6 @@ import '../../ui/werkzeug.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../hilfe/hilfe_themen.dart';
-import '../kochen/programs.dart';
 import 'photo_picker.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
@@ -61,7 +60,7 @@ class _PhaseRow {
       time = TextEditingController(
         text: m == null ? '' : formatDuration(m.time),
       ),
-      speed = m?.speed;
+      speed = m?.speed ?? 0;
 
   final TextEditingController temperature, time;
   int? speed;
@@ -87,8 +86,6 @@ class _StepRow {
       ingredients = [...?s?.ingredients.map(_IngredientRow.new)],
       tool = s?.tool,
       hasMachine = s?.machine != null,
-      useProgram = s?.machine?.programId != null,
-      programId = s?.machine?.programId,
       phases = [
         for (final m in s?.machine?.phasen ?? const <MachineSettings>[])
           _PhaseRow(m),
@@ -105,8 +102,6 @@ class _StepRow {
   final List<_IngredientRow> ingredients;
   Werkzeug? tool;
   bool hasMachine;
-  bool useProgram;
-  String? programId;
 
   List<Ingredient> get builtIngredients => [
     for (final r in ingredients)
@@ -186,17 +181,13 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
       final ingredients = s.builtIngredients;
       StepMachine? machine;
       if (s.hasMachine) {
-        if (s.useProgram) {
-          if (s.programId == null) return null;
-          machine = StepMachine.program(s.programId!);
-        } else {
-          final phasen = [for (final p in s.phases) p.built];
-          if (phasen.any((p) => p == null)) return null;
-          // Die Brücke startet kein Programm, das mit „Motor aus ohne Wärme“ beginnt.
-          final erste = phasen.first!;
-          if (erste.speed == 0 && erste.temperature == 0) return null;
-          machine = StepMachine.phasen([for (final p in phasen) p!]);
-        }
+        // Nur Einzelwerte mit Phasen; gespeicherte Box-Programme wählt man im Editor nicht mehr.
+        final phasen = [for (final p in s.phases) p.built];
+        if (phasen.any((p) => p == null)) return null;
+        // Die Brücke startet kein Programm, das mit „Motor aus ohne Wärme“ beginnt.
+        final erste = phasen.first!;
+        if (erste.speed == 0 && erste.temperature == 0) return null;
+        machine = StepMachine.phasen([for (final p in phasen) p!]);
       }
       if (text.isEmpty && ingredients.isEmpty && machine == null) continue;
       steps.add(
@@ -354,8 +345,6 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final caps = ref.watch(bridgeInfoProvider).value?.readyCaps;
-    final programs = ref.watch(bridgeProgramsProvider).value ?? const [];
-
     final basics = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -473,7 +462,6 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
             number: i + 1,
             row: row,
             caps: caps,
-            programs: programs,
             onChanged: () => setState(() {}),
             onRemove: () => setState(() => _steps.removeAt(i).dispose()),
           ),
@@ -614,7 +602,6 @@ class _StepEditor extends StatelessWidget {
     required this.number,
     required this.row,
     required this.caps,
-    required this.programs,
     required this.onChanged,
     required this.onRemove,
   });
@@ -622,7 +609,6 @@ class _StepEditor extends StatelessWidget {
   final int number;
   final _StepRow row;
   final ApplianceCaps? caps;
-  final List<Program> programs;
   final VoidCallback onChanged;
   final VoidCallback onRemove;
 
@@ -740,42 +726,7 @@ class _StepEditor extends StatelessWidget {
     final theme = Theme.of(context);
     return [
       const SizedBox(height: Tokens.s),
-      SegmentedButton<bool>(
-        segments: [
-          ButtonSegment(value: false, label: Text(l10n.editorMachineValues)),
-          ButtonSegment(value: true, label: Text(l10n.editorMachineProgram)),
-        ],
-        selected: {row.useProgram},
-        onSelectionChanged: (v) {
-          row.useProgram = v.first;
-          onChanged();
-        },
-      ),
-      const SizedBox(height: Tokens.s),
-      if (row.useProgram)
-        if (programs.isEmpty && row.programId == null)
-          Text(l10n.editorProgramNone, style: theme.textTheme.bodyMedium)
-        else
-          DropdownButtonFormField<String>(
-            initialValue: row.programId,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: l10n.editorProgramChoose),
-            items: [
-              for (final p in programs)
-                DropdownMenuItem(value: p.id, child: Text(p.name)),
-              if (row.programId != null &&
-                  !programs.any((p) => p.id == row.programId))
-                DropdownMenuItem(
-                  value: row.programId,
-                  child: Text(row.programId!),
-                ),
-            ],
-            onChanged: (v) {
-              row.programId = v;
-              onChanged();
-            },
-          )
-      else ...[
+      ...[
         for (final (i, phase) in row.phases.indexed) ...[
           if (i > 0) ...[
             const SizedBox(height: Tokens.m),
@@ -887,19 +838,12 @@ class _PhaseEditor extends StatelessWidget {
         ),
         const SizedBox(height: Tokens.s),
         if (caps != null)
-          DropdownButtonFormField<int>(
-            initialValue: caps!.speedOption(phase.speed ?? -1) == null
-                ? null
-                : phase.speed,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: l10n.dialSpeed),
-            items: [
-              for (final o in caps!.speeds)
-                DropdownMenuItem(
-                  value: o.v,
-                  child: Text(speedText(context, caps, o.v)),
-                ),
-            ],
+          // Derselbe Regler wie im Maschinen-Tab: Rührintervall | Aus | min 1 … 6 max.
+          SpeedSlider(
+            label: l10n.dialSpeed,
+            options: caps!.speeds,
+            selected: phase.speed ?? 0,
+            framed: false,
             onChanged: (v) {
               phase.speed = v;
               onChanged();
