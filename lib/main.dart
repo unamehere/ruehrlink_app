@@ -13,7 +13,7 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [appStorageProvider.overrideWithValue(AppStorage(prefs))],
-      child: const FreikochApp(),
+      child: const RuehrlinkApp(),
     ),
   );
 }

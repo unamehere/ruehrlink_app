@@ -13,6 +13,8 @@ import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/widgets/value_dial.dart';
+import '../assistenten/temperatur_schnellwahl.dart';
+import '../waage/scale_sheet.dart';
 import 'live_status_band.dart';
 import 'machine_controller.dart';
 import 'regler.dart';
@@ -42,7 +44,17 @@ class MaschinePage extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.machineTitle)),
+      appBar: AppBar(
+        title: Text(l10n.machineTitle),
+        actions: [
+          if (ref.watch(bridgeInfoProvider).value?.readyCaps?.hasScale ?? false)
+            IconButton(
+              tooltip: l10n.scaleOpen,
+              icon: const Icon(Icons.scale_rounded),
+              onPressed: () => showScaleSheet(context),
+            ),
+        ],
+      ),
       body: AdaptivePage(
         primary: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -137,6 +149,7 @@ class _Controls extends ConsumerWidget {
                 edit(s.copyWith(temperature: Regler.parseTemperature(caps, t))),
             onValidityChanged: (ok) => invalid.report('temp', valid: ok),
           ),
+          action: TemperaturVorschlaege(caps: caps),
         ),
         const SizedBox(height: Tokens.m),
         ValueDial(
@@ -182,7 +195,7 @@ class _Controls extends ConsumerWidget {
   }
 }
 
-/// „An Maschine senden“ – unten neben Stopp. Gesperrt ohne Gerät oder solange ein Feld ungültig ist.
+/// „Senden“ – unten neben Stopp. Gesperrt ohne Gerät oder solange ein Feld ungültig ist.
 class _SendButton extends ConsumerWidget {
   const _SendButton();
 
@@ -258,21 +271,27 @@ class _SendFeedback extends StatelessWidget {
   }
 }
 
-/// „Schüssel einsetzen und Kopf schließen“, wenn die Maschine es meldet.
+/// Nur das nennen, was wirklich fehlt: Schüssel, Kopf oder beides (vorher immer kombiniert).
 class _BowlHint extends ConsumerWidget {
   const _BowlHint();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final status = ref.watch(applianceStatusProvider).value;
     if (status == null || !status.connected || status.readyToStart) {
       return const SizedBox.shrink();
     }
+    final text = switch ((status.bowlFitted, status.lidClosed)) {
+      (false, false) => l10n.checkBowlAndLid,
+      (false, true) => l10n.checkBowl,
+      _ => l10n.checkLid,
+    };
     return Padding(
       padding: const EdgeInsets.only(top: Tokens.m),
       child: HintCard(
         icon: Icons.warning_amber_rounded,
-        text: context.l10n.checkBowl,
+        text: text,
         emphasized: true,
       ),
     );

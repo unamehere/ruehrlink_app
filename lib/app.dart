@@ -12,27 +12,34 @@ import 'core/api/bridge_providers.dart';
 import 'features/kochen/kochen_page.dart';
 import 'features/kochen/programs.dart';
 import 'features/kochen/sequence_nudge.dart';
+import 'features/waage/scale.dart';
+import 'features/waage/scale_sheet.dart';
 import 'features/maschine/maschine_page.dart';
 import 'features/mehr/update_page.dart';
 import 'features/mehr/mehr_page.dart';
 import 'features/mehr/pair_request_watcher.dart';
 import 'features/mehr/verbindung_page.dart';
+import 'features/rezepte/kochmodus_page.dart';
+import 'features/rezepte/recipe_editor_page.dart';
+import 'features/rezepte/recipe_page.dart';
 import 'features/rezepte/rezepte_page.dart';
 import 'l10n/l10n.dart';
 import 'ui/layout.dart';
 import 'ui/theme.dart';
 
-class FreikochApp extends ConsumerStatefulWidget {
-  const FreikochApp({super.key});
+class RuehrlinkApp extends ConsumerStatefulWidget {
+  const RuehrlinkApp({super.key});
 
   @override
-  ConsumerState<FreikochApp> createState() => _FreikochAppState();
+  ConsumerState<RuehrlinkApp> createState() => _RuehrlinkAppState();
 }
 
-class _FreikochAppState extends ConsumerState<FreikochApp> {
+class _RuehrlinkAppState extends ConsumerState<RuehrlinkApp> {
   // Zurück im Vordergrund (z. B. nach dem Entsperren): sofort neu verbinden und den Stand holen,
   // statt auf das Zeitlimit der eingeschlafenen Verbindung zu warten (Fehlerliste F5).
   late final _lifecycle = AppLifecycleListener(
+    onShow: () => ref.read(appForegroundProvider.notifier).set(true),
+    onHide: () => ref.read(appForegroundProvider.notifier).set(false),
     onResume: () {
       ref.read(bridgeApiProvider).reconnect();
       ref.invalidate(applianceStatusProvider);
@@ -53,7 +60,13 @@ class _FreikochAppState extends ConsumerState<FreikochApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp.router(
+  Widget build(BuildContext context) {
+    // Waage vorhalten, solange die App offen ist (nur zuhören, kein Neubau).
+    ref.listen(scaleKeepAliveProvider, (_, _) {});
+    return _app();
+  }
+
+  Widget _app() => MaterialApp.router(
     onGenerateTitle: (context) => context.l10n.appTitle,
     theme: buildTheme(Brightness.light),
     darkTheme: buildTheme(Brightness.dark),
@@ -79,12 +92,16 @@ const _tabs = [
   (path: '/mehr', icon: Icons.more_horiz_rounded),
 ];
 
+/// Navigator über den Tabs – für Vollbildseiten ohne Navigationsleiste (Kochmodus, Editor).
+final _rootNavigator = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   // Router nur neu auswerten (nicht neu bauen), wenn sich der Einrichtungsstatus ändert.
   final refresh = ValueNotifier(0);
   ref.listen(setupDoneProvider, (_, _) => refresh.value++);
 
   final router = GoRouter(
+    navigatorKey: _rootNavigator,
     initialLocation: _tabs.first.path,
     refreshListenable: refresh,
     redirect: (context, state) {
@@ -101,7 +118,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => PairRequestWatcher(
-          child: SequenceNudgeWatcher(child: AppShell(shell: shell)),
+          child: SequenceNudgeWatcher(
+            child: ScalePopupWatcher(
+              shell: shell,
+              child: AppShell(shell: shell),
+            ),
+          ),
         ),
         branches: [
           StatefulShellBranch(
@@ -117,6 +139,36 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/rezepte',
                 builder: (context, state) => const RezeptePage(),
+                routes: [
+                  GoRoute(
+                    path: 'neu',
+                    parentNavigatorKey: _rootNavigator,
+                    builder: (context, state) => const RecipeEditorPage(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) =>
+                        RecipePage(id: state.pathParameters['id']!),
+                    routes: [
+                      GoRoute(
+                        path: 'bearbeiten',
+                        parentNavigatorKey: _rootNavigator,
+                        builder: (context, state) =>
+                            RecipeEditorPage(id: state.pathParameters['id']),
+                      ),
+                      GoRoute(
+                        path: 'kochen',
+                        parentNavigatorKey: _rootNavigator,
+                        builder: (context, state) => KochmodusPage(
+                          id: state.pathParameters['id']!,
+                          servings: int.tryParse(
+                            state.uri.queryParameters['portionen'] ?? '',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
@@ -168,8 +220,16 @@ class AppShell extends StatelessWidget {
 
   final StatefulNavigationShell shell;
 
-  void _select(int index) =>
-      shell.goBranch(index, initialLocation: index == shell.currentIndex);
+  /// Tipp auf den aktiven Tab = zurück zu seiner Startseite: auch Seiten schließen, die per
+  /// `Navigator.push` darüber liegen (z. B. ein Assistent) – `goBranch` allein sieht die nicht.
+  void _select(int index) {
+    if (index == shell.currentIndex) {
+      shell.route.branches[index].navigatorKey.currentState?.popUntil(
+        (r) => r.isFirst,
+      );
+    }
+    shell.goBranch(index, initialLocation: index == shell.currentIndex);
+  }
 
   @override
   Widget build(BuildContext context) {

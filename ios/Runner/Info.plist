@@ -7,16 +7,16 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Freikoch findet deine Freikoch Brücke per Bluetooth, um sie einzurichten.</string>
+	<string>Rührlink findet deine Rührlink per Bluetooth, um sie einzurichten.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Die Kamera liest den QR-Code auf dem Etikett der Brücke. Es werden keine Bilder gespeichert.</string>
+	<string>Die Kamera liest den QR-Code auf dem Etikett deines Rührlinks und macht auf Wunsch Fotos für deine Rezepte. Die Fotos bleiben bei dir zu Hause.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Freikoch greift nicht auf deine Fotos zu.</string>
+	<string>Du kannst ein Foto aus deiner Mediathek für ein Rezept wählen. Es bleibt bei dir zu Hause.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Freikoch spricht nur mit deiner Freikoch Brücke im Heim-WLAN.</string>
+	<string>Rührlink spricht nur mit deiner Rührlink im Heim-WLAN.</string>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_freikoch._tcp</string>
+		<string>_ruehrlink._tcp</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
@@ -28,7 +28,7 @@
 		<string>de</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>Freikoch</string>
+	<string>Rührlink</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -36,7 +36,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>freikoch</string>
+	<string>ruehrlink</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

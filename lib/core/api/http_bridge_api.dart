@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../models/json.dart';
@@ -14,7 +15,7 @@ import 'bridge_api.dart';
 /// Echte Brücke im Heim-WLAN: HTTP für Abfragen und Befehle, WebSocket für Live-Daten.
 ///
 /// Im MVP unverschlüsselt (HTTP + Token) – TLS mit Zertifikats-Pinning folgt
-/// nach dem MVP (siehe `freikoch_esp/docs/architektur.md`).
+/// nach dem MVP (siehe `ruehrlink_esp/docs/architektur.md`).
 class HttpBridgeApi implements BridgeApi {
   HttpBridgeApi(this.target, {http.Client? client})
     : _client = client ?? http.Client();
@@ -25,6 +26,10 @@ class HttpBridgeApi implements BridgeApi {
   static const _timeout = Duration(seconds: 5);
   static const _reconnectDelay = Duration(seconds: 2);
 
+  /// Herzschlag auf dem Live-Kanal: Ping so oft; kommt bis zum nächsten kein Pong, gilt die Box als weg
+  /// (ausgesteckt sendet sie kein „Tschüss“ – ohne Ping merkt die App das sonst nie).
+  static const _pingInterval = Duration(seconds: 3);
+
   late final StreamController<BridgeEvent> _events = StreamController.broadcast(
     onListen: _connect,
     onCancel: _disconnect,
@@ -34,31 +39,47 @@ class HttpBridgeApi implements BridgeApi {
   Timer? _reconnect;
   bool _closed = false;
 
-  Uri _uri(String path, {String scheme = 'http'}) => Uri(
-    scheme: scheme,
-    host: target.host,
-    port: target.port,
-    path: '/api/v1/$path',
-    queryParameters: scheme == 'ws' && target.token != null
-        ? {'token': target.token}
-        : null,
-  );
+  Uri _uri(String path, {String scheme = 'http', Map<String, String>? query}) =>
+      Uri(
+        scheme: scheme,
+        host: target.host,
+        port: target.port,
+        path: '/api/v1/$path',
+        queryParameters: scheme == 'ws' && target.token != null
+            ? {'token': target.token}
+            : query,
+      );
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     if (target.token != null) 'Authorization': 'Bearer ${target.token}',
   };
 
-  Future<http.Response> _send(
+  Future<http.Response> _send(String method, String path, [Object? body]) =>
+      _request(method, path, json: body);
+
+  /// [pass]: Statuscodes, die als Antwort zurückkommen statt als [BridgeException]
+  /// (z. B. `412` beim Speichern eines Rezepts).
+  Future<http.Response> _request(
     String method,
-    String path, [
-    Object? body,
-  ]) async {
-    final request = http.Request(method, _uri(path))..headers.addAll(_headers);
-    if (body != null) request.body = jsonEncode(body);
+    String path, {
+    Object? json,
+    Uint8List? bytes,
+    Map<String, String> headers = const {},
+    Map<String, String>? query,
+    Duration timeout = _timeout,
+    Set<int> pass = const {},
+  }) async {
+    final request = http.Request(method, _uri(path, query: query))
+      ..headers.addAll(_headers)
+      ..headers.addAll(headers);
+    if (json != null) request.body = jsonEncode(json);
+    if (bytes != null) request.bodyBytes = bytes;
     try {
-      final streamed = await _client.send(request).timeout(_timeout);
-      final response = await http.Response.fromStream(streamed);
+      final streamed = await _client.send(request).timeout(timeout);
+      final response = await http.Response.fromStream(streamed)
+          .timeout(timeout);
+      if (pass.contains(response.statusCode)) return response;
       return switch (response.statusCode) {
         >= 200 && < 300 => response,
         401 || 403 => throw BridgeException(
@@ -73,6 +94,7 @@ class HttpBridgeApi implements BridgeApi {
         _ => throw BridgeException(
           BridgeErrorKind.protocol,
           response.statusCode,
+          _errorCode(response),
         ),
       };
     } on BridgeException {
@@ -139,8 +161,83 @@ class HttpBridgeApi implements BridgeApi {
     Program.fromJson,
   );
 
+  // --- Rezepte und Fotos ------------------------------------------------------
+
+  /// Die ganze Bibliothek kann groß sein (die Brücke streamt sie).
+  static const _longTimeout = Duration(seconds: 30);
+
+  @override
+  Future<RecipeChanges> recipeChanges(int since) async =>
+      RecipeChanges.fromJson(
+        _decode(
+          await _request(
+            'GET',
+            'recipes',
+            query: {'since': '$since'},
+            timeout: _longTimeout,
+          ),
+        ),
+      );
+
+  @override
+  Future<RecipeWriteResult> putRecipe(Recipe recipe) async => _writeResult(
+    await _request(
+      'PUT',
+      'recipes/${recipe.id}',
+      json: recipe.toJson(),
+      headers: {'If-Match': '${recipe.rev}'},
+      pass: const {412},
+    ),
+  );
+
+  @override
+  Future<RecipeWriteResult> deleteRecipe(String id, {required int rev}) async =>
+      _writeResult(
+        await _request(
+          'DELETE',
+          'recipes/$id',
+          headers: {'If-Match': '$rev'},
+          pass: const {412},
+        ),
+      );
+
+  RecipeWriteResult _writeResult(http.Response r) {
+    final j = _decode(r);
+    if (r.statusCode == 412) {
+      return RecipeConflict(
+        currentRev: readInt(j['rev']),
+        deleted: readBool(j['deleted']),
+      );
+    }
+    return RecipeWritten(
+      rev: readInt(j['rev']),
+      updated: DateTime.tryParse(readString(j['updated'])),
+    );
+  }
+
+  @override
+  Future<Uint8List> media(String sha256) async =>
+      (await _request('GET', 'media/$sha256', timeout: _longTimeout)).bodyBytes;
+
+  @override
+  Future<void> putMedia(String sha256, Uint8List webp) => _request(
+    'PUT',
+    'media/$sha256',
+    bytes: webp,
+    headers: {'Content-Type': 'image/webp'},
+    timeout: _longTimeout,
+  );
+
   @override
   Future<void> onboardMachine() => _send('POST', 'machine/onboard');
+
+  @override
+  Future<void> watchScale({int seconds = 30}) =>
+      _send('POST', 'scale/watch', {'seconds': seconds});
+
+  @override
+  Future<double> tareScale() async =>
+      readDouble(_decode(await _send('POST', 'scale/tare'))['tare']);
 
   @override
   Future<String> requestPairing(String deviceName) async {
@@ -236,8 +333,20 @@ class HttpBridgeApi implements BridgeApi {
 
   void _connect() {
     if (_closed || _channel != null) return;
-    final channel = WebSocketChannel.connect(_uri('ws', scheme: 'ws'));
+    final channel = IOWebSocketChannel.connect(
+      _uri('ws', scheme: 'ws'),
+      pingInterval: _pingInterval,
+      connectTimeout: _timeout,
+    );
     _channel = channel;
+    channel.ready.then(
+      (_) {
+        if (identical(_channel, channel)) {
+          _setOnline(true);
+        }
+      },
+      onError: (Object _) {}, // meldet der Stream selbst (onError)
+    );
     _wsSub = channel.stream.listen(
       (message) {
         if (message is! String) return;
@@ -252,8 +361,17 @@ class HttpBridgeApi implements BridgeApi {
     );
   }
 
+  bool? _online;
+
+  void _setOnline(bool online) {
+    if (_online == online || _events.isClosed) return;
+    _online = online;
+    _events.add(ConnectionEvent(online: online));
+  }
+
   void _scheduleReconnect() {
     _dropChannel();
+    _setOnline(false);
     if (_closed || !_events.hasListener) return;
     _reconnect?.cancel();
     _reconnect = Timer(_reconnectDelay, _connect);

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/core/models/models.dart';
-import 'package:freikoch/features/kochen/sequence_nudge.dart';
+import 'package:ruehrlink/core/models/models.dart';
+import 'package:ruehrlink/features/kochen/sequence_nudge.dart';
 
 SequenceState s(SequenceRunState state, {int step = 1, String? reason}) =>
     SequenceState(step: step, of: 3, state: state, reason: reason);

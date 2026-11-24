@@ -1,12 +1,12 @@
-# Freikoch App
+# Rührlink App
 
-Die App zur **Freikoch Brücke**: Rezepte mit Fotos, geführtes Kochen, Programme
+Die App zur **Rührlink**: Rezepte mit Fotos, geführtes Kochen, Programme
 und Live-Waage für die *Kenwood Cooking Chef XL* – komplett lokal im Heim-WLAN.
 
 **Eine Codebasis für Android und iOS** (Flutter). Getrennte Repos pro Plattform sind nicht nötig;
 der Ordner `android/` bzw. `ios/` im Projekt enthält nur die plattformspezifische Hülle.
 
-> Freikoch ist ein unabhängiges Projekt und steht in keiner Verbindung zu Kenwood oder De'Longhi.
+> Rührlink ist ein unabhängiges Projekt und steht in keiner Verbindung zu Kenwood oder De'Longhi.
 
 ## Grundsätze
 
@@ -14,14 +14,14 @@ der Ordner `android/` bzw. `ios/` im Projekt enthält nur die plattformspezifisc
 - **Einfach:** große Schrift, eine Aufgabe pro Bildschirm, alles mit einer Hand bedienbar.
 - **Kein Zugriff nach außen:** Die App spricht nur mit der Brücke im Heim-WLAN.
 - **Firmware an Bord:** Jedes App-Release enthält die passende Brücken-Firmware (gleiche Versionsnummer)
-  und spielt sie per OTA auf – siehe [`freikoch_esp/docs/updates.md`](../freikoch_esp/docs/updates.md).
+  und spielt sie per OTA auf – siehe [`ruehrlink_esp/docs/updates.md`](../ruehrlink_esp/docs/updates.md).
 - **Robust:** die App ist nur Fernbedienung und Anzeige – Programme laufen auf der Brücke weiter,
   auch wenn das Handy schläft.
 
 ## Schnittstelle
 
 Die App spricht ausschließlich die lokale API der Brücke:
-[`freikoch_esp/docs/api.md`](../freikoch_esp/docs/api.md).
+[`ruehrlink_esp/docs/api.md`](../ruehrlink_esp/docs/api.md).
 
 ## Entwicklung
 
@@ -50,7 +50,7 @@ Die **Einrichtung per Bluetooth** spricht die echte Brücke an (Security 2, sieh
 In Tests ersetzt `FakeBridgeProvisioning` sie (Code `000000` und WLAN-Passwort `falsch` zeigen die Fehlerwege).
 
 Umschalten auf eine echte Brücke: **Mehr → Verbindung zur Brücke** → im WLAN gefundene Brücke (mDNS
-`_freikoch._tcp`) oder IP-Adresse eingeben → Anfrage auf einem schon gekoppelten Handy
+`_ruehrlink._tcp`) oder IP-Adresse eingeben → Anfrage auf einem schon gekoppelten Handy
 bestätigen (Firmware im Entwicklermodus: auch BOOT-Taste). Zurück mit „Demo-Modus verwenden“.
 „Einrichtung neu starten“ zeigt den Einrichtungsablauf erneut.
 

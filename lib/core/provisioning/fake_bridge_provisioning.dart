@@ -23,10 +23,10 @@ class FakeBridgeProvisioning implements BridgeProvisioning {
 
   @override
   Stream<List<ProvisionableBridge>> scan() async* {
-    log.add('Demo: Suche Freikoch-…');
+    log.add('Demo: Suche Ruehrlink-…');
     yield const [];
     await _wait(2);
-    yield const [ProvisionableBridge(id: 'demo', name: 'Freikoch-98C0')];
+    yield const [ProvisionableBridge(id: 'demo', name: 'Ruehrlink-98C0')];
   }
 
   @override
@@ -50,9 +50,9 @@ class FakeBridgeProvisioning implements BridgeProvisioning {
     await _wait();
     return BridgeSetupInfo(
       id: '98C0',
-      name: 'Freikoch Brücke',
+      name: 'Rührlink',
       fw: '0.1.0',
-      host: 'freikoch-98c0.local',
+      host: 'ruehrlink-98c0.local',
       homeConfigured: homeConnected,
       homeConnected: homeConnected,
       homeSsid: homeConnected ? 'Zuhause' : '',

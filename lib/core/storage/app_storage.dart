@@ -48,6 +48,18 @@ class AppStorage {
   /// Großer Hinweis auf dem Bildschirm.
   bool get nudgeBigHint => _prefs.getBool(_kNudgeBigHint) ?? true;
   Future<void> setNudgeBigHint(bool on) => _prefs.setBool(_kNudgeBigHint, on);
+
+  static const _kScalePopup = 'scalePopup';
+
+  /// Waage im Koch-Tab automatisch zeigen, wenn der Kopf der Maschine hochgeklappt wird.
+  bool get scalePopup => _prefs.getBool(_kScalePopup) ?? true;
+  Future<void> setScalePopup(bool on) => _prefs.setBool(_kScalePopup, on);
+
+  static const _kSafetyHints = 'safetyHints';
+
+  /// Sicherheitshinweise: 0 alle, 1 nur kritische, 2 aus.
+  int get safetyHints => _prefs.getInt(_kSafetyHints) ?? 0;
+  Future<void> setSafetyHints(int v) => _prefs.setInt(_kSafetyHints, v);
 }
 
 /// Wird in `main.dart` mit der geladenen Instanz überschrieben.

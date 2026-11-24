@@ -13,8 +13,11 @@ import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/smooth_countdown.dart';
 import '../../ui/widgets/speed_slider.dart';
+import '../assistenten/assistenten_section.dart';
 import '../maschine/live_status_band.dart';
+import '../waage/scale_sheet.dart';
 import 'programs.dart';
+import 'schnellprogramme.dart';
 
 /// Start-Tab: Begrüßung, Statusband, laufendes Programm, Programme.
 /// Später: „Weiterkochen“, Lieblingsrezepte, Assistenten.
@@ -48,6 +51,8 @@ class KochenPage extends ConsumerWidget {
                 const SizedBox(height: Tokens.l),
                 const _SequencePanel(),
                 const _ProgramSection(),
+                const SizedBox(height: Tokens.l),
+                const AssistentenSection(),
               ],
             ),
           ),
@@ -116,12 +121,14 @@ class _StatusLineState extends State<_StatusLine> {
   );
 }
 
-class _Greeting extends StatelessWidget {
+class _Greeting extends ConsumerWidget {
   const _Greeting();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final hasScale =
+        ref.watch(bridgeInfoProvider).value?.readyCaps?.hasScale ?? false;
     final dark = theme.brightness == Brightness.dark;
     return Row(
       children: [
@@ -129,8 +136,8 @@ class _Greeting extends StatelessWidget {
           dark
               ? 'assets/brand/zeichen_dunkel.png'
               : 'assets/brand/zeichen_hell.png',
-          width: 56,
-          height: 56,
+          width: 44,
+          height: 44,
           excludeFromSemantics: true,
         ),
         const SizedBox(width: Tokens.m),
@@ -140,26 +147,34 @@ class _Greeting extends StatelessWidget {
             children: [
               Text(
                 context.l10n.kochenGreeting,
-                style: theme.textTheme.headlineMedium,
+                style: theme.textTheme.titleLarge,
               ),
               Text(
                 context.l10n.kochenGreetingSub,
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ),
+        // Waage wie im Maschinen-Tab oben rechts
+        if (hasScale)
+          IconButton(
+            tooltip: context.l10n.scaleOpen,
+            icon: const Icon(Icons.scale_rounded),
+            onPressed: () => showScaleSheet(context),
+          ),
       ],
     );
   }
 }
 
 /// Bild zu einem Programm: passend zum Namen, sonst Schüssel bzw. Reagenzglas für Tests.
-String programIllustration(String id, String name) => id.startsWith('test')
-    ? Illustrations.test
-    : Illustrations.forName(name) ?? Illustrations.bowl;
+/// (Inline-Programme wie die der Assistenten haben auf der Brücke keine id.)
+String programIllustration(String id, String name) =>
+    Illustrations.forName(name) ??
+    (id.startsWith('test') ? Illustrations.test : Illustrations.bowl);
 
 // ---------------------------------------------------------------------------
 // Laufendes Programm
@@ -435,15 +450,18 @@ class _ProgramSection extends ConsumerWidget {
     children
       ..add(
         Text(
-          l10n.programsHint,
+          l10n.qpHint,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
       )
       ..add(const SizedBox(height: Tokens.m));
+    children.add(_ProgramGrid(programs: quickPrograms(caps, l10n), caps: caps));
     if (fromBridge.isNotEmpty) {
-      children.add(_ProgramGrid(programs: fromBridge, caps: caps));
+      children
+        ..add(const SizedBox(height: Tokens.m))
+        ..add(_ProgramGrid(programs: fromBridge, caps: caps));
     }
     final tests = testPrograms(caps, l10n);
     if (tests.isNotEmpty) {
@@ -499,15 +517,26 @@ class _ProgramTile extends ConsumerWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showProgram(context, ref),
+        onTap: () => _quickStart(context, ref),
         child: Padding(
           padding: const EdgeInsets.all(Tokens.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Illustration(
-                programIllustration(program.id, program.name),
-                size: 72,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Illustration(
+                    programIllustration(program.id, program.name),
+                    size: 72,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    tooltip: l10n.qpDetails,
+                    icon: const Icon(Icons.info_outline_rounded),
+                    onPressed: () => _showProgram(context, ref),
+                  ),
+                ],
               ),
               const SizedBox(height: Tokens.m),
               Text(
@@ -546,6 +575,20 @@ class _ProgramTile extends ConsumerWidget {
           )
         : l10n.programStepLine(speedText(context, caps, v.speed), time);
     return s.label.isEmpty ? line : '${s.label} – $line';
+  }
+
+  /// Ein Tipp: Werte senden. Gestartet wird ohnehin erst am Knopf der Maschine.
+  Future<void> _quickStart(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    if (ref.read(sequenceProvider).value?.active ?? false) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.programBusy)));
+      return;
+    }
+    final error = await ref
+        .read(sequenceControllerProvider)
+        .start(program, l10n);
+    messenger.showSnackBar(SnackBar(content: Text(error ?? l10n.qpStarted)));
   }
 
   Future<void> _showProgram(BuildContext context, WidgetRef ref) async {

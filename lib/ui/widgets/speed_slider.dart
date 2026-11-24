@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
+import '../icons/ruehr_icon.dart';
 import '../theme.dart';
 
 /// Stufen-Schieberegler nach dem Vorbild des Drehknopfs an der Maschine:
@@ -70,7 +71,14 @@ class SpeedSlider extends StatelessWidget {
                 const SizedBox(width: Tokens.s),
                 Text(label, style: theme.textTheme.titleMedium),
                 const Spacer(),
-                if (caption != null) ...[
+                if (current.group == SpeedGroup.stir) ...[
+                  RuehrIcon(
+                    size: 28,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    semanticLabel: caption,
+                  ),
+                  const SizedBox(width: Tokens.s),
+                ] else if (caption != null) ...[
                   Flexible(
                     child: Text(
                       caption,
@@ -216,15 +224,26 @@ class _Track extends StatelessWidget {
                       width: len * cell,
                       top: 0,
                       height: _titleH,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          speedGroupTitle(context, g),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
+                      child: g == SpeedGroup.stir
+                          // Rühren: eigenes Symbol statt des langen Worts „Rührintervall“.
+                          ? Tooltip(
+                              message: speedGroupTitle(context, g),
+                              child: Center(
+                                child: RuehrIcon(
+                                  size: _titleH,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          : FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                speedGroupTitle(context, g),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
                     ),
                 // Leiste: je Gruppe ein Abschnitt mit Lücke dazwischen.
                 for (final (start, len, g) in runs)

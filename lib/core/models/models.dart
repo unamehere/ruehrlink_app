@@ -1,4 +1,4 @@
-/// Datenmodelle nach `freikoch_esp/docs/api.md` – handgeschrieben, unveränderlich.
+/// Datenmodelle nach `ruehrlink_esp/docs/api.md` – handgeschrieben, unveränderlich.
 library;
 
 export 'appliance_status.dart';
@@ -9,3 +9,4 @@ export 'json.dart' show Json;
 export 'machine_settings.dart';
 export 'program.dart';
 export 'recipe.dart';
+export 'werkzeug.dart';

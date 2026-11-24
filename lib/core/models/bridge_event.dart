@@ -9,7 +9,10 @@ sealed class BridgeEvent {
     final d = readMap(json['d']);
     return switch (json['t']) {
       'status' => StatusEvent(ApplianceStatus.fromJson(d)),
-      'weight' => WeightEvent(readDouble(d['g'])),
+      'weight' => WeightEvent(
+        readDouble(d['g']),
+        gross: d['gross'] is num ? readDouble(d['gross']) : null,
+      ),
       'seq' => SequenceEvent(SequenceState.fromJson(d)),
       'ack' => AckEvent(cmd: readString(d['cmd']), ok: readBool(d['ok'])),
       'recipes' => RecipesChangedEvent(readInt(d['rev'])),
@@ -34,10 +37,16 @@ class StatusEvent extends BridgeEvent {
   final ApplianceStatus status;
 }
 
-/// Gewicht auf der Waage in Gramm (max. 10 Nachrichten/s).
+/// Gewicht auf der Waage in Gramm (max. 10 Nachrichten/s, mindestens eine pro Sekunde,
+/// solange die Waage läuft – siehe `POST /api/v1/scale/watch`).
 class WeightEvent extends BridgeEvent {
-  const WeightEvent(this.grams);
+  const WeightEvent(this.grams, {this.gross});
+
+  /// Netto nach Tara (Tara rechnet die Brücke, alle Apps sehen dasselbe).
   final double grams;
+
+  /// Rohwert der Maschine; `null` bei älterer Firmware.
+  final double? gross;
 }
 
 class SequenceEvent extends BridgeEvent {
@@ -79,6 +88,13 @@ class OnboardEvent extends BridgeEvent {
   final String? reason;
 }
 
+/// Kein Ereignis der Box, sondern der App selbst: Der Live-Kanal zur Box steht ([online]) oder ist
+/// abgerissen (Box ausgesteckt, WLAN weg). Abgerissen erkennt die App am ausbleibenden Pong.
+class ConnectionEvent extends BridgeEvent {
+  const ConnectionEvent({required this.online});
+  final bool online;
+}
+
 /// Unbekannter Typ – neuere Brücke. Wird ignoriert, nicht als Fehler behandelt.
 class UnknownEvent extends BridgeEvent {
   const UnknownEvent(this.type);
@@ -98,7 +114,7 @@ enum SequenceRunState {
 }
 
 /// Fortschritt eines Programms auf der Brücke (intern „sequence“), siehe
-/// `GET /api/v1/sequence` und WS `seq` in `freikoch_esp/docs/api.md`.
+/// `GET /api/v1/sequence` und WS `seq` in `ruehrlink_esp/docs/api.md`.
 class SequenceState {
   const SequenceState({
     this.programId,

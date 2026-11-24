@@ -11,9 +11,13 @@ class HintCard extends StatelessWidget {
     required this.text,
     this.detail,
     this.emphasized = false,
+    this.leading,
   });
 
   final IconData icon;
+
+  /// Statt [icon], z. B. ein Werkzeug-Piktogramm.
+  final Widget? leading;
   final String text;
   final String? detail;
   final bool emphasized;
@@ -30,7 +34,7 @@ class HintCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: fg, size: 30),
+            leading ?? Icon(icon, color: fg, size: 30),
             const SizedBox(width: Tokens.s + 4),
             Expanded(
               child: Column(

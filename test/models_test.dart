@@ -1,8 +1,8 @@
-// JSON-Modelle gegen die Beispiele aus freikoch_esp/docs/api.md.
+// JSON-Modelle gegen die Beispiele aus ruehrlink_esp/docs/api.md.
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freikoch/core/models/models.dart';
+import 'package:ruehrlink/core/models/models.dart';
 
 Json _json(String s) => jsonDecode(s) as Json;
 
@@ -11,7 +11,7 @@ void main() {
     const raw = '''
 {
   "id": "98C0",
-  "name": "Freikoch Brücke",
+  "name": "Rührlink",
   "fw": "0.1.0",
   "api": 1,
   "storage": {"backend": "sd", "totalKB": 30000000, "freeKB": 29000000},
@@ -98,7 +98,7 @@ void main() {
     );
   });
 
-  test('Rezept mit Wiege-, Programm- und Einzelwert-Schritt', () {
+  test('altes Rezept (weigh) wird in Zutaten pro Schritt umgewandelt', () {
     const raw = '''
 {
   "id": "uuid",
@@ -117,7 +117,8 @@ void main() {
 }''';
     final r = Recipe.fromJson(_json(raw));
     expect(r.updated, DateTime.utc(2026, 11, 12, 10));
-    expect(r.steps[0].weigh!.target, 500);
+    expect(r.steps[0].ingredients.single.name, 'Dinkelmehl 630');
+    expect(r.steps[0].ingredients.single.grams, 500);
     expect(r.steps[1].machine!.programId, 'dinkelteig');
     expect(
       r.steps[2].machine!.settings,
@@ -125,6 +126,12 @@ void main() {
     );
     final back = r.toJson();
     expect(back['ingredients'], _json(raw)['ingredients']);
+    expect((back['steps'] as List)[0], {
+      'text': 'Mehl in die Schüssel wiegen.',
+      'ingredients': [
+        {'amount': 500, 'unit': 'g', 'name': 'Dinkelmehl 630'},
+      ],
+    });
     expect((back['steps'] as List)[2], (_json(raw)['steps'] as List)[2]);
   });
 

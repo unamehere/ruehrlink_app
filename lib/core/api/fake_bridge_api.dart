@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
+import '../models/json.dart';
 import '../models/models.dart';
 import 'bridge_api.dart';
+import 'demo_recipes.dart';
 
 /// Simulierte Brücke samt Gerät – für Entwicklung ohne Hardware und den Demo-Modus.
 ///
@@ -85,7 +88,7 @@ class FakeBridgeApi implements BridgeApi {
     await _wait();
     return BridgeInfo(
       id: 'DEMO',
-      name: 'Freikoch Brücke (Demo)',
+      name: 'Rührlink (Demo)',
       fw: '0.1.0',
       api: 1,
       storage: const StorageInfo(
@@ -264,7 +267,142 @@ class FakeBridgeApi implements BridgeApi {
     }
   }
 
+  // --- Rezepte: wie die Brücke mit Revisionen und Löschvermerken ---------------
+
+  final Map<String, Json> _recipes = {
+    for (final r in demoRecipes()) r['id'] as String: r,
+  };
+  final Map<String, int> _tombstones = {};
+  late int _recipeRev = _recipes.values.fold(
+    0,
+    (m, r) => max(m, readInt(r['rev'])),
+  );
+  final Map<String, Uint8List> _media = {};
+
+  @override
+  Future<RecipeChanges> recipeChanges(int since) async {
+    await _wait();
+    return RecipeChanges(
+      rev: _recipeRev,
+      changed: [
+        for (final r in _recipes.values)
+          if (readInt(r['rev']) > since) Recipe.fromJson(r),
+      ],
+      deleted: since == 0
+          ? const []
+          : [
+              for (final e in _tombstones.entries)
+                if (e.value > since) e.key,
+            ],
+    );
+  }
+
+  @override
+  Future<RecipeWriteResult> putRecipe(Recipe recipe) async {
+    await _wait();
+    final live = readInt(_recipes[recipe.id]?['rev']);
+    if (recipe.rev != live) {
+      return RecipeConflict(
+        currentRev: live,
+        deleted: live == 0 && _tombstones.containsKey(recipe.id),
+      );
+    }
+    final rev = ++_recipeRev;
+    final updated = DateTime.now().toUtc();
+    _recipes[recipe.id] = recipe.copyWith(rev: rev, updated: updated).toJson();
+    _tombstones.remove(recipe.id);
+    _emit(RecipesChangedEvent(rev));
+    return RecipeWritten(rev: rev, updated: updated);
+  }
+
+  @override
+  Future<RecipeWriteResult> deleteRecipe(String id, {required int rev}) async {
+    await _wait();
+    final live = readInt(_recipes[id]?['rev']);
+    if (live == 0) {
+      throw const BridgeException(BridgeErrorKind.rejected, 404, 'recipe');
+    }
+    if (rev != live) return RecipeConflict(currentRev: live, deleted: false);
+    final next = ++_recipeRev;
+    _recipes.remove(id);
+    _tombstones[id] = next;
+    _emit(RecipesChangedEvent(next));
+    return RecipeWritten(rev: next);
+  }
+
+  @override
+  Future<Uint8List> media(String sha256) async {
+    await _wait();
+    final bytes = _media[sha256];
+    if (bytes == null) {
+      throw const BridgeException(BridgeErrorKind.rejected, 404, 'media');
+    }
+    return bytes;
+  }
+
+  @override
+  Future<void> putMedia(String sha256, Uint8List webp) async {
+    await _wait();
+    if (webp.length > 1024 * 1024) {
+      throw const BridgeException(BridgeErrorKind.rejected, 413, 'size');
+    }
+    _media[sha256] = webp;
+  }
+
   /// Kopplung wie bei der echten Brücke: Gerät kurz weg, „sucht“, „gesendet“, verbunden.
+  // --- Waage (Demo): Es wird langsam etwas eingefüllt, dann Pause, dann die nächste Zutat. -------
+  Timer? _scaleTimer;
+  DateTime _scaleUntil = DateTime.fromMillisecondsSinceEpoch(0);
+  double _scaleGross = 0;
+  double _scaleTare = 0;
+  int _scaleTick = 0;
+
+  /// Simulierter Rohwert der Waage (für Tests).
+  double get scaleGross => _scaleGross;
+
+  @override
+  Future<void> watchScale({int seconds = 30}) async {
+    await _wait();
+    if (!_status.connected) {
+      throw const BridgeException(
+        BridgeErrorKind.rejected,
+        409,
+        'not_connected',
+      );
+    }
+    final until = DateTime.now().add(Duration(seconds: seconds));
+    if (until.isAfter(_scaleUntil)) _scaleUntil = until;
+    _scaleTimer ??= Timer.periodic(
+      const Duration(milliseconds: 100),
+      (_) => _scaleStep(),
+    );
+  }
+
+  void _scaleStep() {
+    if (DateTime.now().isAfter(_scaleUntil)) {
+      _scaleTimer?.cancel();
+      _scaleTimer = null;
+      _scaleTare = 0;
+      return;
+    }
+    // 6 s einfüllen (≈ 40 g/s), 4 s Pause – wie jemand, der Mehl und Wasser einwiegt.
+    _scaleTick = (_scaleTick + 1) % 100;
+    if (_scaleTick < 60) _scaleGross += 4;
+    if (_scaleGross > 2500) _scaleGross = 0;
+    _emit(WeightEvent(_scaleGross - _scaleTare, gross: _scaleGross));
+  }
+
+  @override
+  Future<double> tareScale() async {
+    await _wait();
+    if (_scaleTimer == null) {
+      throw const BridgeException(BridgeErrorKind.rejected, 409, 'no_weight');
+    }
+    _scaleTare = _scaleGross;
+    _emit(WeightEvent(0, gross: _scaleGross));
+    return _scaleTare;
+  }
+
   @override
   Future<void> onboardMachine() async {
     await _wait();
@@ -392,6 +530,7 @@ class FakeBridgeApi implements BridgeApi {
     _knob?.cancel();
     _onboard?.cancel();
     _pairTimer?.cancel();
+    _scaleTimer?.cancel();
     unawaited(_events.close());
   }
 }

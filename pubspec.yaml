@@ -1,9 +1,9 @@
-name: freikoch
-description: "Freikoch – die App zur Freikoch Brücke. Strikt lokal im Heim-WLAN."
+name: ruehrlink
+description: "Rührlink – die App zur Rührlink. Strikt lokal im Heim-WLAN."
 publish_to: 'none'
 
 # Später: aus der Datei VERSION abgeleitet (App-Version = Firmware-Version).
-version: 0.2.0+14
+version: 0.3.9+24
 
 environment:
   sdk: ^3.14.0
@@ -28,6 +28,10 @@ dependencies:
   pointycastle: ^4.0.0
   device_info_plus: ^13.3.0
   flutter_zxing: ^3.1.1
+  image_picker: ^1.2.4
+  flutter_image_compress: ^2.5.1
+  path_provider: ^2.1.6
+  flutter_svg: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -41,5 +45,5 @@ flutter:
     # Platzhalter-Illustrationen (Fluent Emoji 3D, MIT) – siehe docs/illustrationen.md
     - assets/illustrations/
     - assets/brand/
-    # Firmware der Brücke, von freikoch_esp/tools/firmware_sign.py erzeugt (nicht im Repo)
+    # Firmware der Brücke, von ruehrlink_esp/tools/firmware_sign.py erzeugt (nicht im Repo)
     - assets/firmware/

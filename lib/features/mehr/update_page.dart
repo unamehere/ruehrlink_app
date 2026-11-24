@@ -16,7 +16,7 @@ import '../kochen/programs.dart';
 enum _Phase { idle, uploading, restarting, done, failed }
 
 /// Firmware der Brücke aktualisieren – mit der Firmware, die diese App mitbringt.
-/// Ablauf: `freikoch_esp/docs/updates.md` (Upload, Neustart, Probebetrieb, ggf. Rollback).
+/// Ablauf: `ruehrlink_esp/docs/updates.md` (Upload, Neustart, Probebetrieb, ggf. Rollback).
 class UpdatePage extends ConsumerStatefulWidget {
   const UpdatePage({super.key});
 
