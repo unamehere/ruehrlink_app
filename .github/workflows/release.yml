@@ -1,0 +1,94 @@
+# Release-Pipeline App: Tag v<version> pushen → Tests → Release-APK bauen und signieren → Pre-Release
+# mit der APK. Manuell gestartet (workflow_dispatch) wird nur gebaut und geprüft, nichts veröffentlicht.
+#
+# Secrets (Repo → Settings → Secrets and variables → Actions):
+#   APP_KEYSTORE_B64     app-release.jks, base64
+#   APP_STORE_PASSWORD   APP_KEY_ALIAS   APP_KEY_PASSWORD
+# Original liegt nur in ~/.ruehrlink/ beim Herausgeber; GitHub ist KEIN Backup (Secrets sind nicht lesbar).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Fingerabdruck des Release-Zertifikats: schützt davor, versehentlich mit dem Debug-Schlüssel zu signieren
+  CERT_SHA256: 5f36ca483d14d987a601a7d9f901dc196c0c42618891ce65aa9c22c02e09395b
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version aus pubspec.yaml
+        run: |
+          V="$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
+          echo "V=$V" >> "$GITHUB_ENV"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$V" ]; then
+            echo "pubspec.yaml hat $V, Tag ist $GITHUB_REF_NAME"; exit 1
+          fi
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+          channel: stable
+          cache: true
+      - name: Eingebaute Firmware holen (FIRMWARE_VERSION, aus ruehrlink_esp)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FW="$(tr -d '[:space:]' < FIRMWARE_VERSION)"
+          echo "FW=$FW" >> "$GITHUB_ENV"
+          gh release download "fw-v$FW" -R unamehere/ruehrlink_esp -p "ruehrlink-$FW.rlfw" -D assets/firmware
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Release-Schlüssel bereitstellen
+        env:
+          KEYSTORE_B64: ${{ secrets.APP_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.APP_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.APP_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.APP_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_B64" || { echo "Secret APP_KEYSTORE_B64 fehlt"; exit 1; }
+          mkdir -p ~/.ruehrlink
+          echo "$KEYSTORE_B64" | base64 -d > ~/.ruehrlink/app-release.jks
+          {
+            echo "storeFile=$HOME/.ruehrlink/app-release.jks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > ~/.ruehrlink/app-signing.properties
+      - name: APK bauen
+        run: flutter build apk --release
+      - name: Signatur prüfen
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          SIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          "$SIGNER" verify --print-certs "$APK" | tee certs.txt
+          grep -q "SHA-256 digest: $CERT_SHA256" certs.txt || { echo "APK nicht mit dem Release-Schlüssel signiert"; exit 1; }
+          cp "$APK" "ruehrlink-app-$V.apk"
+      - name: Schlüssel entfernen
+        if: always()
+        run: rm -rf ~/.ruehrlink
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruehrlink-app-${{ env.V }}
+          path: ruehrlink-app-${{ env.V }}.apk
+          retention-days: 14
+      - name: Pre-Release anlegen
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          awk -v v="$V" '$0 ~ "^## " v " " {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          printf '\n---\n**Installieren:** `ruehrlink-app-%s.apk` auf dem Android-Handy öffnen (Installation aus unbekannten Quellen erlauben). Enthält Firmware %s.\n' "$V" "$FW" >> notes.md
+          gh release create "$GITHUB_REF_NAME" --prerelease --verify-tag \
+            --title "App $V (Beta)" --notes-file notes.md "ruehrlink-app-$V.apk"

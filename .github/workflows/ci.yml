@@ -1,0 +1,32 @@
+# Prüf-Pipeline: analyze + Tests bei jedem Push und Pull Request (ohne Geheimnisse).
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+          channel: stable
+          cache: true
+      - name: Eingebaute Firmware holen (FIRMWARE_VERSION, aus ruehrlink_esp)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FW="$(tr -d '[:space:]' < FIRMWARE_VERSION)"
+          gh release download "fw-v$FW" -R unamehere/ruehrlink_esp -p "ruehrlink-$FW.rlfw" -D assets/firmware
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
