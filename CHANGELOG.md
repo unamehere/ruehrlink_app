@@ -7,6 +7,13 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.5.3 – 24.11.2026
+
+### Geändert
+- Eingebaute Firmware 0.6.0 für die Rührlink-Platine (ESP32-C6): Maschine koppeln und Waage wieder zuverlässig.
+- Die App ist jetzt mit einem eigenen Schlüssel signiert. **Einmalig:** Wer eine ältere Version installiert hat,
+  muss sie deinstallieren, 0.5.3 installieren und den Rührlink neu koppeln. Danach gehen Updates wieder darüber.
+
 ## 0.5.2 – 23.11.2026
 
 ### Geändert
