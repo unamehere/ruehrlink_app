@@ -9,7 +9,7 @@ import '../../ui/theme.dart';
 import '../../ui/widgets/speed_slider.dart';
 import 'recipe_library.dart';
 
-/// Foto eines Rezepts; ohne Foto (oder solange es lädt) eine Illustration passend zum Titel.
+/// Foto eines Rezepts; ohne Foto (oder solange es lädt) ein neutraler Platzhalter.
 class RecipeImage extends ConsumerWidget {
   const RecipeImage({
     super.key,
@@ -34,18 +34,17 @@ class RecipeImage extends ConsumerWidget {
               fit: BoxFit.cover,
               gaplessPlayback: true,
               errorBuilder: (context, error, stack) =>
-                  RecipeIllustration(title: recipe.title),
+                  const RecipeIllustration(),
             )
-          : RecipeIllustration(title: recipe.title),
+          : const RecipeIllustration(),
     );
   }
 }
 
-/// Platzhalter-Bild: Illustration auf getöntem Grund (keine Herstellergrafiken).
+/// Platzhalter-Bild: immer dasselbe neutrale Bild auf getöntem Grund. Bewusst nicht aus dem
+/// Titel geraten – das ging zu oft daneben.
 class RecipeIllustration extends StatelessWidget {
-  const RecipeIllustration({super.key, required this.title});
-
-  final String title;
+  const RecipeIllustration({super.key});
 
   @override
   Widget build(BuildContext context) => ColoredBox(
@@ -53,7 +52,7 @@ class RecipeIllustration extends StatelessWidget {
     child: LayoutBuilder(
       builder: (context, c) => Center(
         child: Illustration(
-          Illustrations.forName(title) ?? Illustrations.cooking,
+          Illustrations.cooking,
           size: (c.biggest.shortestSide * 0.55).clamp(32, 160),
         ),
       ),

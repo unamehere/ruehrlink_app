@@ -512,7 +512,7 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
     } else {
       image = AspectRatio(
         aspectRatio: 16 / 10,
-        child: RecipeIllustration(title: _title.text),
+        child: const RecipeIllustration(),
       );
     }
     return ClipRRect(

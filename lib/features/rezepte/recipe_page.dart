@@ -48,11 +48,13 @@ class _RecipePageState extends ConsumerState<RecipePage> {
     final primary = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(Tokens.radius),
-          child: RecipeImage(recipe: recipe, aspectRatio: 16 / 10),
-        ),
-        const SizedBox(height: Tokens.m),
+        if (recipe.photo != null) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(Tokens.radius),
+            child: RecipeImage(recipe: recipe, aspectRatio: 16 / 10),
+          ),
+          const SizedBox(height: Tokens.m),
+        ],
         Text(recipe.title, style: theme.textTheme.headlineMedium),
         const SizedBox(height: Tokens.s / 2),
         const Align(

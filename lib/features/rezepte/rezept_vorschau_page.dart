@@ -177,21 +177,21 @@ class _RezeptVorschauPageState extends ConsumerState<RezeptVorschauPage> {
     final primary = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(Tokens.radius),
-          child: AspectRatio(
-            aspectRatio: 16 / 10,
-            child: photo != null
-                ? Image.memory(
-                    photo,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stack) =>
-                        RecipeIllustration(title: recipe.title),
-                  )
-                : RecipeIllustration(title: recipe.title),
+        if (photo != null) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(Tokens.radius),
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: Image.memory(
+                photo,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stack) =>
+                    const RecipeIllustration(),
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: Tokens.m),
+          const SizedBox(height: Tokens.m),
+        ],
         Text(recipe.title, style: theme.textTheme.headlineMedium),
         const SizedBox(height: Tokens.s / 2),
         Text(
