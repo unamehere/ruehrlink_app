@@ -1,17 +1,18 @@
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/l10n.dart';
 import '../../ui/theme.dart';
 
-/// Fotos der Bildanleitung (eigene Aufnahmen an der KCL95, verkleinert; Gerätekennung der SSID
-/// im letzten Bild verpixelt).
+/// Bilder der Anleitung: vereinfachte Zeichnungen des KCL95-Displays (SVG, erzeugt von
+/// tool/anleitung_maschine_koppeln.py), das Ziel jeweils orange markiert.
 const maschineKoppelnBilder = [
-  'assets/anleitung/maschine-koppeln/01-startseite-zahnrad.jpg',
-  'assets/anleitung/maschine-koppeln/02-einstellungen-wifi.jpg',
-  'assets/anleitung/maschine-koppeln/03-wifi-connect.jpg',
-  'assets/anleitung/maschine-koppeln/04-wiederherstellung.jpg',
-  'assets/anleitung/maschine-koppeln/05-wifi-startet.jpg',
-  'assets/anleitung/maschine-koppeln/06-ssid-angezeigt.jpg',
+  'assets/anleitung/maschine-koppeln/01-startseite-zahnrad.svg',
+  'assets/anleitung/maschine-koppeln/02-einstellungen-wifi.svg',
+  'assets/anleitung/maschine-koppeln/03-wifi-connect.svg',
+  'assets/anleitung/maschine-koppeln/04-wiederherstellung.svg',
+  'assets/anleitung/maschine-koppeln/05-wifi-startet.svg',
+  'assets/anleitung/maschine-koppeln/06-ssid-angezeigt.svg',
 ];
 
 List<String> _texte(AppLocalizations l10n) => [
@@ -90,10 +91,10 @@ class _MaschineKoppelnAnleitungState extends State<MaschineKoppelnAnleitung> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(Tokens.radius),
                           child: AspectRatio(
-                            aspectRatio: 4 / 3,
-                            child: Image.asset(
+                            aspectRatio: 800 / 560,
+                            child: SvgPicture.asset(
                               maschineKoppelnBilder[i],
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
@@ -172,7 +173,7 @@ class MaschineKoppelnVorschau extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(maschineKoppelnBilder.first, fit: BoxFit.cover),
+            SvgPicture.asset(maschineKoppelnBilder.first, fit: BoxFit.cover),
             // Das ganze Bild ist antippbar; für Screenreader reicht der Knopf.
             ExcludeSemantics(
               child: Material(

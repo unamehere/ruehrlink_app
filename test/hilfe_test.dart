@@ -139,11 +139,11 @@ void main() {
     expect(find.byType(MaschineKoppelnAnleitung), findsNothing);
   });
 
-  test('Fotos der Anleitung liegen klein im Projekt', () {
+  test('Bilder der Anleitung liegen klein im Projekt', () {
     for (final pfad in maschineKoppelnBilder) {
       final f = File(pfad);
       expect(f.existsSync(), isTrue, reason: pfad);
-      expect(f.lengthSync(), lessThan(150 * 1024), reason: pfad);
+      expect(f.lengthSync(), lessThan(20 * 1024), reason: pfad);
     }
   });
 

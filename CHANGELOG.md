@@ -7,6 +7,9 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+### Geändert
+- Bildanleitung „Maschine koppeln“: klare Zeichnungen des Maschinen-Displays statt Fotos, der nächste Tipp ist jeweils orange markiert.
+
 ## 0.5.3 – 24.11.2026
 
 ### Geändert

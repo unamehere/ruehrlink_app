@@ -52,7 +52,7 @@ flutter:
     # Platzhalter-Illustrationen (Fluent Emoji 3D, MIT) – siehe docs/illustrationen.md
     - assets/illustrations/
     - assets/brand/
-    # Bildanleitung „Maschine koppeln“ (eigene Fotos, verkleinert auf 1000 px)
+    # Bildanleitung „Maschine koppeln“ (SVG-Zeichnungen, tool/anleitung_maschine_koppeln.py)
     - assets/anleitung/maschine-koppeln/
     # Grundrezepte als Rezept-Dateien (.rlrezept) für „Grundrezepte hinzufügen“ – Entwürfe, an der Maschine prüfen
     - assets/rezepte/
