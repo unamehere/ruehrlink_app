@@ -6,7 +6,6 @@ import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
-import '../../ui/illustrations.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/werkzeug.dart';
@@ -80,11 +79,6 @@ class _RecipePageState extends ConsumerState<RecipePage> {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                Illustration(
-                  Illustrations.forName(i.name) ?? Illustrations.bowl,
-                  size: 40,
-                ),
-                const SizedBox(width: Tokens.m),
                 Expanded(
                   child: Text(
                     ingredientText(i, factor),

@@ -207,11 +207,6 @@ class _AssistentPageState extends ConsumerState<AssistentPage> {
               children: [
                 for (final z in plan.zutaten)
                   ListTile(
-                    leading: Illustration(
-                      Illustrations.forName(zutatName(l10n, z)) ??
-                          Illustrations.bowl,
-                      size: 40,
-                    ),
                     title: Text(
                       zutatName(l10n, z),
                       style: theme.textTheme.titleMedium,

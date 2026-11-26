@@ -534,11 +534,6 @@ class _PreparePage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Illustration(
-                    Illustrations.forName(i.name) ?? Illustrations.bowl,
-                    size: 48,
-                  ),
-                  const SizedBox(width: Tokens.m),
                   Expanded(
                     child: Text(
                       ingredientText(i, factor),
@@ -693,11 +688,6 @@ class _StepPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
-                    Illustration(
-                      Illustrations.forName(i.name) ?? Illustrations.bowl,
-                      size: 40,
-                    ),
-                    const SizedBox(width: Tokens.m),
                     Expanded(
                       child: Text(
                         ingredientText(i, 1),

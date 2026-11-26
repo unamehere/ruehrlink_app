@@ -5,7 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/api/bridge_api.dart';
 import '../../core/api/bridge_providers.dart';
 import '../../l10n/l10n.dart';
-import '../../ui/illustrations.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/werkzeug.dart';
@@ -217,11 +216,6 @@ class _RezeptVorschauPageState extends ConsumerState<RezeptVorschauPage> {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
-                Illustration(
-                  Illustrations.forName(i.name) ?? Illustrations.bowl,
-                  size: 40,
-                ),
-                const SizedBox(width: Tokens.m),
                 Expanded(
                   child: Text(
                     ingredientText(i, 1),
