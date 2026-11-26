@@ -54,6 +54,8 @@ flutter:
     - assets/brand/
     # Bildanleitung „Maschine koppeln“ (SVG-Zeichnungen, tool/anleitung_maschine_koppeln.py)
     - assets/anleitung/maschine-koppeln/
+    # Zutaten-Icons (SVG, tool/zutaten_icons.py) – Zuordnung fest in lib/ui/zutat_icons.dart
+    - assets/zutaten/
     # Grundrezepte als Rezept-Dateien (.rlrezept) für „Grundrezepte hinzufügen“ – Entwürfe, an der Maschine prüfen
     - assets/rezepte/
     # Eingebaute Firmware des Rührlink als Update-Datei .rlfw, von ruehrlink_esp/tools/firmware_sign.py pack

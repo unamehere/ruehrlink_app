@@ -10,6 +10,7 @@ import '../../ui/theme.dart';
 import '../../ui/werkzeug.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import '../../ui/zutat_icons.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
@@ -169,6 +170,9 @@ class _RezeptVorschauPageState extends ConsumerState<RezeptVorschauPage> {
       if (h.fehlendeFotos > 0) l10n.recipeFileHintPhotos(h.fehlendeFotos),
       if (h.gekuerzt) l10n.recipeFileHintShortened,
     ];
+    final mitIcons = ZutatIcon.irgendeins(
+      recipe.ingredients.map((i) => i.name),
+    );
 
     final primary = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -216,6 +220,10 @@ class _RezeptVorschauPageState extends ConsumerState<RezeptVorschauPage> {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
+                if (mitIcons) ...[
+                  ZutatIcon(i.name, size: 36),
+                  const SizedBox(width: Tokens.m),
+                ],
                 Expanded(
                   child: Text(
                     ingredientText(i, 1),

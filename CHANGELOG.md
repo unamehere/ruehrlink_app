@@ -8,7 +8,7 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 ## Unveröffentlicht
 
 ### Geändert
-- Zutatenlisten ohne Bildchen: Die automatisch geratenen Bilder passten oft nicht (z. B. Fleisch bei „gehackte Mandeln“) und wiederholten sich. Menge und Name stehen jetzt allein.
+- Zutaten-Icons neu gezeichnet (52 Stück im Rührlink-Stil). Ein Icon gibt es nur noch, wenn die Zutat sicher bekannt ist – unbekannte Zutaten bekommen keins statt eines falschen (vorher z. B. Fleisch bei „gehackte Mandeln“).
 - Bildanleitung „Maschine koppeln“: klare Zeichnungen des Maschinen-Displays statt Fotos, der nächste Tipp ist jeweils orange markiert.
 
 ## 0.5.3 – 24.11.2026

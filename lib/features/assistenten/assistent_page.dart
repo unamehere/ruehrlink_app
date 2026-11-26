@@ -8,6 +8,7 @@ import '../../core/models/models.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/format.dart';
 import '../../ui/illustrations.dart';
+import '../../ui/zutat_icons.dart';
 import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
@@ -207,6 +208,7 @@ class _AssistentPageState extends ConsumerState<AssistentPage> {
               children: [
                 for (final z in plan.zutaten)
                   ListTile(
+                    leading: ZutatIcon(zutatName(l10n, z)),
                     title: Text(
                       zutatName(l10n, z),
                       style: theme.textTheme.titleMedium,

@@ -17,6 +17,7 @@ import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
 import '../../ui/widgets/speed_slider.dart';
 import '../../ui/werkzeug.dart';
+import '../../ui/zutat_icons.dart';
 import '../assistenten/sicherheit.dart';
 import '../hilfe/hilfe_themen.dart';
 import '../kochen/nachstellen.dart';
@@ -516,6 +517,9 @@ class _PreparePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final mitIcons = ZutatIcon.irgendeins(
+      recipe.ingredients.map((i) => i.name),
+    );
     return AdaptivePage(
       primary: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -534,6 +538,10 @@ class _PreparePage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
+                  if (mitIcons) ...[
+                    ZutatIcon(i.name, size: 44),
+                    const SizedBox(width: Tokens.m),
+                  ],
                   Expanded(
                     child: Text(
                       ingredientText(i, factor),
@@ -625,6 +633,7 @@ class _StepPage extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final ingredients = [for (final i in step.ingredients) i.scaled(factor)];
+    final mitIcons = ZutatIcon.irgendeins(ingredients.map((i) => i.name));
     final toWeigh = zuWiegen(step, factor);
     final machine = step.machine != null
         ? _MachinePanel(
@@ -688,6 +697,10 @@ class _StepPage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
+                    if (mitIcons) ...[
+                      ZutatIcon(i.name, size: 36),
+                      const SizedBox(width: Tokens.m),
+                    ],
                     Expanded(
                       child: Text(
                         ingredientText(i, 1),

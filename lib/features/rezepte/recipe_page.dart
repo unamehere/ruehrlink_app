@@ -10,6 +10,7 @@ import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/werkzeug.dart';
 import '../../ui/widgets/big_button.dart';
+import '../../ui/zutat_icons.dart';
 import '../kochen/programs.dart';
 import 'recipe_library.dart';
 import 'recipe_widgets.dart';
@@ -40,6 +41,9 @@ class _RecipePageState extends ConsumerState<RecipePage> {
     final factor = servings / base;
     final caps = ref.watch(bridgeInfoProvider).value?.readyCaps;
     final programs = ref.watch(bridgeProgramsProvider).value ?? const [];
+    final mitIcons = ZutatIcon.irgendeins(
+      recipe.ingredients.map((i) => i.name),
+    );
 
     final primary = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,6 +83,10 @@ class _RecipePageState extends ConsumerState<RecipePage> {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
+                if (mitIcons) ...[
+                  ZutatIcon(i.name, size: 36),
+                  const SizedBox(width: Tokens.m),
+                ],
                 Expanded(
                   child: Text(
                     ingredientText(i, factor),
