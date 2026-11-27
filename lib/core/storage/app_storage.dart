@@ -61,6 +61,12 @@ class AppStorage {
   bool get weighAutoNext => _prefs.getBool(_kWeighAutoNext) ?? false;
   Future<void> setWeighAutoNext(bool on) => _prefs.setBool(_kWeighAutoNext, on);
 
+  static const _kTextSize = 'textSize';
+
+  /// Schriftgröße: 0 klein, 1 mittel (ab Werk), 2 groß.
+  int get textSize => _prefs.getInt(_kTextSize) ?? 1;
+  Future<void> setTextSize(int v) => _prefs.setInt(_kTextSize, v);
+
   static const _kSafetyHints = 'safetyHints';
 
   /// Sicherheitshinweise: 0 alle, 1 nur kritische, 2 aus.
