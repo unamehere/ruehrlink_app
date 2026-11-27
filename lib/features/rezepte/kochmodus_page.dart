@@ -92,7 +92,21 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
     return null;
   }
 
-  void _abhaken(int p, int i) => (_erledigt[p] ??= <int>{}).add(i);
+  void _abhaken(int p, int i) {
+    if ((_erledigt[p] ??= <int>{}).add(i)) {
+      appEvents.add('kochmodus', 'Seite ${p + 1}: Zutat ${i + 1} erledigt');
+    }
+  }
+
+  /// Haken in der Zutatenliste von Hand setzen oder wieder wegnehmen.
+  void _umschalten(int p, int i) {
+    final set = _erledigt[p] ??= <int>{};
+    final jetzt = set.contains(i) ? !set.remove(i) : set.add(i);
+    appEvents.add(
+      'kochmodus',
+      'Seite ${p + 1}: Zutat ${i + 1} von Hand ${jetzt ? 'abgehakt' : 'offen'}',
+    );
+  }
 
   @override
   void initState() {
@@ -334,6 +348,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                           });
                         },
                   onWeighSelect: (i) => setState(() => _zutat[p] = i),
+                  onWeighToggle: (i) => setState(() => _umschalten(p, i)),
                 );
               },
             ),
@@ -355,18 +370,29 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   child: Row(
                     children: [
                       if (_page > 0) ...[
-                        Expanded(
-                          child: BigButton(
-                            label: l10n.back,
-                            icon: Icons.arrow_back_rounded,
-                            kind: BigButtonKind.secondary,
+                        // Nur Pfeil, feste Breite: „Zurück“ brach bei großer Schrift um,
+                        // und der Hauptknopf bekommt mehr Platz.
+                        Tooltip(
+                          message: l10n.back,
+                          child: OutlinedButton(
                             onPressed: () => _go(_page - 1),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(
+                                Tokens.bigButton + 8,
+                                Tokens.bigButton,
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: Icon(
+                              Icons.arrow_back_rounded,
+                              size: 30,
+                              semanticLabel: l10n.back,
+                            ),
                           ),
                         ),
                         const SizedBox(width: Tokens.m),
                       ],
                       Expanded(
-                        flex: 2,
                         child: _page == last
                             ? BigButton(
                                 label: l10n.cookFinish,
@@ -614,6 +640,7 @@ class _StepPage extends StatelessWidget {
     required this.onWeighReached,
     this.onWeighSettled,
     required this.onWeighSelect,
+    required this.onWeighToggle,
   });
 
   final Recipe recipe;
@@ -637,6 +664,7 @@ class _StepPage extends StatelessWidget {
   /// `null`: nicht automatisch weiter (Einstellung aus oder letzte offene Zutat).
   final ValueChanged<int>? onWeighSettled;
   final ValueChanged<int> onWeighSelect;
+  final ValueChanged<int> onWeighToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -666,6 +694,7 @@ class _StepPage extends StatelessWidget {
                 onReached: onWeighReached,
                 onSettled: onWeighSettled,
                 onSelect: onWeighSelect,
+                onToggle: onWeighToggle,
               ),
               if (machine != null) ...[
                 const SizedBox(height: Tokens.l),
@@ -752,6 +781,7 @@ class _WeighSequence extends StatelessWidget {
     required this.onReached,
     this.onSettled,
     required this.onSelect,
+    required this.onToggle,
   });
 
   final List<Ingredient> ingredients;
@@ -760,6 +790,9 @@ class _WeighSequence extends StatelessWidget {
   final ValueChanged<int> onReached;
   final ValueChanged<int>? onSettled;
   final ValueChanged<int> onSelect;
+
+  /// Haken von Hand setzen/wegnehmen (z. B. ohne Waage abgewogen).
+  final ValueChanged<int> onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -815,22 +848,35 @@ class _WeighSequence extends StatelessWidget {
               borderRadius: BorderRadius.circular(Tokens.radius),
               onTap: i == current ? null : () => onSelect(i),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 6,
-                  horizontal: Tokens.s,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
                 child: Row(
                   children: [
-                    Icon(
-                      done.contains(i)
-                          ? Icons.check_circle_rounded
-                          : i == current
-                          ? Icons.arrow_right_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      size: 22,
-                      color: done.contains(i)
-                          ? const Color(0xFF2E7D32)
-                          : scheme.onSurfaceVariant,
+                    // Antippen = abhaken / wieder offen (eigene, große Tippfläche).
+                    Semantics(
+                      checked: done.contains(i),
+                      child: InkResponse(
+                        radius: 24,
+                        onTap: () => onToggle(i),
+                        child: Tooltip(
+                          message: done.contains(i)
+                              ? l10n.cookWeighUntick
+                              : l10n.cookWeighTick,
+                          child: SizedBox.square(
+                            dimension: 40,
+                            child: Icon(
+                              done.contains(i)
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              size: 26,
+                              color: done.contains(i)
+                                  ? const Color(0xFF2E7D32)
+                                  : i == current
+                                  ? Tokens.glow
+                                  : scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: Tokens.s),
                     Expanded(
