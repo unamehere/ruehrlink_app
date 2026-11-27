@@ -10,6 +10,9 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 ### Behoben
 - Kochen-Tab: Ein laufender Rezept- oder Assistenten-Schritt zeigte ein Reagenzglas (Symbol für Testprogramme)
   und „Schritt 1 von 1“. Jetzt die Schüssel, und gezählt wird nur bei mehreren Schritten (F36).
+- Kochmodus: „Schritt 2: 1 Zutat offen“ erschien auch für Schritte, durch die man nur geblättert hat (z. B. um
+  später weiterzukochen). Jetzt nur, wenn man mindestens 4 s dort war oder dort etwas abgehakt hat. Mit ✕
+  lässt sich der Hinweis ausblenden (F37).
 
 ## 0.6.0 – 27.11.2026
 

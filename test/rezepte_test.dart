@@ -430,11 +430,11 @@ void main() {
           await settle(tester);
         }
 
+        // Nur durchgeblättert (kürzer als 4 s, nichts abgehakt): kein Hinweis
         await wischen(-300);
         expect(find.text('Schritt 2 von 4'), findsOneWidget);
-        expect(find.text('Schritt 1: 2 Zutaten offen'), findsOneWidget);
+        expect(find.textContaining('Zutaten offen'), findsNothing);
         await wischen(300);
-        expect(find.text('Schritt 1: 2 Zutaten offen'), findsNothing);
         expect(find.text('Zutat 1 von 2'), findsOneWidget);
 
         // Mehl mit dem Hauptknopf abhaken, dann wegwischen: 1 Zutat offen
@@ -449,6 +449,14 @@ void main() {
         await tester.tap(mehl);
         await settle(tester);
         expect(find.text('Zutat 1 von 2'), findsOneWidget);
+        await wischen(-300);
+        expect(find.text('Schritt 1: 1 Zutat offen'), findsOneWidget);
+        // ✕ blendet den Hinweis aus – bis man wieder in Schritt 1 war
+        await tester.tap(find.byTooltip('Hinweis ausblenden'));
+        await settle(tester);
+        expect(find.text('Schritt 2 von 4'), findsOneWidget);
+        expect(find.textContaining('Zutat offen'), findsNothing);
+        await wischen(300);
         await wischen(-300);
         expect(find.text('Schritt 1: 1 Zutat offen'), findsOneWidget);
         await tester.tap(find.text('Schritt 1: 1 Zutat offen'));

@@ -682,6 +682,7 @@
   "@cookWeighNextNamed": {"placeholders": {"name": {"type": "String"}}},
   "cookWeighTick": "Abhaken",
   "cookWeighUntick": "Wieder offen",
+  "cookWeighOpenHide": "Hinweis ausblenden",
   "cookWeighOpenStep": "Schritt {step}: {count, plural, =1{1 Zutat offen} other{{count} Zutaten offen}}",
   "@cookWeighOpenStep": {"placeholders": {"step": {"type": "int"}, "count": {"type": "int"}}},
   "cookPhasesTitle": "{count} Phasen · {time} gesamt",

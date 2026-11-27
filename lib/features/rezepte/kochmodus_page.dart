@@ -67,8 +67,25 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
   /// es mit der ersten offenen weiter.
   final _zutat = <int, int>{};
 
-  /// Schon angezeigte Seiten (offene Zutaten werden nur dort angemerkt).
-  final _besucht = <int>{0};
+  /// Seiten, auf denen man wirklich war: mindestens [verweilZeit] lang oder mit einer abgehakten
+  /// Zutat. Nur dort werden offene Zutaten angemerkt – schnelles Durchblättern (z. B. um später
+  /// weiterzukochen) zählt nicht.
+  final _besucht = <int>{};
+
+  /// Offene-Zutaten-Hinweise, die mit ✕ weggeklickt wurden (bis man wieder auf der Seite ist).
+  final _ausgeblendet = <int>{};
+
+  Timer? _verweil;
+
+  /// So lange muss man auf einer Seite bleiben, damit sie als besucht gilt.
+  static const verweilZeit = Duration(seconds: 4);
+
+  void _verweilen(int p) {
+    _verweil?.cancel();
+    _verweil = Timer(verweilZeit, () {
+      if (mounted && _page == p) setState(() => _besucht.add(p));
+    });
+  }
 
   Set<int> _fertig(int p) => _erledigt[p] ?? const {};
 
@@ -93,6 +110,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
   }
 
   void _abhaken(int p, int i) {
+    _besucht.add(p);
     if ((_erledigt[p] ??= <int>{}).add(i)) {
       appEvents.add('kochmodus', 'Seite ${p + 1}: Zutat ${i + 1} erledigt');
     }
@@ -100,6 +118,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
 
   /// Haken in der Zutatenliste von Hand setzen oder wieder wegnehmen.
   void _umschalten(int p, int i) {
+    _besucht.add(p);
     final set = _erledigt[p] ??= <int>{};
     final jetzt = set.contains(i) ? !set.remove(i) : set.add(i);
     appEvents.add(
@@ -112,11 +131,13 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
   void initState() {
     super.initState();
     appEvents.add('kochmodus', 'geöffnet (Rezept ${widget.id})');
+    _verweilen(0);
   }
 
   @override
   void dispose() {
     appEvents.add('kochmodus', 'geschlossen auf Seite ${_page + 1}');
+    _verweil?.cancel();
     _pages.dispose();
     super.dispose();
   }
@@ -197,7 +218,10 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
     // Verlassene Schritte mit offenen Zutaten (dezent oben angemerkt, antippen = hin).
     final offeneSchritte = [
       for (final p in _besucht)
-        if (p != _page && p < total && pages[p].schritt != null)
+        if (p != _page &&
+            p < total &&
+            !_ausgeblendet.contains(p) &&
+            pages[p].schritt != null)
           if (_offen(p, wiegen(p).length) case final n when n > 0)
             (p, pages[p].schritt! + 1, n),
     ]..sort((a, b) => a.$1.compareTo(b.$1));
@@ -268,7 +292,7 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                 runSpacing: Tokens.s,
                 children: [
                   for (final (p, nummer, n) in offeneSchritte)
-                    ActionChip(
+                    InputChip(
                       avatar: const Icon(
                         Icons.circle,
                         size: 10,
@@ -278,6 +302,8 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                       visualDensity: VisualDensity.compact,
                       // springen statt blättern: Schritte dazwischen gelten nicht als besucht
                       onPressed: () => _pages.jumpToPage(p),
+                      deleteButtonTooltipMessage: l10n.cookWeighOpenHide,
+                      onDeleted: () => setState(() => _ausgeblendet.add(p)),
                     ),
                 ],
               ),
@@ -295,9 +321,11 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                 );
                 setState(() {
                   _zutat.remove(_page);
-                  _besucht.add(p);
+                  // wieder dort gewesen: ein ausgeblendeter Hinweis darf erneut kommen
+                  _ausgeblendet.remove(p);
                   _page = p;
                 });
+                _verweilen(p);
               },
               itemBuilder: (context, p) {
                 final seite = pages[p];
