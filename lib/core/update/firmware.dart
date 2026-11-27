@@ -210,20 +210,33 @@ class BundledFirmware {
   }
 }
 
-/// Vergleicht `0.1.12` mit `0.2.0` Zahl für Zahl (Zusätze wie `-dirty` werden ignoriert).
+/// Vergleicht `0.1.12` mit `0.2.0` Zahl für Zahl. Eine Testversion (`0.6.1-rc.2`) ist älter als die
+/// fertige `0.6.1`, Testversionen untereinander nach ihrer Nummer (rc.1 < rc.2). `-dirty` wird ignoriert.
 int compareVersions(String a, String b) {
-  List<int> split(String v) => v
+  List<int> zahlen(String v) => v
       .split(RegExp(r'[^0-9.]'))
       .first
       .split('.')
       .map((p) => int.tryParse(p) ?? 0)
       .toList();
-  final x = split(a), y = split(b);
+  final x = zahlen(a), y = zahlen(b);
   for (var i = 0; i < 3; i++) {
     final d = (i < x.length ? x[i] : 0) - (i < y.length ? y[i] : 0);
     if (d != 0) return d.sign;
   }
-  return 0;
+  String? zusatz(String v) {
+    final i = v.indexOf('-');
+    final z = i < 0 ? null : v.substring(i + 1);
+    // `-dirty` = Entwicklungsbuild mit lokalen Änderungen, zählt wie die Version selbst
+    return z == null || z.startsWith('dirty') ? null : z;
+  }
+
+  final za = zusatz(a), zb = zusatz(b);
+  if (za == null || zb == null) {
+    return za == zb ? 0 : (za == null ? 1 : -1);
+  }
+  int nr(String z) => int.tryParse(RegExp(r'(\d+)$').firstMatch(z)?[1] ?? '') ?? 0;
+  return (nr(za) - nr(zb)).sign;
 }
 
 final bundledFirmwareProvider = FutureProvider<BundledFirmware?>(

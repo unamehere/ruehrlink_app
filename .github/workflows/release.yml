@@ -44,7 +44,8 @@ jobs:
         run: |
           APP="$(grep -m1 '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
           FW="$(tr -d '[:space:]' < FIRMWARE_VERSION)"
-          if [ "${APP%.*}" != "${FW%.*}" ]; then
+          # nur MAJOR.MINOR vergleichen, Testzusatz (-rc.1) abschneiden
+          if [ "$(echo "${APP%%-*}" | cut -d. -f1,2)" != "$(echo "${FW%%-*}" | cut -d. -f1,2)" ]; then
             echo "App $APP und Firmware $FW passen nicht: MAJOR.MINOR muss gleich sein"; exit 1
           fi
       - name: Eingebaute Firmware holen (FIRMWARE_VERSION, aus ruehrlink_esp)
@@ -97,5 +98,6 @@ jobs:
         run: |
           awk -v v="$V" '$0 ~ "^## " v " " {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
           printf '\n---\n**Installieren:** `ruehrlink-app-%s.apk` auf dem Android-Handy öffnen (Installation aus unbekannten Quellen erlauben). Enthält Firmware %s.\n' "$V" "$FW" >> notes.md
+          case "$V" in *-*) TITLE="App $V (Testversion)" ;; *) TITLE="App $V (Beta)" ;; esac
           gh release create "$GITHUB_REF_NAME" --prerelease --verify-tag \
-            --title "App $V (Beta)" --notes-file notes.md "ruehrlink-app-$V.apk"
+            --title "$TITLE" --notes-file notes.md "ruehrlink-app-$V.apk"
