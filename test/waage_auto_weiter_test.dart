@@ -82,6 +82,10 @@ void main() {
     await wiegen(tester, 100);
     expect(ruhig, 0);
     await tester.pump(const Duration(milliseconds: 600));
+    // jetzt sichtbar „Passt!“ mit Balken, noch nicht weiter
+    expect(ruhig, 0);
+    expect(find.text('Passt! Gleich kommt die nächste Zutat.'), findsOneWidget);
+    await tester.pump(scaleAdvanceDelay);
     expect(ruhig, 1);
     // nur einmal
     await tester.pump(scaleSettleTime * 2);
@@ -102,7 +106,38 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     expect(ruhig, 0);
     await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(scaleAdvanceDelay);
     expect(ruhig, 1);
+    await ende(tester);
+  });
+
+  testWidgets('Rieseln im Zielbereich zählt nicht als ruhig', (tester) async {
+    await starten(tester);
+    // 97 → 99 → 101 g in je 1 s: immer im Bereich (±3 g), aber in Bewegung.
+    for (final g in [97.0, 99.5, 102.0]) {
+      await wiegen(tester, g);
+      await tester.pump(const Duration(seconds: 1));
+    }
+    expect(find.text('Passt! Gleich kommt die nächste Zutat.'), findsNothing);
+    // erst jetzt ruhig
+    await tester.pump(scaleSettleTime);
+    await wiegen(tester, 102);
+    expect(find.text('Passt! Gleich kommt die nächste Zutat.'), findsOneWidget);
+    await tester.pump(scaleAdvanceDelay);
+    expect(ruhig, 1);
+    await ende(tester);
+  });
+
+  testWidgets('„Hier bleiben“ bricht das Weiterspringen ab', (tester) async {
+    await starten(tester);
+    await wiegen(tester, 100);
+    await tester.pump(scaleSettleTime);
+    await tester.pump();
+    await tester.tap(find.text('Hier bleiben'));
+    await tester.pump();
+    await tester.pump(scaleAdvanceDelay * 2);
+    expect(ruhig, 0);
+    expect(find.text('Passt!'), findsOneWidget);
     await ende(tester);
   });
 

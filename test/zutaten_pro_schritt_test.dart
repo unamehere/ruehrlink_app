@@ -39,10 +39,22 @@ void main() {
     test('Gramm erkennt g und kg, sonst nicht wiegbar', () {
       expect(const Ingredient(amount: 2, unit: 'kg', name: 'x').grams, 2000);
       expect(const Ingredient(amount: 200, unit: ' G ', name: 'x').grams, 200);
-      expect(const Ingredient(amount: 200, unit: 'ml', name: 'Wasser').grams, 200);
-      expect(const Ingredient(amount: 1, unit: 'l', name: 'Rapsöl').grams, closeTo(920, 0.01));
-      expect(const Ingredient(amount: 100, unit: 'ml', name: 'Kölsch').grams, 100);
-      expect(const Ingredient(amount: 1, unit: 'Prise', name: 'Salz').grams, null);
+      expect(
+        const Ingredient(amount: 200, unit: 'ml', name: 'Wasser').grams,
+        200,
+      );
+      expect(
+        const Ingredient(amount: 1, unit: 'l', name: 'Rapsöl').grams,
+        closeTo(920, 0.01),
+      );
+      expect(
+        const Ingredient(amount: 100, unit: 'ml', name: 'Kölsch').grams,
+        100,
+      );
+      expect(
+        const Ingredient(amount: 1, unit: 'Prise', name: 'Salz').grams,
+        null,
+      );
       expect(const Ingredient(amount: 0, unit: 'g', name: 'x').grams, null);
     });
 

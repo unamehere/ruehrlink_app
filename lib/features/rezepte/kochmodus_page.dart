@@ -314,17 +314,25 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   weighIndex: n == 0 ? 0 : _aktuelleZutat(p, n),
                   weighDone: _fertig(p),
                   onWeighReached: (i) => setState(() => _abhaken(p, i)),
-                  onWeighSettled: (i) {
-                    // Einstellung „Automatisch zur nächsten Zutat“: nur innerhalb des Schritts,
-                    // nie automatisch zum nächsten Schritt (Werkzeugwechsel o. Ä. bleibt beim Koch).
-                    if (!ref.read(weighAutoNextProvider) || p != _page) return;
-                    final next = _naechsteOffene(p, n, i);
-                    if (next == null) return;
-                    setState(() {
-                      _abhaken(p, i);
-                      _zutat[p] = next;
-                    });
-                  },
+                  // Einstellung „Automatisch zur nächsten Zutat“: nur innerhalb des Schritts,
+                  // nie automatisch zum nächsten Schritt (Werkzeugwechsel o. Ä. bleibt beim Koch).
+                  // Ohne nächste Zutat gar nicht erst „Gleich kommt die nächste Zutat“ zeigen.
+                  onWeighSettled:
+                      !ref.watch(weighAutoNextProvider) ||
+                          n == 0 ||
+                          _naechsteOffene(p, n, _aktuelleZutat(p, n)) == null
+                      ? null
+                      : (i) {
+                          if (!ref.read(weighAutoNextProvider) || p != _page) {
+                            return;
+                          }
+                          final next = _naechsteOffene(p, n, i);
+                          if (next == null) return;
+                          setState(() {
+                            _abhaken(p, i);
+                            _zutat[p] = next;
+                          });
+                        },
                   onWeighSelect: (i) => setState(() => _zutat[p] = i),
                 );
               },
@@ -604,7 +612,7 @@ class _StepPage extends StatelessWidget {
     required this.weighIndex,
     required this.weighDone,
     required this.onWeighReached,
-    required this.onWeighSettled,
+    this.onWeighSettled,
     required this.onWeighSelect,
   });
 
@@ -625,7 +633,9 @@ class _StepPage extends StatelessWidget {
   final int weighIndex;
   final Set<int> weighDone;
   final ValueChanged<int> onWeighReached;
-  final ValueChanged<int> onWeighSettled;
+
+  /// `null`: nicht automatisch weiter (Einstellung aus oder letzte offene Zutat).
+  final ValueChanged<int>? onWeighSettled;
   final ValueChanged<int> onWeighSelect;
 
   @override
@@ -740,7 +750,7 @@ class _WeighSequence extends StatelessWidget {
     required this.current,
     required this.done,
     required this.onReached,
-    required this.onSettled,
+    this.onSettled,
     required this.onSelect,
   });
 
@@ -748,7 +758,7 @@ class _WeighSequence extends StatelessWidget {
   final int current;
   final Set<int> done;
   final ValueChanged<int> onReached;
-  final ValueChanged<int> onSettled;
+  final ValueChanged<int>? onSettled;
   final ValueChanged<int> onSelect;
 
   @override
@@ -796,7 +806,7 @@ class _WeighSequence extends StatelessWidget {
           key: ValueKey(current),
           ingredient: ingredients[current],
           onReached: () => onReached(current),
-          onSettled: () => onSettled(current),
+          onSettled: onSettled == null ? null : () => onSettled!(current),
         ),
         if (n > 1) ...[
           const SizedBox(height: Tokens.s),

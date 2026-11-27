@@ -7,6 +7,16 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+### Neu
+- Mehr → Schriftgröße: Klein, Mittel oder Groß für die ganze App (zusätzlich zur Schriftgröße des Handys).
+
+### Geändert
+- Rezept-Editor: Die Zutat steht jetzt über die ganze Breite, Menge und Einheit darunter. Vorher war vom Namen
+  nur der Anfang zu lesen („Zuc“, „Zitr“ …) (F31).
+- Kochmodus, „Automatisch zur nächsten Zutat“: Es geht erst weiter, wenn das Gewicht wirklich still liegt
+  (nachrieselndes Mehl zählt nicht). Danach ist 3 s lang „Passt!“ mit Balken zu sehen, „Hier bleiben“ hält an.
+  Das erscheint nur, wenn es eine nächste Zutat gibt (F32).
+
 ## 0.5.4 – 26.11.2026
 
 ### Geändert
