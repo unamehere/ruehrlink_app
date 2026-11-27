@@ -7,6 +7,11 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+### Neu
+
+- Rezepte: Jeder Maschinenschritt zeigt klein das Werkzeug, das drin sein soll („mit Schneebesen“) – in
+  der Rezeptansicht, der Vorschau und im Kochmodus, auch wenn der Wechsel ein paar Schritte vorher war.
+
 ### Behoben
 
 - Kochmodus: Nach dem Abwiegen sprang die Anzeige sofort zur nächsten Zutat, auch ohne „Automatisch zur

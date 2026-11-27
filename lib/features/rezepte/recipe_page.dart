@@ -187,6 +187,12 @@ class _RecipePageState extends ConsumerState<RecipePage> {
                             ],
                           ),
                         ),
+                      if (s.machine != null)
+                        if (werkzeugIn(recipe.steps, n) case final w?)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: WerkzeugMarke(w),
+                          ),
                     ],
                   ),
                 ),

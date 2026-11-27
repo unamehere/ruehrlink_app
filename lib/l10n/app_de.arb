@@ -666,6 +666,8 @@
   "toolKochRuehrelement": "Koch-Rührelement",
   "toolDaempfeinsatz": "Dämpfeinsatz",
   "toolInsert": "{tool} einsetzen",
+  "toolWith": "mit {tool}",
+  "@toolWith": {"placeholders": {"tool": {"type": "String"}}},
   "toolSwapTitle": "Werkzeug wechseln",
   "toolSwapHint": "{old} abnehmen, {tool} einsetzen, Kopf schließen.",
   "@toolSwapHint": {"placeholders": {"old": {"type": "String"}, "tool": {"type": "String"}}},

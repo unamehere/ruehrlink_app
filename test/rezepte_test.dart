@@ -471,6 +471,46 @@ void main() {
       );
     }
 
+    testWidgets('Maschinenschritt zeigt klein das Werkzeug, das drin ist', (
+      tester,
+    ) async {
+      await open(tester, const Size(390, 844));
+      await tester.scrollUntilVisible(
+        find.text('Pfannkuchen'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -80));
+      await tester.pump();
+      await tester.tap(find.text('Pfannkuchen'));
+      await settle(tester);
+      // Rezeptansicht: „Glatt rühren“ (Schritt 3) mit dem Schneebesen aus Schritt 1
+      final marke = find.text('mit Schneebesen');
+      await tester.scrollUntilVisible(
+        marke,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(marke, findsOneWidget);
+      // Kochmodus: an der Maschinenkarte von Schritt 3
+      await tester.tap(find.text('Jetzt kochen'));
+      await settle(tester);
+      expect(find.text('mit Schneebesen'), findsNothing);
+      // Übersicht und Werkzeugwechsel liegen vor den Schritten
+      for (
+        var i = 0;
+        i < 8 && find.text('Schritt 3 von 4').evaluate().isEmpty;
+        i++
+      ) {
+        await tester.fling(find.byType(PageView), const Offset(-300, 0), 1500);
+        await settle(tester);
+      }
+      expect(find.text('Schritt 3 von 4'), findsOneWidget);
+      expect(find.text('mit Schneebesen'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await close(tester);
+    });
+
     testWidgets(
       'Kochmodus: Wegwischen mit offenen Zutaten wird dezent angemerkt',
       (tester) async {

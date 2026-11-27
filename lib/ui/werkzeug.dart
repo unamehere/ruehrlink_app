@@ -42,3 +42,37 @@ class WerkzeugBild extends StatelessWidget {
 /// Werkzeug, das vor [index] zuletzt im Einsatz war (oder `null`).
 Werkzeug? werkzeugVor(List<RecipeStep> steps, int index) =>
     steps.take(index).map((s) => s.tool).whereType<Werkzeug>().lastOrNull;
+
+/// Werkzeug, das in Schritt [index] drin ist: neu eingesetzt oder vom letzten Wechsel davor
+/// (`null` = das Rezept sagt nichts dazu).
+Werkzeug? werkzeugIn(List<RecipeStep> steps, int index) =>
+    steps[index].tool ?? werkzeugVor(steps, index);
+
+/// Kleines Kennzeichen an Maschinenschritten: Piktogramm und „mit K-Haken“. Ergänzt den
+/// Werkzeugwechsel-Hinweis, damit man an jeder Maschinenfunktion sieht, was drin sein soll.
+class WerkzeugMarke extends StatelessWidget {
+  const WerkzeugMarke(this.werkzeug, {super.key, this.size = 24});
+
+  final Werkzeug werkzeug;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    return Row(
+      children: [
+        WerkzeugBild(werkzeug, size: size),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            l10n.toolWith(werkzeugName(l10n, werkzeug)),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

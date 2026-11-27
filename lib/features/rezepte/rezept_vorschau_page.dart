@@ -291,6 +291,12 @@ class _RezeptVorschauPageState extends ConsumerState<RezeptVorschauPage> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                      if (s.machine != null)
+                        if (werkzeugIn(recipe.steps, n) case final w?)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: WerkzeugMarke(w),
+                          ),
                     ],
                   ),
                 ),

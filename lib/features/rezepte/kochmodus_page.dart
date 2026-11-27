@@ -709,6 +709,7 @@ class _StepPage extends StatelessWidget {
     final machine = step.machine != null
         ? _MachinePanel(
             step: step,
+            werkzeug: werkzeugIn(recipe.steps, number - 1),
             doneHere: doneHere,
             sending: sending,
             onStart: onStart,
@@ -967,6 +968,7 @@ class _StepPhoto extends ConsumerWidget {
 class _MachinePanel extends ConsumerWidget {
   const _MachinePanel({
     required this.step,
+    this.werkzeug,
     required this.doneHere,
     required this.sending,
     required this.onStart,
@@ -974,6 +976,9 @@ class _MachinePanel extends ConsumerWidget {
   });
 
   final RecipeStep step;
+
+  /// Werkzeug, das dabei drin sein soll (klein über den Werten).
+  final Werkzeug? werkzeug;
 
   /// Der hier gestartete Schritt ist gerade fertig geworden.
   final bool doneHere;
@@ -1042,6 +1047,10 @@ class _MachinePanel extends ConsumerWidget {
           );
 
     final children = <Widget>[
+      if (werkzeug case final w?) ...[
+        WerkzeugMarke(w, size: 28),
+        const SizedBox(height: Tokens.s),
+      ],
       Card(
         child: Padding(padding: const EdgeInsets.all(Tokens.m), child: values),
       ),
