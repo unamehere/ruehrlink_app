@@ -177,7 +177,9 @@ void main() {
     );
     expect(find.text('Noch nicht fertig?'), findsNothing);
     expect(find.text('Sahne 400 ml'), findsOneWidget); // gleiche Karte
-    expect(find.text('Schritt 1 von 1 · Schlagen'), findsOneWidget);
+    // ein einzelner Schritt: kein „Schritt 1 von 1“, nur die Phase
+    expect(find.text('Schlagen'), findsOneWidget);
+    expect(find.textContaining('Schritt 1 von 1'), findsNothing);
 
     // Läuft durch, danach wieder angeboten – weiter mit den kurzen Zeiten
     await _sekunden(tester, 40);

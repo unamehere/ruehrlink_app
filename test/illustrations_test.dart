@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ruehrlink/features/kochen/kochen_page.dart';
 import 'package:ruehrlink/ui/illustrations.dart';
 
 void main() {
@@ -13,5 +14,10 @@ void main() {
     expect(Illustrations.forName('Weizen'), isNull);
     expect(Illustrations.forName('Eischnee'), contains('egg'));
     expect(Illustrations.forName('Eisbein'), isNull);
+  });
+
+  test('Rezeptschritte ohne Programm-ID bekommen nie das Reagenzglas', () {
+    expect(programIllustration(null, 'Rosinenstollen'), Illustrations.bowl);
+    expect(programIllustration('test-rampe', 'Rampe'), Illustrations.test);
   });
 }

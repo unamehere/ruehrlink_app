@@ -142,10 +142,13 @@ class _Greeting extends ConsumerWidget {
 }
 
 /// Bild zu einem Programm: passend zum Namen, sonst Schüssel bzw. Reagenzglas für Tests.
-/// (Inline-Programme wie die der Assistenten haben auf der Brücke keine id.)
-String programIllustration(String id, String name) =>
+/// Inline-Programme (Rezeptschritte, Assistenten) haben auf der Brücke keine id ([id] = `null`)
+/// und bekommen nie das Reagenzglas.
+String programIllustration(String? id, String name) =>
     Illustrations.forName(name) ??
-    (id.startsWith('test') ? Illustrations.test : Illustrations.bowl);
+    (id != null && id.startsWith('test')
+        ? Illustrations.test
+        : Illustrations.bowl);
 
 // ---------------------------------------------------------------------------
 // Laufendes Programm
@@ -220,7 +223,7 @@ class _SequencePanelState extends ConsumerState<_SequencePanel> {
               Row(
                 children: [
                   Illustration(
-                    programIllustration(seq.programId ?? 'test', seq.name),
+                    programIllustration(seq.programId, seq.name),
                     size: 48,
                   ),
                   const SizedBox(width: Tokens.m),
@@ -229,15 +232,17 @@ class _SequencePanelState extends ConsumerState<_SequencePanel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(seq.name, style: theme.textTheme.titleLarge),
-                        Text(
-                          [
-                            l10n.seqStep(seq.step, seq.of),
-                            if (seq.label.isNotEmpty) seq.label,
-                          ].join(' · '),
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: scheme.onSurfaceVariant,
+                        // „Schritt 1 von 1“ sagt nichts – nur bei mehreren Schritten zählen.
+                        if (seq.of > 1 || seq.label.isNotEmpty)
+                          Text(
+                            [
+                              if (seq.of > 1) l10n.seqStep(seq.step, seq.of),
+                              if (seq.label.isNotEmpty) seq.label,
+                            ].join(' · '),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),

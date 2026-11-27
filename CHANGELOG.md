@@ -7,6 +7,10 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+### Behoben
+- Kochen-Tab: Ein laufender Rezept- oder Assistenten-Schritt zeigte ein Reagenzglas (Symbol für Testprogramme)
+  und „Schritt 1 von 1“. Jetzt die Schüssel, und gezählt wird nur bei mehreren Schritten (F36).
+
 ## 0.6.0 – 27.11.2026
 
 Eingebaute Firmware bleibt 0.6.0. Ab jetzt gehören App und Firmware mit gleicher Mittelzahl zusammen (0.6.x).
