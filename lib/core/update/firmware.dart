@@ -211,7 +211,8 @@ class BundledFirmware {
 }
 
 /// Vergleicht `0.1.12` mit `0.2.0` Zahl für Zahl. Eine Testversion (`0.6.1-rc.2`) ist älter als die
-/// fertige `0.6.1`, Testversionen untereinander nach ihrer Nummer (rc.1 < rc.2). `-dirty` wird ignoriert.
+/// fertige `0.6.1`, Entwicklungsbuilds (`-dev.57`) älter als Testversionen, untereinander nach ihrer
+/// Nummer (rc.1 < rc.2). `-dirty` wird ignoriert.
 int compareVersions(String a, String b) {
   List<int> zahlen(String v) => v
       .split(RegExp(r'[^0-9.]'))
@@ -235,7 +236,11 @@ int compareVersions(String a, String b) {
   if (za == null || zb == null) {
     return za == zb ? 0 : (za == null ? 1 : -1);
   }
-  int nr(String z) => int.tryParse(RegExp(r'(\d+)$').firstMatch(z)?[1] ?? '') ?? 0;
+  // dev (Entwicklungsbuild) < rc (Testversion), danach nach Nummer
+  int stufe(String z) => z.startsWith('dev') ? 0 : 1;
+  if (stufe(za) != stufe(zb)) return (stufe(za) - stufe(zb)).sign;
+  int nr(String z) =>
+      int.tryParse(RegExp(r'(\d+)$').firstMatch(z)?[1] ?? '') ?? 0;
   return (nr(za) - nr(zb)).sign;
 }
 

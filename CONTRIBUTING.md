@@ -40,6 +40,16 @@ unter **Unveröffentlicht** (Neu / Geändert / Behoben, in Nutzersprache). Reine
 3. Im `CHANGELOG.md` die Einträge unter „Unveröffentlicht“ in die neue Version verschieben (Datum dazu).
 4. Fehler aus Tests kommen in die Fehlerliste (`Ruehrlink/user_feedback/fehlerliste.md`, lokal, nicht im Repo).
 
+### Entwicklungsbuilds
+
+Jeder Push auf `test/beta` baut automatisch eine signierte APK `<version>-dev.<lauf>` (z. B. `0.6.2-dev.57`):
+GitHub → Actions → Lauf „Release“ → Artifacts. Nichts wird veröffentlicht, der Download hält 14 Tage. Die
+Build-Nummer aller Builds sind die Minuten seit 1.1.2026, so lässt sich jede neuere APK über eine ältere
+installieren – egal ob Entwicklungsbuild, Testversion oder Release. Firmware-Entwicklungsbuilds werden **nie**
+auf GitHub signiert (Schlüssel nur lokal): per USB flashen oder lokal packen mit
+`~/.platformio/penv/Scripts/python.exe tools/firmware_sign.py pack --min-app 0.4.0 --channel beta --out ~/Downloads`.
+RC oder Release gibt es erst, wenn Niklas es sagt.
+
 ### Testversionen (Release Candidates)
 
 Bevor eine Version fertig ist, gibt es Testversionen mit Zusatz: `0.6.1-rc.1`, `0.6.1-rc.2` … Gebaut und

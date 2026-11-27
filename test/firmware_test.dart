@@ -71,5 +71,9 @@ void main() {
     expect(compareVersions('0.6.1-rc.1', '0.6.1-rc.2'), -1);
     expect(compareVersions('0.6.1-rc.2', '0.6.0'), 1);
     expect(compareVersions('0.6.1-rc.1', '0.6.1-rc.1'), 0);
+    // Entwicklungsbuilds
+    expect(compareVersions('0.6.2-dev.57', '0.6.2-rc.1'), -1);
+    expect(compareVersions('0.6.2-dev.57', '0.6.1'), 1);
+    expect(compareVersions('0.6.2-dev.57', '0.6.2-dev.60'), -1);
   });
 }
