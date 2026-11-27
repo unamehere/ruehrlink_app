@@ -299,7 +299,8 @@ class HttpBridgeApi implements BridgeApi {
       _decode(await _request('GET', 'diag', timeout: _longTimeout));
 
   @override
-  Future<void> reset() => _send('POST', 'reset');
+  Future<void> reset({bool wipe = false}) =>
+      _send('POST', 'reset', wipe ? {'wipe': true} : null);
 
   /// Eigener [HttpClient] statt `package:http`: nur so lässt sich der Fortschritt
   /// beim Senden zählen (flush wartet, bis der Block raus ist).

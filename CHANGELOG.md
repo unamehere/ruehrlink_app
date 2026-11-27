@@ -7,6 +7,13 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+### Neu
+- **Sicherheit:** Mehr → Rührlink zurücksetzen bietet „Auch Rezepte und Fotos auf dem Rührlink löschen“ an –
+  z. B. vor Weitergabe oder Verkauf (ab Firmware 0.6.1). Die Rezepte in der App bleiben.
+- **Sicherheit:** Läuft am Rührlink schon eine Kopplungsanfrage, sagt die App jetzt „Bitte in einer Minute noch
+  einmal versuchen“ statt „nicht erreichbar“ (Firmware 0.6.1 lässt laufende Anfragen nicht mehr ersetzen).
+- Meldeweg für Sicherheitslücken: `SECURITY.md`.
+
 ### Behoben
 - Kochen-Tab: Ein laufender Rezept- oder Assistenten-Schritt zeigte ein Reagenzglas (Symbol für Testprogramme)
   und „Schritt 1 von 1“. Jetzt die Schüssel, und gezählt wird nur bei mehreren Schritten (F36).

@@ -144,35 +144,59 @@ class MehrPage extends ConsumerWidget {
   Future<void> _reset(BuildContext context, WidgetRef ref) async {
     final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
+    // „Alles löschen“ (vor Weitergabe/Verkauf) nur, wenn die Firmware es kann.
+    final canWipe =
+        ref.read(bridgeInfoProvider).value?.has('reset.wipe') ?? false;
+    var wipe = false;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(
-          Icons.warning_amber_rounded,
-          size: 40,
-          color: Theme.of(context).colorScheme.error,
-        ),
-        title: Text(l10n.resetTitle),
-        content: Text(l10n.resetText),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          icon: Icon(
+            Icons.warning_amber_rounded,
+            size: 40,
+            color: Theme.of(context).colorScheme.error,
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
+          title: Text(l10n.resetTitle),
+          scrollable: true,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(wipe ? l10n.resetWipeText : l10n.resetText),
+              if (canWipe) ...[
+                const SizedBox(height: Tokens.m),
+                CheckboxListTile(
+                  value: wipe,
+                  onChanged: (v) => setState(() => wipe = v ?? false),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: Text(l10n.resetWipe),
+                  subtitle: Text(l10n.resetWipeDetail),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
             ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.resetConfirm),
-          ),
-        ],
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(wipe ? l10n.resetWipeConfirm : l10n.resetConfirm),
+            ),
+          ],
+        ),
       ),
     );
     if (ok != true) return;
     try {
-      await ref.read(bridgeApiProvider).reset();
+      await ref.read(bridgeApiProvider).reset(wipe: wipe);
     } on BridgeException {
       messenger.showSnackBar(SnackBar(content: Text(l10n.resetFailed)));
       return;

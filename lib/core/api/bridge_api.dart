@@ -96,8 +96,9 @@ abstract class BridgeApi {
   Future<Json> diag();
 
   /// `POST /api/v1/reset` – Werksreset: Heim-WLAN, App-Kopplungen und
-  /// Maschinen-Kopplung werden gelöscht, die Brücke startet neu.
-  Future<void> reset();
+  /// Maschinen-Kopplung werden gelöscht, die Brücke startet neu. [wipe] (Fähigkeit
+  /// `reset.wipe`): zusätzlich Rezepte, Fotos und Protokolle auf dem Rührlink löschen.
+  Future<void> reset({bool wipe = false});
 
   /// `POST /api/v1/ota` – Firmware-Image hochladen (Prüfsumme und Signatur aus dem Manifest).
   /// [onProgress] bekommt 0…1. Danach startet die Brücke neu; ob die neue Firmware läuft,

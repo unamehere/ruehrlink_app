@@ -91,7 +91,7 @@ class FakeBridgeApi implements BridgeApi {
       name: 'Rührlink (Demo)',
       fw: '0.1.0',
       api: 1,
-      features: const {...legacyFeatures, 'machine.repair'},
+      features: const {...legacyFeatures, 'machine.repair', 'reset.wipe'},
       storage: const StorageInfo(
         backend: 'sd',
         totalKB: 30000000,
@@ -508,7 +508,7 @@ class FakeBridgeApi implements BridgeApi {
   }
 
   @override
-  Future<void> reset() async {
+  Future<void> reset({bool wipe = false}) async {
     await _wait();
     _paired = false;
     _update(ApplianceStatus.disconnected);

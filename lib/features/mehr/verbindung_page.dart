@@ -94,7 +94,10 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
         return;
       }
     } on BridgeException catch (e) {
-      error = e.kind == BridgeErrorKind.rejected
+      error = e.statusCode == 429
+          // Firmware ≥ 0.6.1: eine andere Anfrage läuft noch (wird nicht ersetzt).
+          ? l10n.connectionPairBusy
+          : e.kind == BridgeErrorKind.rejected
           ? l10n.connectionPairTimeout
           : l10n.bridgeUnreachableHint;
     } finally {
