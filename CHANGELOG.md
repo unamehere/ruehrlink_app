@@ -7,6 +7,10 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.6.1-rc.1 – 27.11.2026 (Testversion)
+
+Enthält Firmware 0.6.1-rc.1 (Sicherheit).
+
 ### Neu
 - **Sicherheit:** Mehr → Rührlink zurücksetzen bietet „Auch Rezepte und Fotos auf dem Rührlink löschen“ an –
   z. B. vor Weitergabe oder Verkauf (ab Firmware 0.6.1). Die Rezepte in der App bleiben.
