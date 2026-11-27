@@ -7,6 +7,10 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.6.1 – 27.11.2026
+
+Enthält Firmware 0.6.1 (Sicherheit). Alles aus der Testversion 0.6.1-rc.1 (unten) plus:
+
 ### Neu
 
 - Rezepte: Jeder Maschinenschritt zeigt klein das Werkzeug, das drin sein soll („mit Schneebesen“) – in
@@ -18,18 +22,16 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
   nächsten Zutat“. Jetzt bleibt die Zutat stehen; automatisch weiter geht es nur mit der Einstellung, nach
   ruhigem Gewicht und 3 s „Passt!“ (F39).
 
-## 0.6.1-rc.1 – 27.11.2026 (Testversion)
+### Aus der Testversion 0.6.1-rc.1
 
-Enthält Firmware 0.6.1-rc.1 (Sicherheit).
-
-### Neu
+#### Neu
 - **Sicherheit:** Mehr → Rührlink zurücksetzen bietet „Auch Rezepte und Fotos auf dem Rührlink löschen“ an –
   z. B. vor Weitergabe oder Verkauf (ab Firmware 0.6.1). Die Rezepte in der App bleiben.
 - **Sicherheit:** Läuft am Rührlink schon eine Kopplungsanfrage, sagt die App jetzt „Bitte in einer Minute noch
   einmal versuchen“ statt „nicht erreichbar“ (Firmware 0.6.1 lässt laufende Anfragen nicht mehr ersetzen).
 - Meldeweg für Sicherheitslücken: `SECURITY.md`.
 
-### Behoben
+#### Behoben
 - Kochen-Tab: Ein laufender Rezept- oder Assistenten-Schritt zeigte ein Reagenzglas (Symbol für Testprogramme)
   und „Schritt 1 von 1“. Jetzt die Schüssel, und gezählt wird nur bei mehreren Schritten (F36).
 - Kochmodus: „Schritt 2: 1 Zutat offen“ erschien auch für Schritte, durch die man nur geblättert hat (z. B. um

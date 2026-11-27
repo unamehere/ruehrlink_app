@@ -4,5 +4,5 @@
 /// App und Firmware haben eigene Versionsnummern (siehe ruehrlink_esp/docs/updates.md).
 const appVersion = String.fromEnvironment(
   'APP_VERSION',
-  defaultValue: '0.6.1-rc.1',
+  defaultValue: '0.6.1',
 );
