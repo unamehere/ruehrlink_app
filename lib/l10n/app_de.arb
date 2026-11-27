@@ -119,6 +119,7 @@
   "setupMachineOffline": "Der Rührlink ist kurz nicht erreichbar, während er mit der Maschine spricht. Das ist normal.",
   "setupMachineFailed": "Die Kopplung hat nicht geklappt. Bitte an der Maschine noch einmal auf Verbinden drücken und erneut versuchen.",
   "setupLater": "Später erledigen",
+  "setupMachineAlreadyPaired": "Deine Maschine ist schon mit dem Rührlink gekoppelt – das musst du nicht noch einmal machen.",
 
   "setupDoneTitle": "Fertig!",
   "setupDoneText": "Zum Ausprobieren stellen wir 30 Sekunden Stufe 1 ein. Zum Starten dann den Knopf an der Maschine drücken.",
@@ -163,6 +164,9 @@
   "connectionPairText": "Bestätige die Anfrage auf einem Handy, das schon mit dem Rührlink verbunden ist.",
   "connectionPairTimeout": "Die Anfrage wurde nicht bestätigt. Bitte noch einmal versuchen.",
   "connectionPairDevHint": "Entwicklermodus: Die BOOT-Taste am Rührlink bestätigt ebenfalls.",
+  "connectionNoOtherPhone": "Kein anderes Handy da?",
+  "connectionNoOtherPhoneText": "Zum Beispiel, wenn du die App neu installiert hast. Dann koppelst du dieses Handy mit dem Code vom Etikett. Heim-WLAN und Maschine bleiben eingerichtet.",
+  "connectionPairWithCode": "Mit Code vom Etikett koppeln",
   "connectionPaired": "Verbunden mit {name}.",
   "@connectionPaired": {"placeholders": {"name": {"type": "String"}}},
 

@@ -62,6 +62,13 @@ class _DoneStepState extends ConsumerState<DoneStep> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (ref.read(setupStepProvider.notifier).machineAlreadyPaired) ...[
+            HintCard(
+              icon: Icons.link_rounded,
+              text: l10n.setupMachineAlreadyPaired,
+            ),
+            const SizedBox(height: Tokens.m),
+          ],
           BigButton(
             label: l10n.setupTrySend,
             icon: Icons.play_circle_outline_rounded,

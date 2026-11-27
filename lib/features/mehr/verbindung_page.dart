@@ -18,6 +18,7 @@ import '../../ui/layout.dart';
 import '../../ui/theme.dart';
 import '../../ui/widgets/big_button.dart';
 import '../../ui/widgets/hint_card.dart';
+import '../einrichtung/setup_controller.dart';
 import 'storage_row.dart';
 
 /// Brücke wählen: Demo-Modus, im WLAN gefunden (mDNS) oder IP von Hand.
@@ -50,6 +51,15 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
   Future<void> _useDemo() async {
     await ref.read(bridgeTargetProvider.notifier).select(const DemoTarget());
     if (mounted) context.go('/maschine');
+  }
+
+  /// Kein gekoppeltes Handy mehr da (App neu installiert, Handy gewechselt):
+  /// über die Einrichtung mit dem Code vom Etikett koppeln (Bluetooth). Ein
+  /// schon eingerichtetes Heim-WLAN und die Maschine erkennt sie und überspringt sie.
+  Future<void> _setupWithCode() async {
+    setState(() => _pairing = null);
+    ref.read(setupEntryProvider.notifier).set(SetupStep.bridge);
+    await ref.read(setupDoneProvider.notifier).set(false);
   }
 
   /// Kopplung anfragen und alle 2 s nachfragen, bis bestätigt oder abgelaufen.
@@ -124,6 +134,8 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
               const SizedBox(height: Tokens.xl),
               const Center(child: CircularProgressIndicator()),
               const SizedBox(height: Tokens.xl),
+              _NoOtherPhone(onPressed: _setupWithCode),
+              const SizedBox(height: Tokens.xl),
               // Nur für Entwicklung: Firmware im Entwicklermodus.
               Text(
                 l10n.connectionPairDevHint,
@@ -192,6 +204,8 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
                 text: _error!,
                 emphasized: true,
               ),
+              const SizedBox(height: Tokens.m),
+              _NoOtherPhone(onPressed: _setupWithCode),
             ],
           ],
         ),
@@ -286,6 +300,39 @@ class _VerbindungPageState extends ConsumerState<VerbindungPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// „Kein anderes Handy da?“ – Ausweg über den Code vom Etikett.
+class _NoOtherPhone extends StatelessWidget {
+  const _NoOtherPhone({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.connectionNoOtherPhone,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.connectionNoOtherPhoneText,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: Tokens.s),
+        BigButton(
+          label: l10n.connectionPairWithCode,
+          icon: Icons.qr_code_scanner_rounded,
+          kind: BigButtonKind.secondary,
+          onPressed: onPressed,
+        ),
+      ],
     );
   }
 }
