@@ -105,7 +105,10 @@ class _WifiStepState extends ConsumerState<WifiStep> {
     try {
       final target = await _prov.finish();
       await ref.read(bridgeTargetProvider.notifier).select(target);
-      if (mounted) ref.read(setupStepProvider.notifier).next();
+      final paired = await _machinePaired();
+      if (!mounted) return;
+      final steps = ref.read(setupStepProvider.notifier);
+      paired ? steps.skipMachine() : steps.next();
     } catch (e) {
       _fail(e);
     } finally {
@@ -115,6 +118,21 @@ class _WifiStepState extends ConsumerState<WifiStep> {
           _finishing = false;
         });
       }
+    }
+  }
+
+  /// Ist die Maschine schon mit dem Rührlink gekoppelt (App neu installiert,
+  /// weiteres Handy)? Dann entfällt „Maschine koppeln“. Im Zweifel nein.
+  Future<bool> _machinePaired() async {
+    try {
+      final info = await ref
+          .read(bridgeApiProvider)
+          .info()
+          .timeout(const Duration(seconds: 8));
+      final appliance = info.appliance;
+      return appliance != null && (appliance.paired || appliance.connected);
+    } catch (_) {
+      return false;
     }
   }
 

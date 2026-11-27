@@ -26,6 +26,12 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
   gewogenen, mit eigener Karte „3 Eier zugeben“. Vorher standen sie nur oben in der Liste und gingen leicht unter
   (F35).
 
+### Behoben
+- App neu installiert und kein anderes Handy mehr gekoppelt: Beim Warten auf die Bestätigung bietet die App jetzt
+  „Mit Code vom Etikett koppeln“ an und springt direkt zum Code-Schritt der Einrichtung.
+- Einrichtung mit schon gekoppelter Maschine: „Maschine koppeln“ entfällt, „Fertig“ sagt, dass die Maschine schon
+  gekoppelt ist (vorher musste man den Schritt überspringen).
+
 ## 0.5.4 – 26.11.2026
 
 ### Geändert
