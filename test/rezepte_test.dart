@@ -16,6 +16,8 @@ import 'package:ruehrlink/features/kochen/programs.dart';
 import 'package:ruehrlink/features/rezepte/recipe_library.dart';
 import 'package:ruehrlink/features/rezepte/rezept_datei.dart';
 import 'package:ruehrlink/features/rezepte/rezept_teilen.dart';
+import 'package:ruehrlink/features/waage/scale.dart';
+import 'package:ruehrlink/features/waage/scale_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Recipe _recipe(String id, {int rev = 0, String title = 'Test'}) => Recipe(
@@ -290,18 +292,25 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     }
 
-    Future<void> open(WidgetTester tester, Size size) async {
+    Future<void> open(
+      WidgetTester tester,
+      Size size, {
+      Stream<ScaleReading>? waage,
+      bool autoWeiter = false,
+    }) async {
       tester.view
         ..physicalSize = size
         ..devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       SharedPreferences.setMockInitialValues({'setupDone': true});
       final prefs = await SharedPreferences.getInstance();
+      if (autoWeiter) await AppStorage(prefs).setWeighAutoNext(true);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             appStorageProvider.overrideWithValue(AppStorage(prefs)),
             recipeStoreProvider.overrideWithValue(MemoryRecipeStore()),
+            if (waage != null) scaleProvider.overrideWith((ref) => waage),
           ],
           child: const RuehrlinkApp(),
         ),
@@ -401,6 +410,65 @@ void main() {
         expect(tester.takeException(), isNull);
         await close(tester);
       });
+    }
+
+    for (final autoWeiter in [false, true]) {
+      testWidgets(
+        'Kochmodus: erreichte Zutat bleibt stehen (F39, automatisch weiter: $autoWeiter)',
+        (tester) async {
+          final waage = StreamController<ScaleReading>.broadcast();
+          addTearDown(waage.close);
+          await open(
+            tester,
+            const Size(390, 844),
+            waage: waage.stream,
+            autoWeiter: autoWeiter,
+          );
+          await tester.scrollUntilVisible(
+            find.text('Pfannkuchen'),
+            200,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.drag(
+            find.byType(Scrollable).first,
+            const Offset(0, -80),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Pfannkuchen'));
+          await settle(tester);
+          await tester.tap(find.text('Jetzt kochen'));
+          await settle(tester);
+          await tester.tap(find.text('Weiter'));
+          await settle(tester);
+          await tester.tap(find.text('Erledigt, weiter'));
+          await settle(tester);
+          expect(find.text('Zutat 1 von 2'), findsOneWidget);
+
+          // 250 g Mehl liegen auf der Waage (nichts von Hand ausgewählt)
+          Future<void> wiegen(Duration dauer) async {
+            final ende = tester.binding.clock.now().add(dauer);
+            while (tester.binding.clock.now().isBefore(ende)) {
+              waage.add(ScaleReading(net: 250, at: DateTime.now()));
+              await tester.pump(const Duration(milliseconds: 500));
+            }
+          }
+
+          await wiegen(const Duration(seconds: 1));
+          expect(find.text('Zutat 1 von 2'), findsOneWidget);
+          await wiegen(const Duration(seconds: 2));
+          expect(find.text('Zutat 1 von 2'), findsOneWidget);
+          if (autoWeiter) {
+            // erst „Passt!“ mit Balken, dann nach ein paar Sekunden weiter
+            expect(find.textContaining('Passt!'), findsOneWidget);
+            await wiegen(scaleAdvanceDelay + const Duration(seconds: 1));
+            expect(find.text('Zutat 2 von 2'), findsOneWidget);
+          } else {
+            await wiegen(const Duration(seconds: 6));
+            expect(find.text('Zutat 1 von 2'), findsOneWidget);
+          }
+          await close(tester);
+        },
+      );
     }
 
     testWidgets(

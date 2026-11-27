@@ -7,6 +7,12 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+### Behoben
+
+- Kochmodus: Nach dem Abwiegen sprang die Anzeige sofort zur nächsten Zutat, auch ohne „Automatisch zur
+  nächsten Zutat“. Jetzt bleibt die Zutat stehen; automatisch weiter geht es nur mit der Einstellung, nach
+  ruhigem Gewicht und 3 s „Passt!“ (F39).
+
 ## 0.6.1-rc.1 – 27.11.2026 (Testversion)
 
 Enthält Firmware 0.6.1-rc.1 (Sicherheit).

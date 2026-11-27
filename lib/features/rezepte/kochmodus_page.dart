@@ -355,7 +355,12 @@ class _KochmodusPageState extends ConsumerState<KochmodusPage> {
                   }),
                   weighIndex: n == 0 ? 0 : _aktuelleZutat(p, n),
                   weighDone: _fertig(p),
-                  onWeighReached: (i) => setState(() => _abhaken(p, i)),
+                  // Gezeigte Zutat festhalten, sonst wäre nach dem Abhaken sofort die nächste
+                  // offene „aktuell“ und es spränge ohne Pause weiter (F39).
+                  onWeighReached: (i) => setState(() {
+                    _zutat[p] = i;
+                    _abhaken(p, i);
+                  }),
                   // Einstellung „Automatisch zur nächsten Zutat“: nur innerhalb des Schritts,
                   // nie automatisch zum nächsten Schritt (Werkzeugwechsel o. Ä. bleibt beim Koch).
                   // Ohne nächste Zutat gar nicht erst „Gleich kommt die nächste Zutat“ zeigen.
