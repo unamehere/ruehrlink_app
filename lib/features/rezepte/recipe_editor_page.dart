@@ -537,60 +537,87 @@ class _IngredientEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final name = TextField(
+      controller: row.name,
+      onChanged: (_) => onChanged?.call(),
+      textCapitalization: TextCapitalization.sentences,
+      decoration: InputDecoration(labelText: l10n.editorIngredientName),
+    );
+    final amount = TextField(
+      controller: row.amount,
+      onChanged: (_) => onChanged?.call(),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[0-9.,]'))],
+      decoration: InputDecoration(labelText: l10n.editorAmount),
+    );
+    final unit = DropdownButtonFormField<String>(
+      initialValue: row.unit,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: l10n.editorUnit),
+      items: [
+        for (final u in {...recipeUnits, row.unit})
+          DropdownMenuItem(
+            value: u,
+            child: Text(
+              u.isEmpty ? l10n.editorUnitNone : u,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+      onChanged: (u) {
+        if (u == null) return;
+        row.unit = u;
+        onChanged?.call();
+      },
+    );
+    final remove = IconButton(
+      tooltip: l10n.editorRemove,
+      onPressed: onRemove,
+      icon: const Icon(Icons.close_rounded),
+    );
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: Tokens.s),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 96,
-            child: TextField(
-              controller: row.amount,
-              onChanged: (_) => onChanged?.call(),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+      padding: const EdgeInsets.only(bottom: Tokens.m),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          // Breit (Tablet, quer): alles in einer Zeile, die Zutat bekommt den Rest.
+          if (box.maxWidth >= 600) {
+            return Row(
+              children: [
+                SizedBox(width: 120, child: amount),
+                const SizedBox(width: Tokens.s),
+                SizedBox(width: 140, child: unit),
+                const SizedBox(width: Tokens.s),
+                Expanded(child: name),
+                remove,
+              ],
+            );
+          }
+          // Handy: Zutat über die ganze Breite, darunter Menge und Einheit –
+          // sonst bleibt vom Namen nur „Zuc“ übrig.
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    name,
+                    const SizedBox(height: Tokens.s),
+                    Row(
+                      children: [
+                        Expanded(child: amount),
+                        const SizedBox(width: Tokens.s),
+                        Expanded(child: unit),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-              ],
-              decoration: InputDecoration(labelText: l10n.editorAmount),
-            ),
-          ),
-          const SizedBox(width: Tokens.s),
-          SizedBox(
-            width: 104,
-            child: DropdownButtonFormField<String>(
-              initialValue: row.unit,
-              isExpanded: true,
-              decoration: InputDecoration(labelText: l10n.editorUnit),
-              items: [
-                for (final u in {...recipeUnits, row.unit})
-                  DropdownMenuItem(
-                    value: u,
-                    child: Text(u.isEmpty ? l10n.editorUnitNone : u),
-                  ),
-              ],
-              onChanged: (u) {
-                if (u == null) return;
-                row.unit = u;
-                onChanged?.call();
-              },
-            ),
-          ),
-          const SizedBox(width: Tokens.s),
-          Expanded(
-            child: TextField(
-              controller: row.name,
-              onChanged: (_) => onChanged?.call(),
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(labelText: l10n.editorIngredientName),
-            ),
-          ),
-          IconButton(
-            tooltip: l10n.editorRemove,
-            onPressed: onRemove,
-            icon: const Icon(Icons.close_rounded),
-          ),
-        ],
+              Padding(padding: const EdgeInsets.only(top: 4), child: remove),
+            ],
+          );
+        },
       ),
     );
   }
