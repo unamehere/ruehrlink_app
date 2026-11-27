@@ -764,10 +764,11 @@ class _StepPage extends StatelessWidget {
   }
 }
 
-/// Wiegezutaten eines Schritts (g/kg/ml/l), mit den Portionen skaliert.
+/// Alle Zutaten eines Schritts in Rezeptreihenfolge, mit den Portionen skaliert. Wiegbare
+/// (g/kg/ml/l, [Ingredient.grams]) kommen mit Waage, die übrigen („2 Eier“, „1 Prise Salz“) mit
+/// einer Karte zum Abhaken – damit in der Reihenfolge nichts untergeht.
 List<Ingredient> zuWiegen(RecipeStep step, double factor) => [
-  for (final i in step.ingredients)
-    if (i.scaled(factor) case final z when z.grams != null) z,
+  for (final i in step.ingredients) i.scaled(factor),
 ];
 
 /// Waage für alle Wiegezutaten eines Schritts, eine nach der anderen: „Zutat 2 von 4“, die Waage
@@ -835,12 +836,19 @@ class _WeighSequence extends StatelessWidget {
               ],
             ),
           ),
-        WeighStepSlot(
-          key: ValueKey(current),
-          ingredient: ingredients[current],
-          onReached: () => onReached(current),
-          onSettled: onSettled == null ? null : () => onSettled!(current),
-        ),
+        if (ingredients[current].grams != null)
+          WeighStepSlot(
+            key: ValueKey(current),
+            ingredient: ingredients[current],
+            onReached: () => onReached(current),
+            onSettled: onSettled == null ? null : () => onSettled!(current),
+          )
+        else
+          _AddCard(
+            key: ValueKey(current),
+            ingredient: ingredients[current],
+            done: done.contains(current),
+          ),
         if (n > 1) ...[
           const SizedBox(height: Tokens.s),
           for (final (i, z) in ingredients.indexed)
@@ -1286,3 +1294,61 @@ Program einzelschrittProgramm(Recipe recipe, RecipeStep step) => Program(
       ProgramStep(settings: p, label: fitUtf8(step.text, 31)),
   ],
 );
+
+/// Zutat ohne Waage („2 Eier“, „1 Prise Salz“): groß anzeigen, abgehakt wird mit dem Hauptknopf
+/// oder dem Kreis in der Liste.
+class _AddCard extends StatelessWidget {
+  const _AddCard({super.key, required this.ingredient, required this.done});
+
+  final Ingredient ingredient;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Tokens.l),
+        child: Column(
+          children: [
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                if (ZutatIcons.forName(ingredient.name) != null)
+                  ZutatIcon(ingredient.name, size: 96)
+                else
+                  Icon(
+                    Icons.add_circle_outline_rounded,
+                    size: 80,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                if (done)
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 36,
+                    color: Color(0xFF2E7D32),
+                  ),
+              ],
+            ),
+            const SizedBox(height: Tokens.m),
+            Text(
+              l10n.cookAddTarget(ingredientText(ingredient, 1)),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleLarge,
+            ),
+            const SizedBox(height: Tokens.s),
+            Text(
+              l10n.cookAddHint,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

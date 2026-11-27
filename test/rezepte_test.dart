@@ -380,8 +380,20 @@ void main() {
         expect(find.text('Schritt 1 von 4'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // bis zum Maschinenschritt (Schritt 3)
+        // bis zum Maschinenschritt (Schritt 3); Schritt 2 (Eier, Salz) führt jetzt auch
+        // durch die Zutaten ohne Waage
         for (var i = 0; i < 2; i++) {
+          if (i == 1) {
+            expect(find.textContaining('Eier zugeben'), findsOneWidget);
+            expect(
+              find.text('Ohne Waage – zugeben und weiter.'),
+              findsOneWidget,
+            );
+          }
+          while (find.text('Nächste Zutat').evaluate().isNotEmpty) {
+            await tester.tap(find.text('Nächste Zutat'));
+            await settle(tester);
+          }
           await tester.tap(find.text('Weiter'));
           await settle(tester);
         }
@@ -445,12 +457,12 @@ void main() {
         expect(find.text('500 g Milch abwiegen'), findsOneWidget);
 
         // Kreis vor der Zutat antippen = von Hand abhaken (z. B. ohne Waage abgewogen)
-        final kreis = find.byTooltip('Als abgewogen abhaken');
+        final kreis = find.byTooltip('Abhaken');
         await tester.ensureVisible(kreis);
         await tester.pump();
         await tester.tap(kreis);
         await settle(tester);
-        expect(find.byTooltip('Als abgewogen abhaken'), findsNothing);
+        expect(find.byTooltip('Abhaken'), findsNothing);
         await wischen(-300);
         expect(find.textContaining('Zutat offen'), findsNothing);
         await wischen(300);

@@ -226,7 +226,12 @@ void main() {
       await _hinweisWeg(tester);
       expect(find.text('Noch nicht fertig?'), findsOneWidget);
 
-      // Nicht aufdrängen: „Weiter“ geht normal zum nächsten Schritt
+      // Nicht aufdrängen: „Weiter“ geht normal zum nächsten Schritt (vorher die
+      // Zutaten ohne Waage abhaken, die stehen jetzt auch in der Reihenfolge)
+      while (find.text('Nächste Zutat').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Nächste Zutat'));
+        await _sekunden(tester, 1);
+      }
       await tester.tap(find.text('Weiter'));
       await _sekunden(tester, 2);
       expect(find.text('Schritt 2 von 3'), findsOneWidget);
