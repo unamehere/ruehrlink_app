@@ -7,6 +7,10 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+## 0.6.0 – 27.11.2026
+
+Eingebaute Firmware bleibt 0.6.0. Ab jetzt gehören App und Firmware mit gleicher Mittelzahl zusammen (0.6.x).
+
 ### Neu
 - Rezept-Editor: Schritte lassen sich am Griff ⠿ ziehen oder über das ⋮-Menü nach oben/unten schieben;
   dort auch „Schritt davor einfügen“ und „Schritt danach einfügen“.
