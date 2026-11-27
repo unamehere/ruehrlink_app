@@ -456,15 +456,40 @@ class _RecipeEditorPageState extends ConsumerState<RecipeEditorPage> {
       children: [
         Text(l10n.editorSteps, style: theme.textTheme.headlineSmall),
         const SizedBox(height: Tokens.s),
-        for (final (i, row) in _steps.indexed)
-          _StepEditor(
-            key: ObjectKey(row),
-            number: i + 1,
-            row: row,
-            caps: caps,
-            onChanged: () => setState(() {}),
-            onRemove: () => setState(() => _steps.removeAt(i).dispose()),
-          ),
+        // Ziehen am Griff oder über das ⋮-Menü (nach oben/unten, davor/danach einfügen).
+        ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          itemCount: _steps.length,
+          onReorderItem: (from, to) =>
+              setState(() => _steps.insert(to, _steps.removeAt(from))),
+          itemBuilder: (context, i) {
+            final row = _steps[i];
+            return _StepEditor(
+              key: ObjectKey(row),
+              index: i,
+              count: _steps.length,
+              row: row,
+              caps: caps,
+              onChanged: () => setState(() {}),
+              onAction: (a) => setState(() {
+                switch (a) {
+                  case _StepAction.up:
+                    _steps.insert(i - 1, _steps.removeAt(i));
+                  case _StepAction.down:
+                    _steps.insert(i + 1, _steps.removeAt(i));
+                  case _StepAction.insertBefore:
+                    _steps.insert(i, _StepRow());
+                  case _StepAction.insertAfter:
+                    _steps.insert(i + 1, _StepRow());
+                  case _StepAction.remove:
+                    _steps.removeAt(i).dispose();
+                }
+              }),
+            );
+          },
+        ),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
@@ -623,21 +648,42 @@ class _IngredientEditor extends StatelessWidget {
   }
 }
 
+enum _StepAction { up, down, insertBefore, insertAfter, remove }
+
+PopupMenuItem<_StepAction> _menuItem(
+  _StepAction value,
+  IconData icon,
+  String label, {
+  bool enabled = true,
+}) => PopupMenuItem(
+  value: value,
+  enabled: enabled,
+  child: Row(
+    children: [
+      Icon(icon),
+      const SizedBox(width: Tokens.m),
+      Flexible(child: Text(label)),
+    ],
+  ),
+);
+
 class _StepEditor extends StatelessWidget {
   const _StepEditor({
     super.key,
-    required this.number,
+    required this.index,
+    required this.count,
     required this.row,
     required this.caps,
     required this.onChanged,
-    required this.onRemove,
+    required this.onAction,
   });
 
-  final int number;
+  final int index;
+  final int count;
   final _StepRow row;
   final ApplianceCaps? caps;
   final VoidCallback onChanged;
-  final VoidCallback onRemove;
+  final ValueChanged<_StepAction> onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -653,16 +699,57 @@ class _StepEditor extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: Tooltip(
+                      message: l10n.editorStepDrag,
+                      child: const Padding(
+                        padding: EdgeInsets.fromLTRB(0, 8, 8, 8),
+                        child: Icon(Icons.drag_indicator_rounded, size: 28),
+                      ),
+                    ),
+                  ),
                   Expanded(
                     child: Text(
-                      l10n.editorStepNumber(number),
+                      l10n.editorStepNumber(index + 1),
                       style: theme.textTheme.titleMedium,
                     ),
                   ),
-                  IconButton(
-                    tooltip: l10n.editorRemove,
-                    onPressed: onRemove,
-                    icon: const Icon(Icons.delete_outline_rounded),
+                  PopupMenuButton<_StepAction>(
+                    tooltip: l10n.editorStepMenu,
+                    icon: const Icon(Icons.more_vert_rounded),
+                    onSelected: onAction,
+                    itemBuilder: (context) => [
+                      _menuItem(
+                        _StepAction.up,
+                        Icons.arrow_upward_rounded,
+                        l10n.editorStepUp,
+                        enabled: index > 0,
+                      ),
+                      _menuItem(
+                        _StepAction.down,
+                        Icons.arrow_downward_rounded,
+                        l10n.editorStepDown,
+                        enabled: index < count - 1,
+                      ),
+                      const PopupMenuDivider(),
+                      _menuItem(
+                        _StepAction.insertBefore,
+                        Icons.vertical_align_top_rounded,
+                        l10n.editorStepInsertBefore,
+                      ),
+                      _menuItem(
+                        _StepAction.insertAfter,
+                        Icons.vertical_align_bottom_rounded,
+                        l10n.editorStepInsertAfter,
+                      ),
+                      const PopupMenuDivider(),
+                      _menuItem(
+                        _StepAction.remove,
+                        Icons.delete_outline_rounded,
+                        l10n.editorRemove,
+                      ),
+                    ],
                   ),
                 ],
               ),

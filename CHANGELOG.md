@@ -8,6 +8,8 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 ## Unveröffentlicht
 
 ### Neu
+- Rezept-Editor: Schritte lassen sich am Griff ⠿ ziehen oder über das ⋮-Menü nach oben/unten schieben;
+  dort auch „Schritt davor einfügen“ und „Schritt danach einfügen“.
 - Mehr → Schriftgröße: Klein, Mittel oder Groß für die ganze App (zusätzlich zur Schriftgröße des Handys).
 
 ### Geändert
