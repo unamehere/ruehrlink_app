@@ -7,6 +7,25 @@ Die Firmware der Box hat ein eigenes Changelog (`ruehrlink_esp/CHANGELOG.md`).
 
 ## Unveröffentlicht
 
+### Neu
+- Rezept-Editor: Schritte lassen sich am Griff ⠿ ziehen oder über das ⋮-Menü nach oben/unten schieben;
+  dort auch „Schritt davor einfügen“ und „Schritt danach einfügen“.
+- Mehr → Schriftgröße: Klein, Mittel oder Groß für die ganze App (zusätzlich zur Schriftgröße des Handys).
+
+### Geändert
+- Rezept-Editor: Die Zutat steht jetzt über die ganze Breite, Menge und Einheit darunter. Vorher war vom Namen
+  nur der Anfang zu lesen („Zuc“, „Zitr“ …) (F31).
+- Kochmodus, „Automatisch zur nächsten Zutat“: Es geht erst weiter, wenn das Gewicht wirklich still liegt
+  (nachrieselndes Mehl zählt nicht). Danach ist 3 s lang „Passt!“ mit Balken zu sehen, „Hier bleiben“ hält an.
+  Das erscheint nur, wenn es eine nächste Zutat gibt (F32).
+- Kochmodus: Zurück ist nur noch ein Pfeil links unten (brach bei großer Schrift auf zwei Zeilen um), der
+  Hauptknopf wird breiter (F33).
+- Kochmodus: Den Kreis vor einer Zutat kannst du antippen, um sie abzuhaken oder wieder zu öffnen – z. B. wenn
+  oben „2 Zutaten offen“ steht, obwohl sie schon drin sind (F34).
+- Kochmodus: Zutaten ohne Waage („3 Eier“, „1 Prise Salz“) stehen jetzt in derselben Reihenfolge wie die
+  gewogenen, mit eigener Karte „3 Eier zugeben“. Vorher standen sie nur oben in der Liste und gingen leicht unter
+  (F35).
+
 ## 0.5.4 – 26.11.2026
 
 ### Geändert

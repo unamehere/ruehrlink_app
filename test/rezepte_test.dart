@@ -380,8 +380,20 @@ void main() {
         expect(find.text('Schritt 1 von 4'), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // bis zum Maschinenschritt (Schritt 3)
+        // bis zum Maschinenschritt (Schritt 3); Schritt 2 (Eier, Salz) führt jetzt auch
+        // durch die Zutaten ohne Waage
         for (var i = 0; i < 2; i++) {
+          if (i == 1) {
+            expect(find.textContaining('Eier zugeben'), findsOneWidget);
+            expect(
+              find.text('Ohne Waage – zugeben und weiter.'),
+              findsOneWidget,
+            );
+          }
+          while (find.text('Nächste Zutat').evaluate().isNotEmpty) {
+            await tester.tap(find.text('Nächste Zutat'));
+            await settle(tester);
+          }
           await tester.tap(find.text('Weiter'));
           await settle(tester);
         }
@@ -443,6 +455,17 @@ void main() {
         await settle(tester);
         expect(find.text('Zutat 2 von 2'), findsOneWidget);
         expect(find.text('500 g Milch abwiegen'), findsOneWidget);
+
+        // Kreis vor der Zutat antippen = von Hand abhaken (z. B. ohne Waage abgewogen)
+        final kreis = find.byTooltip('Abhaken');
+        await tester.ensureVisible(kreis);
+        await tester.pump();
+        await tester.tap(kreis);
+        await settle(tester);
+        expect(find.byTooltip('Abhaken'), findsNothing);
+        await wischen(-300);
+        expect(find.textContaining('Zutat offen'), findsNothing);
+        await wischen(300);
 
         // letzte Zutat: Hauptknopf heißt wieder „Weiter“ und blättert
         await tester.tap(find.text('Weiter'));
@@ -704,6 +727,57 @@ void main() {
       await settle(tester);
       expect(tester.takeException(), isNull);
       expect(find.byTooltip('Bearbeiten'), findsOneWidget);
+      await close(tester);
+    });
+
+    testWidgets('Editor: Schritte einfügen und verschieben', (tester) async {
+      await open(tester, const Size(390, 844));
+      await tester.tap(find.text('Neues Rezept'));
+      await settle(tester);
+      final scroll = find.byType(Scrollable).first;
+      List<String> texte() => [
+        for (final f
+            in find.widgetWithText(TextField, 'Was ist zu tun?').evaluate())
+          (f.widget as TextField).controller!.text,
+      ];
+      Future<void> menue(int nr, String aktion) async {
+        final knopf = find
+            .byTooltip('Schritt verschieben oder einfügen')
+            .at(nr - 1);
+        await tester.ensureVisible(knopf);
+        await tester.pump();
+        await tester.tap(knopf);
+        await settle(tester);
+        await tester.tap(find.text(aktion).last);
+        await settle(tester);
+      }
+
+      await tester.scrollUntilVisible(
+        find.text('Schritt 1'),
+        200,
+        scrollable: scroll,
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Was ist zu tun?'),
+        'Kneten',
+      );
+      await menue(1, 'Schritt davor einfügen');
+      expect(find.text('Schritt 2'), findsOneWidget);
+      expect(texte(), ['', 'Kneten']);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Was ist zu tun?').first,
+        'Abwiegen',
+      );
+      await menue(1, 'Schritt danach einfügen');
+      expect(texte(), ['Abwiegen', '', 'Kneten']);
+      await menue(3, 'Nach oben');
+      expect(texte(), ['Abwiegen', 'Kneten', '']);
+      await menue(1, 'Nach unten');
+      expect(texte(), ['Kneten', 'Abwiegen', '']);
+      await menue(3, 'Entfernen');
+      expect(texte(), ['Kneten', 'Abwiegen']);
+      expect(find.text('Schritt 3'), findsNothing);
+      expect(tester.takeException(), isNull);
       await close(tester);
     });
   });

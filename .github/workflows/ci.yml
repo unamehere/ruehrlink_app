@@ -21,6 +21,13 @@ jobs:
           flutter-version: "3.50.0"
           channel: stable
           cache: true
+      - name: App und eingebaute Firmware – gleiche Mittelzahl (0.6.x ↔ 0.6.y)
+        run: |
+          APP="$(grep -m1 '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
+          FW="$(tr -d '[:space:]' < FIRMWARE_VERSION)"
+          if [ "${APP%.*}" != "${FW%.*}" ]; then
+            echo "App $APP und Firmware $FW passen nicht: MAJOR.MINOR muss gleich sein"; exit 1
+          fi
       - name: Eingebaute Firmware holen (FIRMWARE_VERSION, aus ruehrlink_esp)
         env:
           GH_TOKEN: ${{ github.token }}

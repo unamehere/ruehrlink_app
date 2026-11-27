@@ -8,6 +8,7 @@ import '../../core/models/models.dart';
 import '../../core/update/firmware.dart';
 import '../../l10n/l10n.dart';
 import '../../ui/layout.dart';
+import '../../ui/text_size.dart';
 import '../../ui/theme.dart';
 import '../../version.dart';
 import '../einrichtung/setup_controller.dart';
@@ -69,6 +70,8 @@ class MehrPage extends ConsumerWidget {
                 onTap: () => context.go('/mehr/hinweise'),
               ),
             ),
+            const SizedBox(height: Tokens.s),
+            const _TextSizeCard(),
             if (canRepair) ...[
               const SizedBox(height: Tokens.s),
               Card(
@@ -177,5 +180,59 @@ class MehrPage extends ConsumerWidget {
     // Brücke ist jetzt leer: Token vergessen, Einrichtung von vorn.
     await ref.read(bridgeTargetProvider.notifier).forget();
     await ref.read(setupDoneProvider.notifier).set(false);
+  }
+}
+
+/// Schriftgröße klein / mittel / groß – wirkt sofort in der ganzen App.
+class _TextSizeCard extends ConsumerWidget {
+  const _TextSizeCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final size = ref.watch(textSizeProvider);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(Tokens.m),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.format_size_rounded, size: 32),
+                const SizedBox(width: Tokens.m),
+                Expanded(
+                  child: Text(
+                    l10n.textSizeTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Tokens.m),
+            SegmentedButton<TextSize>(
+              showSelectedIcon: false,
+              segments: [
+                ButtonSegment(
+                  value: TextSize.small,
+                  label: Text(l10n.textSizeSmall),
+                ),
+                ButtonSegment(
+                  value: TextSize.medium,
+                  label: Text(l10n.textSizeMedium),
+                ),
+                ButtonSegment(
+                  value: TextSize.large,
+                  label: Text(l10n.textSizeLarge),
+                ),
+              ],
+              selected: {size},
+              onSelectionChanged: (s) =>
+                  ref.read(textSizeProvider.notifier).set(s.first),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

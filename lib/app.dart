@@ -29,6 +29,7 @@ import 'features/rezepte/rezept_vorschau_page.dart';
 import 'features/rezepte/rezepte_page.dart';
 import 'l10n/l10n.dart';
 import 'ui/layout.dart';
+import 'ui/text_size.dart';
 import 'ui/theme.dart';
 
 class RuehrlinkApp extends ConsumerStatefulWidget {
@@ -85,6 +86,7 @@ class _RuehrlinkAppState extends ConsumerState<RuehrlinkApp> {
       GlobalWidgetsLocalizations.delegate,
     ],
     routerConfig: ref.watch(routerProvider),
+    builder: (context, child) => AppTextScale(child: child!),
   );
 }
 
